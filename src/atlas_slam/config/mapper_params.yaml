@@ -1,0 +1,79 @@
+# Dựa trên mapper_params_online_async.yaml mặc định của slam_toolbox, chỉ chỉnh vài
+# tham số cho khớp quy mô robot Atlas (~0.32m x 0.26m) và world maze nhỏ (6x6m):
+# - base_frame/odom_frame/map_frame/scan_topic: đã khớp sẵn với TF/topic của atlas_control,
+#   không cần đổi tên gì cả (đây là điểm hay khi mọi package trước đó theo đúng convention).
+# - max_laser_range: giảm xuống dưới mức tối đa thật của LiDAR (10.0m, xem atlas.gazebo.xacro)
+#   để tránh dùng các tia gần giới hạn cảm biến (kém tin cậy).
+# - minimum_travel_distance/heading: giảm so với mặc định (0.5m/0.5rad) vì world maze chỉ
+#   rộng 6x6m -- mặc định sẽ khiến map cập nhật quá thưa trong không gian nhỏ này.
+# - loop_match_minimum_response_coarse/fine: tăng so với mặc định (0.35/0.45 -> 0.45/0.55)
+#   để loop closure khó chấp nhận match hơn. world maze.sdf ban đầu bị đối xứng tâm 180°
+#   (2 vách trong (-1,1)/(1,-1) là ảnh gương của nhau), khiến slam_toolbox thỉnh thoảng
+#   nhầm 2 vị trí đối xứng là cùng 1 chỗ (loop closure sai) -> bản đồ "nhảy" và lệch vĩnh
+#   viễn. Đã thêm 1 cột mốc phá đối xứng trong maze.sdf (fix gốc), ngưỡng chặt hơn ở đây
+#   là lớp phòng vệ thứ 2, phòng khi world khác (học viên tự vẽ) cũng bị đối xứng tương tự.
+# - min_laser_range: sửa từ 0.0 -> 0.12 khớp đúng range.min thật của LiDAR (atlas.gazebo.xacro),
+#   trước đó slam_toolbox phải tự warn + clip vì 0.0 < khả năng thật của cảm biến.
+slam_toolbox:
+  ros__parameters:
+    solver_plugin: solver_plugins::CeresSolver
+    ceres_linear_solver: SPARSE_NORMAL_CHOLESKY
+    ceres_preconditioner: SCHUR_JACOBI
+    ceres_trust_strategy: LEVENBERG_MARQUARDT
+    ceres_dogleg_type: TRADITIONAL_DOGLEG
+    ceres_loss_function: None
+
+    odom_frame: odom
+    map_frame: map
+    base_frame: base_footprint
+    scan_topic: /scan
+    use_map_saver: true
+    mode: mapping
+
+    debug_logging: false
+    throttle_scans: 1
+    transform_publish_period: 0.02
+    map_update_interval: 2.0
+    resolution: 0.05
+    min_laser_range: 0.12
+    max_laser_range: 9.5
+    minimum_time_interval: 0.5
+    transform_timeout: 0.2
+    tf_buffer_duration: 30.
+    stack_size_to_use: 40000000
+    enable_interactive_mode: true
+
+    use_scan_matching: true
+    use_scan_barycenter: true
+    minimum_travel_distance: 0.2
+    minimum_travel_heading: 0.2
+    scan_buffer_size: 10
+    scan_buffer_maximum_scan_distance: 10.0
+    link_match_minimum_response_fine: 0.1
+    link_scan_maximum_distance: 1.5
+    loop_search_maximum_distance: 3.0
+    do_loop_closing: true
+    loop_match_minimum_chain_size: 10
+    loop_match_maximum_variance_coarse: 3.0
+    loop_match_minimum_response_coarse: 0.45
+    loop_match_minimum_response_fine: 0.55
+
+    correlation_search_space_dimension: 0.5
+    correlation_search_space_resolution: 0.01
+    correlation_search_space_smear_deviation: 0.1
+
+    loop_search_space_dimension: 8.0
+    loop_search_space_resolution: 0.05
+    loop_search_space_smear_deviation: 0.03
+
+    distance_variance_penalty: 0.5
+    angle_variance_penalty: 1.0
+
+    fine_search_angle_offset: 0.00349
+    coarse_search_angle_offset: 0.349
+    coarse_angle_resolution: 0.0349
+    minimum_angle_penalty: 0.9
+    minimum_distance_penalty: 0.5
+    use_response_expansion: true
+    min_pass_through: 2
+    occupancy_threshold: 0.1

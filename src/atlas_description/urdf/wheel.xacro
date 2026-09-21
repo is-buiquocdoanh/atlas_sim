@@ -1,0 +1,67 @@
+<?xml version="1.0"?>
+<robot xmlns:xacro="http://www.ros.org/wiki/xacro">
+
+  <!-- Một bánh chủ động (continuous joint quanh trục Y của bánh).
+       prefix: "left"/"right", reflect: 1 (trái) hoặc -1 (phải), quyết định dấu của y_offset -->
+  <xacro:macro name="atlas_wheel" params="prefix reflect">
+    <link name="${prefix}_wheel_link">
+      <visual>
+        <origin xyz="0 0 0" rpy="${pi/2} 0 0"/>
+        <geometry>
+          <cylinder radius="${wheel_radius}" length="${wheel_width}"/>
+        </geometry>
+        <material name="atlas_dark_grey"/>
+      </visual>
+      <collision>
+        <origin xyz="0 0 0" rpy="${pi/2} 0 0"/>
+        <geometry>
+          <cylinder radius="${wheel_radius}" length="${wheel_width}"/>
+        </geometry>
+      </collision>
+      <xacro:inertial_cylinder mass="${wheel_mass}" radius="${wheel_radius}" length="${wheel_width}">
+        <origin xyz="0 0 0" rpy="${pi/2} 0 0"/>
+      </xacro:inertial_cylinder>
+    </link>
+
+    <joint name="${prefix}_wheel_joint" type="continuous">
+      <parent link="base_link"/>
+      <child link="${prefix}_wheel_link"/>
+      <origin xyz="0 ${reflect * wheel_separation / 2} 0" rpy="0 0 0"/>
+      <axis xyz="0 1 0"/>
+    </joint>
+  </xacro:macro>
+
+  <!-- Bánh đỡ (caster): joint fixed vì đây là cách đơn giản hóa phổ biến cho caster kiểu bi cầu.
+       Độ ma sát gần 0 để lăn tự do mọi hướng sẽ được cấu hình ở surface friction trong Gazebo (Module 4),
+       không cần thêm bậc tự do (DOF) cho khớp này.
+       prefix: "front"/"rear", dùng chung macro cho 2 caster để không lặp code. Cần CẢ HAI
+       (không phải 1) vì trục bánh đặt đúng tâm x=0: nếu chỉ có 1 caster (vd phía sau), toàn bộ
+       nửa thân bên kia trục bánh không có điểm tựa, trong khi trọng tâm robot nằm rất gần x=0,
+       chỉ cần lệch nhỏ là robot chúi mũi hoặc hất đuôi khỏi mặt đất. 2 caster trước/sau giữ
+       tam giác/tứ giác điểm tựa bao trọn trọng tâm ở giữa, ổn định cả 2 hướng tăng/giảm tốc. -->
+  <xacro:macro name="atlas_caster" params="prefix x_offset">
+    <link name="${prefix}_caster_link">
+      <visual>
+        <geometry>
+          <sphere radius="${caster_radius}"/>
+        </geometry>
+        <material name="atlas_black"/>
+      </visual>
+      <collision>
+        <geometry>
+          <sphere radius="${caster_radius}"/>
+        </geometry>
+      </collision>
+      <xacro:inertial_sphere mass="${caster_mass}" radius="${caster_radius}">
+        <origin xyz="0 0 0" rpy="0 0 0"/>
+      </xacro:inertial_sphere>
+    </link>
+
+    <joint name="${prefix}_caster_joint" type="fixed">
+      <parent link="base_link"/>
+      <child link="${prefix}_caster_link"/>
+      <origin xyz="${x_offset} 0 ${-wheel_radius + caster_radius}" rpy="0 0 0"/>
+    </joint>
+  </xacro:macro>
+
+</robot>

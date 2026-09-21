@@ -1,0 +1,49 @@
+controller_manager:
+  ros__parameters:
+    update_rate: 100 # Hz
+
+    joint_state_broadcaster:
+      type: joint_state_broadcaster/JointStateBroadcaster
+
+    diff_drive_controller:
+      type: diff_drive_controller/DiffDriveController
+
+diff_drive_controller:
+  ros__parameters:
+    left_wheel_names: ["left_wheel_joint"]
+    right_wheel_names: ["right_wheel_joint"]
+
+    # Phải khớp đúng với wheel_radius/wheel_separation trong atlas_description/urdf/atlas.urdf.xacro
+    # (Module 5 - bài tập tính tay vận tốc bánh trái/phải dựa trên 2 số này).
+    wheel_separation: 0.30
+    wheel_radius: 0.05
+
+    odom_frame_id: odom
+    base_frame_id: base_footprint
+    pose_covariance_diagonal: [0.001, 0.001, 0.0, 0.0, 0.0, 0.01]
+    twist_covariance_diagonal: [0.001, 0.0, 0.0, 0.0, 0.0, 0.01]
+
+    open_loop: false
+    enable_odom_tf: true
+    publish_rate: 50.0
+
+    cmd_vel_timeout: 0.5
+    # Bản diff_drive_controller đi kèm Humble mặc định use_stamped_vel: true (chờ
+    # TwistStamped trên /cmd_vel). teleop_twist_keyboard và `ros2 topic pub` ở Module 5/7
+    # phát Twist thường -- phải đặt false, nếu không robot sẽ không nhúc nhích dù mọi thứ
+    # khác đều đúng.
+    use_stamped_vel: false
+
+    linear.x.has_velocity_limits: true
+    linear.x.has_acceleration_limits: true
+    linear.x.max_velocity: 0.5
+    linear.x.min_velocity: -0.5
+    linear.x.max_acceleration: 1.0
+    linear.x.min_acceleration: -1.0
+
+    angular.z.has_velocity_limits: true
+    angular.z.has_acceleration_limits: true
+    angular.z.max_velocity: 1.5
+    angular.z.min_velocity: -1.5
+    angular.z.max_acceleration: 3.0
+    angular.z.min_acceleration: -3.0

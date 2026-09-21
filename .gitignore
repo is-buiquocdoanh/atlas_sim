@@ -1,0 +1,14 @@
+# colcon build artifacts -- regenerated bằng `colcon build`, không commit
+build/
+install/
+log/
+
+# Python bytecode cache
+__pycache__/
+*.pyc
+
+# editor / OS
+.vscode/
+.idea/
+*.swp
+.DS_Store

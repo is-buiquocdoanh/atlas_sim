@@ -1,0 +1,35 @@
+<svg viewBox="0 0 560 260" xmlns="http://www.w3.org/2000/svg" font-family="system-ui, sans-serif">
+  <style>
+    .netbox { fill: #f7fafc; stroke: #cbd5e0; stroke-width: 1.5; stroke-dasharray: 4 3; rx: 10; }
+    .domainA { fill: #eef4fb; stroke: #2b6cb0; stroke-width: 2; rx: 10; }
+    .domainB { fill: #fef6e7; stroke: #b7791f; stroke-width: 2; rx: 10; }
+    .node { fill: #ffffff; stroke: #4a5568; stroke-width: 1.6; }
+    .lbl { font-size: 12px; fill: #1a202c; }
+    .title { font-size: 14px; font-weight: 700; fill: #1a202c; }
+    .cap { font-size: 11.5px; fill: #718096; }
+    .link { stroke: #4a5568; stroke-width: 1.4; }
+    .cross { stroke: #c53030; stroke-width: 1.8; stroke-dasharray: 3 3; }
+  </style>
+
+  <text x="280" y="24" text-anchor="middle" class="title">Cùng 1 mạng, 2 ROS_DOMAIN_ID khác nhau</text>
+
+  <rect class="netbox" x="20" y="40" width="520" height="200"/>
+  <text class="cap" x="30" y="58">mạng LAN / cùng máy</text>
+
+  <rect class="domainA" x="45" y="75" width="220" height="140"/>
+  <text class="title" x="155" y="98" text-anchor="middle">ROS_DOMAIN_ID=5</text>
+
+  <circle class="node" cx="100" cy="150" r="22"/><text class="lbl" x="100" y="154" text-anchor="middle">pub</text>
+  <circle class="node" cx="210" cy="150" r="22"/><text class="lbl" x="210" y="154" text-anchor="middle">sub</text>
+  <line class="link" x1="122" y1="150" x2="188" y2="150"/>
+
+  <rect class="domainB" x="295" y="75" width="220" height="140"/>
+  <text class="title" x="405" y="98" text-anchor="middle">ROS_DOMAIN_ID=99</text>
+
+  <circle class="node" cx="350" cy="150" r="22"/><text class="lbl" x="350" y="154" text-anchor="middle">pub</text>
+  <circle class="node" cx="460" cy="150" r="22"/><text class="lbl" x="460" y="154" text-anchor="middle">sub</text>
+  <line class="link" x1="372" y1="150" x2="438" y2="150"/>
+
+  <line class="cross" x1="232" y1="150" x2="328" y2="150"/>
+  <text x="280" y="140" text-anchor="middle" font-size="16" fill="#c53030">✕</text>
+</svg>

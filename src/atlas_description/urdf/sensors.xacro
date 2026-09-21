@@ -1,0 +1,61 @@
+<?xml version="1.0"?>
+<robot xmlns:xacro="http://www.ros.org/wiki/xacro">
+
+  <!-- Chỉ mô tả hình học + vị trí gắn cảm biến (mount). Plugin Gazebo phát dữ liệu /scan, /imu
+       nằm ở package atlas_gazebo (urdf/atlas.gazebo.xacro, Module 6): atlas_description không
+       phụ thuộc Gazebo, để có thể tái dùng cho robot thật sau này.
+       Bọc trong macro (thay vì khai báo link/joint trực tiếp) để việc include file này ở đầu
+       atlas.urdf.xacro không bị lỗi "property chưa định nghĩa": macro chỉ được xử lý khi gọi
+       xacro:atlas_sensors, lúc đó các property (lidar_radius, base_height...) đã có giá trị. -->
+  <xacro:macro name="atlas_sensors">
+
+  <link name="lidar_link">
+    <visual>
+      <geometry>
+        <cylinder radius="${lidar_radius}" length="${lidar_height}"/>
+      </geometry>
+      <material name="atlas_black"/>
+    </visual>
+    <collision>
+      <geometry>
+        <cylinder radius="${lidar_radius}" length="${lidar_height}"/>
+      </geometry>
+    </collision>
+    <xacro:inertial_cylinder mass="${lidar_mass}" radius="${lidar_radius}" length="${lidar_height}">
+      <origin xyz="0 0 0" rpy="0 0 0"/>
+    </xacro:inertial_cylinder>
+  </link>
+
+  <joint name="lidar_joint" type="fixed">
+    <parent link="base_link"/>
+    <child link="lidar_link"/>
+    <origin xyz="${lidar_x_offset} 0 ${base_height + lidar_height / 2}" rpy="0 0 0"/>
+  </joint>
+
+  <link name="imu_link">
+    <visual>
+      <geometry>
+        <box size="${imu_size} ${imu_size} ${imu_size}"/>
+      </geometry>
+      <material name="atlas_orange"/>
+    </visual>
+    <collision>
+      <geometry>
+        <box size="${imu_size} ${imu_size} ${imu_size}"/>
+      </geometry>
+    </collision>
+    <xacro:inertial_box mass="${imu_mass}" x="${imu_size}" y="${imu_size}" z="${imu_size}">
+      <origin xyz="0 0 0" rpy="0 0 0"/>
+    </xacro:inertial_box>
+  </link>
+
+  <!-- IMU thường đặt gần trọng tâm robot để phép đo gia tốc/góc quay ít bị nhiễu bởi cánh tay đòn -->
+  <joint name="imu_joint" type="fixed">
+    <parent link="base_link"/>
+    <child link="imu_link"/>
+    <origin xyz="0 0 ${imu_size / 2}" rpy="0 0 0"/>
+  </joint>
+
+  </xacro:macro>
+
+</robot>

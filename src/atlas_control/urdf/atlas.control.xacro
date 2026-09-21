@@ -1,0 +1,52 @@
+<?xml version="1.0"?>
+<robot name="atlas" xmlns:xacro="http://www.ros.org/wiki/xacro">
+
+  <!-- File này = atlas_gazebo (vật lý) + khai báo ros2_control cho 2 khớp bánh xe
+       + plugin gz_ros2_control để Gazebo tự chạy controller_manager khi spawn.
+       Tách riêng khỏi atlas_gazebo vì đây là ranh giới "vật lý" vs "hệ điều khiển"
+       (xem 01-cau-truc-workspace.md). Robot thật sau này sẽ có 1 file tương tự nhưng
+       <hardware><plugin> trỏ tới driver thật thay vì GazeboSimSystem. -->
+  <xacro:include filename="$(find atlas_gazebo)/urdf/atlas.gazebo.xacro"/>
+
+  <ros2_control name="atlas_system" type="system">
+    <hardware>
+      <plugin>gz_ros2_control/GazeboSimSystem</plugin>
+    </hardware>
+    <joint name="left_wheel_joint">
+      <command_interface name="velocity">
+        <param name="min">-10</param>
+        <param name="max">10</param>
+      </command_interface>
+      <state_interface name="velocity"/>
+      <state_interface name="position"/>
+    </joint>
+    <joint name="right_wheel_joint">
+      <command_interface name="velocity">
+        <param name="min">-10</param>
+        <param name="max">10</param>
+      </command_interface>
+      <state_interface name="velocity"/>
+      <state_interface name="position"/>
+    </joint>
+  </ros2_control>
+
+  <!-- Plugin này chạy bên trong tiến trình Gazebo, đọc file config bên dưới để tự
+       khởi động controller_manager + nạp diff_drive_controller ngay khi robot được spawn.
+       $(find ...) ở đây được xacro phân giải thành đường dẫn tuyệt đối lúc xử lý file,
+       vì plugin cần path thật trên đĩa, không phải package:// URI.
+
+       diff_drive_controller mặc định publish/subscribe dưới namespace của controller
+       (/diff_drive_controller/cmd_vel_unstamped, /diff_drive_controller/odom). Remap về
+       /cmd_vel và /odom cho khớp convention chuẩn ROS 2 mà teleop_twist_keyboard (Module 7)
+       và Nav2 (Module 10) mặc định dùng, để không phải nhớ tên topic dài ở mọi bài sau. -->
+  <gazebo>
+    <plugin filename="gz_ros2_control-system" name="gz_ros2_control::GazeboSimROS2ControlPlugin">
+      <ros>
+        <remapping>/diff_drive_controller/cmd_vel_unstamped:=/cmd_vel</remapping>
+        <remapping>/diff_drive_controller/odom:=/odom</remapping>
+      </ros>
+      <parameters>$(find atlas_control)/config/diff_drive_controller.yaml</parameters>
+    </plugin>
+  </gazebo>
+
+</robot>

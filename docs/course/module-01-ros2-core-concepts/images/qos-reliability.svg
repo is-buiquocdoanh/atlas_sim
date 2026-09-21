@@ -1,0 +1,29 @@
+<svg viewBox="0 0 560 220" xmlns="http://www.w3.org/2000/svg" font-family="system-ui, sans-serif">
+  <style>
+    .lane { fill: #f7fafc; stroke: #e2e8f0; stroke-width: 1.5; rx: 8; }
+    .msg { fill: #2b6cb0; }
+    .msgdrop { fill: #c53030; }
+    .lbl { font-size: 13px; fill: #1a202c; font-weight: 600; }
+    .cap { font-size: 11.5px; fill: #718096; }
+    .end { fill: #4a5568; }
+  </style>
+
+  <text x="20" y="30" class="lbl">RELIABLE</text>
+  <rect class="lane" x="20" y="40" width="520" height="55"/>
+  <circle class="end" cx="45" cy="67" r="6"/><text class="cap" x="45" y="90">publisher</text>
+  <circle class="end" cx="510" cy="67" r="6"/><text class="cap" x="510" y="90" text-anchor="end">subscriber</text>
+  <circle class="msg" cx="150" cy="67" r="8"/>
+  <circle class="msg" cx="280" cy="67" r="8"/>
+  <circle class="msg" cx="410" cy="67" r="8"/>
+  <text class="cap" x="280" y="52" text-anchor="middle">mọi message đều tới đích, có gửi lại nếu cần</text>
+
+  <text x="20" y="130" class="lbl">BEST_EFFORT</text>
+  <rect class="lane" x="20" y="140" width="520" height="55"/>
+  <circle class="end" cx="45" cy="167" r="6"/><text class="cap" x="45" y="190">publisher</text>
+  <circle class="end" cx="510" cy="167" r="6"/><text class="cap" x="510" y="190" text-anchor="end">subscriber</text>
+  <circle class="msg" cx="150" cy="167" r="8"/>
+  <circle class="msgdrop" cx="280" cy="167" r="8"/>
+  <text x="280" y="172" text-anchor="middle" font-size="12" fill="#ffffff">✕</text>
+  <circle class="msg" cx="410" cy="167" r="8"/>
+  <text class="cap" x="280" y="152" text-anchor="middle">có thể rớt, không gửi lại -- chấp nhận được cho dữ liệu tần số cao</text>
+</svg>

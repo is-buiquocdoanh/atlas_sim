@@ -1,0 +1,43 @@
+<svg viewBox="0 0 600 300" xmlns="http://www.w3.org/2000/svg" font-family="system-ui, sans-serif">
+  <style>
+    .launch { fill: #fef6e7; stroke: #b7791f; stroke-width: 2; rx: 8; }
+    .node { fill: #eef4fb; stroke: #2b6cb0; stroke-width: 1.8; rx: 8; }
+    .lbl { font-size: 12px; fill: #1a202c; }
+    .cap { font-size: 10.5px; fill: #718096; }
+    .arr { stroke: #a0aec0; stroke-width: 1.6; marker-end: url(#a); }
+  </style>
+  <defs>
+    <marker id="a" markerWidth="9" markerHeight="9" refX="5" refY="2.5" orient="auto">
+      <path d="M0,0 L5,2.5 L0,5 Z" fill="#a0aec0"/>
+    </marker>
+  </defs>
+
+  <rect class="launch" x="20" y="20" width="200" height="44"/>
+  <text class="lbl" x="120" y="40" text-anchor="middle" font-weight="600">atlas_bringup</text>
+  <text class="lbl" x="120" y="56" text-anchor="middle">bringup.launch.py</text>
+
+  <line class="arr" x1="120" y1="64" x2="120" y2="96"/>
+  <text class="cap" x="130" y="82">include</text>
+
+  <rect class="launch" x="20" y="98" width="200" height="44"/>
+  <text class="lbl" x="120" y="118" text-anchor="middle" font-weight="600">atlas_control</text>
+  <text class="lbl" x="120" y="134" text-anchor="middle">controller.launch.py</text>
+
+  <line class="arr" x1="120" y1="142" x2="120" y2="174"/>
+  <text class="cap" x="130" y="160">include</text>
+
+  <rect class="launch" x="20" y="176" width="200" height="44"/>
+  <text class="lbl" x="120" y="196" text-anchor="middle" font-weight="600">atlas_gazebo</text>
+  <text class="lbl" x="120" y="212" text-anchor="middle">spawn_robot.launch.py</text>
+
+  <line class="arr" x1="220" y1="198" x2="270" y2="198"/>
+
+  <rect class="node" x="272" y="176" width="150" height="34"/>
+  <text class="lbl" x="347" y="197" text-anchor="middle">robot_state_publisher</text>
+
+  <line class="arr" x1="220" y1="198" x2="270" y2="240"/>
+  <rect class="node" x="272" y="223" width="150" height="34"/>
+  <text class="lbl" x="347" y="244" text-anchor="middle">ros_gz_bridge</text>
+
+  <text x="300" y="280" text-anchor="middle" class="cap">mỗi tầng chỉ include tầng dưới + ghi đè vài tham số (vd world:=maze.sdf) — không copy lại logic</text>
+</svg>

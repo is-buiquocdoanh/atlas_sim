@@ -1,0 +1,59 @@
+# joy_node đọc gamepad -> /joy
+# teleop_node (teleop_twist_joy) đọc /joy -> Twist, publish ra topic "cmd_vel" tương đối,
+#   launch file remap thành "cmd_vel_joy" để khớp với entry "joystick" bên dưới.
+# twist_mux gộp nhiều nguồn cmd_vel_* theo priority (số càng cao càng được ưu tiên),
+#   publish ra "/cmd_vel_out" cố định trong code, launch file remap thành "/cmd_vel"
+#   (đầu vào thật mà atlas_control/diff_drive_controller đang lắng nghe).
+#
+# "magnetic" (line-follower) và "collision_detect" (né vật cản khẩn cấp) là placeholder
+# cho các package chưa xây trong atlas_sim -- không có gì publish vào 2 topic đó lúc này,
+# twist_mux vẫn chạy bình thường, chỉ đơn giản input đó luôn rỗng/timeout.
+#
+# Lưu ý: twist_mux giới hạn priority trong khoảng [0, 255] -- giá trị 1000 của
+# collision_detect bên dưới bị tự động kẹp về 255 lúc chạy (đã kiểm chứng qua log).
+# Thứ tự ưu tiên tương đối vẫn đúng (255 > 100 > 50 > 10), chỉ là con số hiển thị
+# không phải 1000 như viết ở đây -- đừng thêm input nào định kỳ vọng "cao hơn 1000".
+
+joy_node:
+  ros__parameters:
+    device_id: 0
+    deadzone: 0.05
+    autorepeat_rate: 20.0
+
+teleop_node:
+  ros__parameters:
+    axis_linear:
+      x: 1
+    scale_linear:
+      x: 0.2
+    scale_linear_turbo:
+      x: 0.8
+    axis_angular:
+      yaw: 0
+    scale_angular:
+      yaw: 0.5
+    scale_angular_turbo:
+      yaw: 1.0
+    enable_button: 7
+    enable_turbo_button: 6
+    require_enable_button: true
+
+twist_mux:
+  ros__parameters:
+    topics:
+      magnetic:
+        topic   : cmd_vel_mag
+        timeout : 0.5
+        priority: 10
+      navigation:
+        topic   : cmd_vel_nav
+        timeout : 0.5
+        priority: 50
+      joystick:
+        topic   : cmd_vel_joy
+        timeout : 0.5
+        priority: 100
+      collision_detect:
+        topic   : cmd_vel_collision
+        timeout : 0.5
+        priority: 1000

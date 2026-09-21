@@ -1,0 +1,69 @@
+# nav2_collision_monitor cho Atlas -- lớp an toàn cuối cùng, độc lập với costmap/Nav2:
+# quét /scan trực tiếp quanh robot, phát hiện vật cản sắp va chạm nhanh hơn 1 chu kỳ
+# costmap/planner đầy đủ. Tham khảo từ config đã tune trên robot Atlas thật (atlas_c1,
+# footprint 32x26cm), chỉnh lại đúng kích thước robot mô phỏng 30x24cm.
+#
+# QUAN TRỌNG: node này KHÔNG tự publish thẳng vào /cmd_vel. cmd_vel_out_topic trỏ vào
+# "cmd_vel_monitor_out" -- một node relay riêng (scripts/collision_guard_relay.py) mới
+# là nơi quyết định có forward sang /cmd_vel_collision (slot ưu tiên cao nhất của
+# twist_mux, xem atlas_bringup/config/joystick_teleop.yaml) hay không, dựa trên
+# state_topic. Lý do: nav2_collision_monitor mặc định LỌC LIÊN TỤC (luôn publish ra
+# cmd_vel_out dù không có gì nguy hiểm), nếu đấu thẳng vào slot ưu tiên cao nhất của
+# twist_mux thì nó sẽ LUÔN thắng và chặn robot di chuyển vĩnh viễn dù không có vật cản.
+collision_monitor:
+  ros__parameters:
+    use_sim_time: True
+    enabled: true
+    base_frame_id: "base_footprint"
+    odom_frame_id: "odom"
+    cmd_vel_in_topic: "cmd_vel"                 # quan sát lệnh hiện tại (output của twist_mux)
+    cmd_vel_out_topic: "cmd_vel_monitor_out"     # bản đã lọc an toàn, relay node đọc từ đây
+    state_topic: "collision_monitor_state"       # relay node dựa vào đây để quyết định forward
+    transform_tolerance: 0.5
+    source_timeout: 1.0
+    base_shift_correction: true
+    stop_pub_timeout: 2.0
+
+    # Robot mô phỏng: dài 30cm (front/rear +-0.15m), rộng 24cm (left/right +-0.12m),
+    # base_footprint ở tâm (xem atlas_description/urdf/atlas.urdf.xacro).
+    polygons: ["PolygonStop", "PolygonSlow"]
+
+    PolygonStop:
+      type: "polygon"
+      points: [
+         0.20,  0.17,   # Trước-trái  (15cm + 5cm margin)
+        -0.20,  0.17,   # Sau-trái
+        -0.20, -0.17,   # Sau-phải
+         0.20, -0.17    # Trước-phải
+      ]
+      action_type: "stop"
+      max_points: 3
+      visualize: true
+      polygon_pub_topic: "polygon_stop"
+      enabled: true
+
+    PolygonSlow:
+      type: "polygon"
+      points: [
+         0.30,  0.27,   # Trước-trái  (15cm + 15cm margin)
+        -0.30,  0.27,   # Sau-trái
+        -0.30, -0.27,   # Sau-phải
+         0.30, -0.27    # Trước-phải
+      ]
+      action_type: "slowdown"
+      max_points: 3
+      slowdown_ratio: 0.5   # [CHỈNH] còn lại 50% tốc độ khi có vật cản trong vùng này
+      visualize: true
+      polygon_pub_topic: "polygon_slowdown"
+      enabled: true
+
+    # Không dùng FootprintApproach (dự đoán va chạm theo costmap): phụ thuộc
+    # /local_costmap/published_footprint, chỉ tồn tại khi Nav2 đang chạy -- collision
+    # monitor ở đây phải hoạt động độc lập, kể cả khi chỉ lái tay bằng joystick, không
+    # có Nav2. Có thể bật thêm sau nếu luôn chạy kèm Nav2.
+
+    observation_sources: ["scan"]
+    scan:
+      type: "scan"
+      topic: "/scan"
+      enabled: true

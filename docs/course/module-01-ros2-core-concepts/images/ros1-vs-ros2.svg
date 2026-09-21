@@ -1,0 +1,51 @@
+<svg viewBox="0 0 640 300" xmlns="http://www.w3.org/2000/svg" font-family="system-ui, sans-serif">
+  <style>
+    .node { fill: #eef4fb; stroke: #2b6cb0; stroke-width: 2; }
+    .center-bad { fill: #fde8e8; stroke: #c53030; stroke-width: 2.5; }
+    .lbl { font-size: 12.5px; fill: #1a202c; font-weight: 600; }
+    .title { font-size: 15px; font-weight: 700; fill: #1a202c; }
+    .cap { font-size: 12px; fill: #718096; }
+    .link { stroke: #a0aec0; stroke-width: 1.6; }
+    .linkbad { stroke: #c53030; stroke-width: 1.6; }
+  </style>
+
+  <!-- ROS 1 side -->
+  <text class="title" x="150" y="26" text-anchor="middle">ROS 1</text>
+  <text class="cap" x="150" y="44" text-anchor="middle">mọi node phải qua roscore</text>
+
+  <circle class="center-bad" cx="150" cy="140" r="26"/>
+  <text class="lbl" x="150" y="144" text-anchor="middle">roscore</text>
+
+  <circle class="node" cx="60" cy="80" r="20"/><text class="lbl" x="60" y="84" text-anchor="middle">A</text>
+  <circle class="node" cx="240" cy="80" r="20"/><text class="lbl" x="240" y="84" text-anchor="middle">B</text>
+  <circle class="node" cx="60" cy="210" r="20"/><text class="lbl" x="60" y="214" text-anchor="middle">C</text>
+  <circle class="node" cx="240" cy="210" r="20"/><text class="lbl" x="240" y="214" text-anchor="middle">D</text>
+
+  <line class="linkbad" x1="75" y1="95" x2="130" y2="125"/>
+  <line class="linkbad" x1="225" y1="95" x2="170" y2="125"/>
+  <line class="linkbad" x1="75" y1="196" x2="130" y2="156"/>
+  <line class="linkbad" x1="225" y1="196" x2="170" y2="156"/>
+
+  <text class="cap" x="150" y="270" text-anchor="middle" fill="#c53030">roscore sập -&gt; A,B,C,D mất kết nối nhau</text>
+
+  <!-- divider -->
+  <line x1="330" y1="20" x2="330" y2="280" stroke="#e2e8f0" stroke-width="2"/>
+
+  <!-- ROS 2 side -->
+  <text class="title" x="490" y="26" text-anchor="middle">ROS 2</text>
+  <text class="cap" x="490" y="44" text-anchor="middle">tự phát hiện nhau qua DDS, không có tâm</text>
+
+  <circle class="node" cx="400" cy="80" r="20"/><text class="lbl" x="400" y="84" text-anchor="middle">A</text>
+  <circle class="node" cx="580" cy="80" r="20"/><text class="lbl" x="580" y="84" text-anchor="middle">B</text>
+  <circle class="node" cx="400" cy="210" r="20"/><text class="lbl" x="400" y="214" text-anchor="middle">C</text>
+  <circle class="node" cx="580" cy="210" r="20"/><text class="lbl" x="580" y="214" text-anchor="middle">D</text>
+
+  <line class="link" x1="400" y1="100" x2="400" y2="190"/>
+  <line class="link" x1="580" y1="100" x2="580" y2="190"/>
+  <line class="link" x1="420" y1="80" x2="560" y2="80"/>
+  <line class="link" x1="420" y1="210" x2="560" y2="210"/>
+  <line class="link" x1="415" y1="95" x2="565" y2="195"/>
+  <line class="link" x1="565" y1="95" x2="415" y2="195"/>
+
+  <text class="cap" x="490" y="270" text-anchor="middle" fill="#1a7a4c">tắt 1 node chỉ ảnh hưởng kết nối liên quan tới nó</text>
+</svg>

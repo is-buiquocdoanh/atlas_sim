@@ -1,0 +1,93 @@
+<?xml version="1.0"?>
+<robot name="atlas" xmlns:xacro="http://www.ros.org/wiki/xacro">
+
+  <xacro:include filename="$(find atlas_description)/urdf/materials.xacro"/>
+  <xacro:include filename="$(find atlas_description)/urdf/inertial_macros.xacro"/>
+  <xacro:include filename="$(find atlas_description)/urdf/wheel.xacro"/>
+  <xacro:include filename="$(find atlas_description)/urdf/sensors.xacro"/>
+
+  <!-- ============================================================
+       Tham số hình học/khối lượng của robot Atlas.
+       Đổi các giá trị này để "vẽ lại" robot mà không đụng logic bên dưới
+       (bài tập Module 3: thử đổi wheel_radius/wheel_separation).
+       Đơn vị: mét (m), kilogram (kg), theo REP-103.
+       ============================================================ -->
+
+  <!-- Khung robot (base) -->
+  <xacro:property name="base_length" value="0.30"/>
+  <xacro:property name="base_width" value="0.24"/>
+  <xacro:property name="base_height" value="0.12"/>
+  <xacro:property name="base_mass" value="5.0"/>
+
+  <!-- Bánh chủ động, đặt đúng tâm hình học (x=0), đây cũng là tâm quay (ICR) của
+       robot mà diff_drive_controller giả định trùng với gốc base_link/base_footprint
+       khi tính odometry. Không dịch chuyển trục bánh khỏi x=0, nếu không odometry sẽ
+       trôi dần mỗi khi robot quay tại chỗ (ảnh hưởng SLAM/Nav2 ở module sau).
+       wheel_separation = khoảng cách tâm 2 bánh, dùng lại trong công thức động học
+       vi sai ở Module 5 (diff_drive_controller.yaml). -->
+  <xacro:property name="wheel_radius" value="0.05"/>
+  <xacro:property name="wheel_width" value="0.03"/>
+  <xacro:property name="wheel_mass" value="0.3"/>
+  <xacro:property name="wheel_separation" value="0.30"/>
+
+  <!-- 2 bánh đỡ (caster), đặt cả trước lẫn sau, xem giải thích trong wheel.xacro
+       về lý do cần 2 caster thay vì 1 (chống lật cả 2 hướng, trục bánh giữ đúng x=0). -->
+  <xacro:property name="caster_radius" value="0.02"/>
+  <xacro:property name="caster_mass" value="0.05"/>
+
+  <!-- LiDAR 2D, đặt trên nóc, hơi lệch về phía trước để không bị caster/dây cản góc quét -->
+  <xacro:property name="lidar_radius" value="0.035"/>
+  <xacro:property name="lidar_height" value="0.04"/>
+  <xacro:property name="lidar_mass" value="0.15"/>
+  <xacro:property name="lidar_x_offset" value="0.05"/>
+
+  <!-- IMU, đặt gần tâm robot -->
+  <xacro:property name="imu_size" value="0.02"/>
+  <xacro:property name="imu_mass" value="0.05"/>
+
+  <!-- ============================================================
+       base_footprint: link ảo (không hình học), là gốc tọa độ của cả robot
+       chiếu xuống mặt đất, theo convention chuẩn ROS Nav2 mong đợi
+       (đế robot phải "chạm đất" ở frame này để AMCL/costmap tính đúng).
+       base_link nằm cao hơn base_footprint đúng bằng wheel_radius, ngang
+       trục bánh xe.
+       ============================================================ -->
+  <link name="base_footprint"/>
+
+  <joint name="base_joint" type="fixed">
+    <parent link="base_footprint"/>
+    <child link="base_link"/>
+    <origin xyz="0 0 ${wheel_radius}" rpy="0 0 0"/>
+  </joint>
+
+  <link name="base_link">
+    <visual>
+      <origin xyz="0 0 ${base_height / 2}" rpy="0 0 0"/>
+      <geometry>
+        <box size="${base_length} ${base_width} ${base_height}"/>
+      </geometry>
+      <material name="atlas_white"/>
+    </visual>
+    <collision>
+      <origin xyz="0 0 ${base_height / 2}" rpy="0 0 0"/>
+      <geometry>
+        <box size="${base_length} ${base_width} ${base_height}"/>
+      </geometry>
+    </collision>
+    <xacro:inertial_box mass="${base_mass}" x="${base_length}" y="${base_width}" z="${base_height}">
+      <origin xyz="0 0 ${base_height / 2}" rpy="0 0 0"/>
+    </xacro:inertial_box>
+  </link>
+
+  <!-- 2 bánh chủ động: trái (+y) và phải (-y) theo REP-103 (x tới trước, y sang trái, z lên trên) -->
+  <xacro:atlas_wheel prefix="left" reflect="1"/>
+  <xacro:atlas_wheel prefix="right" reflect="-1"/>
+
+  <!-- Caster trước và sau, đối xứng qua trục bánh (x=0) -->
+  <xacro:atlas_caster prefix="front" x_offset="${base_length / 2 - caster_radius - 0.01}"/>
+  <xacro:atlas_caster prefix="rear" x_offset="${-(base_length / 2 - caster_radius - 0.01)}"/>
+
+  <!-- LiDAR + IMU (định nghĩa macro trong sensors.xacro) -->
+  <xacro:atlas_sensors/>
+
+</robot>

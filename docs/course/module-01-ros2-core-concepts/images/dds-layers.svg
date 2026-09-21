@@ -1,0 +1,41 @@
+<svg viewBox="0 0 560 400" xmlns="http://www.w3.org/2000/svg" font-family="system-ui, sans-serif">
+  <style>
+    .box { fill: #eef4fb; stroke: #2b6cb0; stroke-width: 2; rx: 8; }
+    .box2 { fill: #f3f0fb; stroke: #6b46c1; stroke-width: 2; rx: 8; }
+    .box3 { fill: #fef6e7; stroke: #b7791f; stroke-width: 2; rx: 8; }
+    .box4 { fill: #eafaf1; stroke: #1a7a4c; stroke-width: 2; rx: 8; }
+    .lbl { font-size: 17px; font-weight: 600; fill: #1a202c; }
+    .sub { font-size: 12.5px; fill: #4a5568; }
+    .arrow { stroke: #718096; stroke-width: 2; marker-end: url(#arr); }
+  </style>
+  <defs>
+    <marker id="arr" markerWidth="10" markerHeight="10" refX="6" refY="3" orient="auto">
+      <path d="M0,0 L6,3 L0,6 Z" fill="#718096"/>
+    </marker>
+  </defs>
+
+  <text x="280" y="28" text-anchor="middle" font-size="16" font-weight="700" fill="#1a202c">Kiến trúc phân lớp của ROS 2</text>
+
+  <rect class="box" x="80" y="50" width="400" height="60"/>
+  <text class="lbl" x="280" y="76" text-anchor="middle">Code bạn viết</text>
+  <text class="sub" x="280" y="96" text-anchor="middle">rclpy (Python) hoặc rclcpp (C++)</text>
+
+  <line class="arrow" x1="280" y1="110" x2="280" y2="138"/>
+
+  <rect class="box2" x="80" y="140" width="400" height="55"/>
+  <text class="lbl" x="280" y="163" text-anchor="middle">rcl</text>
+  <text class="sub" x="280" y="182" text-anchor="middle">lõi dùng chung, viết bằng C</text>
+
+  <line class="arrow" x1="280" y1="195" x2="280" y2="223"/>
+
+  <rect class="box3" x="80" y="225" width="400" height="55"/>
+  <text class="lbl" x="280" y="248" text-anchor="middle">rmw — ROS MiddleWare interface</text>
+  <text class="sub" x="280" y="267" text-anchor="middle">lớp trừu tượng, cho phép đổi DDS bên dưới</text>
+
+  <line class="arrow" x1="280" y1="280" x2="280" y2="308"/>
+
+  <rect class="box4" x="80" y="310" width="400" height="70"/>
+  <text class="lbl" x="280" y="336" text-anchor="middle">DDS implementation</text>
+  <text class="sub" x="280" y="356" text-anchor="middle">Fast DDS (mặc định Humble) · Cyclone DDS · ...</text>
+  <text class="sub" x="280" y="372" text-anchor="middle">đổi qua biến môi trường RMW_IMPLEMENTATION</text>
+</svg>

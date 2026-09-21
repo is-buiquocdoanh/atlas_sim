@@ -1,0 +1,47 @@
+<svg viewBox="0 0 560 320" xmlns="http://www.w3.org/2000/svg" font-family="system-ui, sans-serif">
+  <style>
+    .node { fill: #eef4fb; stroke: #2b6cb0; stroke-width: 2.5; rx: 12; }
+    .io { fill: #ffffff; stroke: #718096; stroke-width: 1.6; rx: 6; }
+    .lbl { font-size: 13px; fill: #1a202c; }
+    .title { font-size: 18px; font-weight: 700; fill: #1a202c; }
+    .cap { font-size: 11px; fill: #718096; }
+    .arrIn { stroke: #1a7a4c; stroke-width: 2; marker-end: url(#arrG); }
+    .arrOut { stroke: #2b6cb0; stroke-width: 2; marker-end: url(#arrB); }
+  </style>
+  <defs>
+    <marker id="arrG" markerWidth="9" markerHeight="9" refX="5" refY="2.5" orient="auto">
+      <path d="M0,0 L5,2.5 L0,5 Z" fill="#1a7a4c"/>
+    </marker>
+    <marker id="arrB" markerWidth="9" markerHeight="9" refX="5" refY="2.5" orient="auto">
+      <path d="M0,0 L5,2.5 L0,5 Z" fill="#2b6cb0"/>
+    </marker>
+  </defs>
+
+  <rect class="node" x="180" y="110" width="200" height="100"/>
+  <text class="title" x="280" y="155" text-anchor="middle">Node</text>
+  <text class="cap" x="280" y="175" text-anchor="middle">"sensor_publisher"</text>
+  <text class="cap" x="280" y="192" text-anchor="middle">timer + parameter bên trong</text>
+
+  <!-- subscription in -->
+  <rect class="io" x="20" y="60" width="130" height="34"/>
+  <text class="lbl" x="85" y="82" text-anchor="middle">subscription</text>
+  <line class="arrIn" x1="150" y1="90" x2="200" y2="118"/>
+
+  <!-- service call in -->
+  <rect class="io" x="20" y="230" width="130" height="34"/>
+  <text class="lbl" x="85" y="252" text-anchor="middle">service request</text>
+  <line class="arrIn" x1="150" y1="238" x2="200" y2="200"/>
+
+  <!-- publisher out -->
+  <rect class="io" x="410" y="60" width="130" height="34"/>
+  <text class="lbl" x="475" y="82" text-anchor="middle">publisher</text>
+  <line class="arrOut" x1="360" y1="118" x2="412" y2="88"/>
+
+  <!-- service response out -->
+  <rect class="io" x="410" y="230" width="130" height="34"/>
+  <text class="lbl" x="475" y="252" text-anchor="middle">service response</text>
+  <line class="arrOut" x1="360" y1="200" x2="412" y2="238"/>
+
+  <text class="cap" x="280" y="30" text-anchor="middle" fill="#1a7a4c">xanh lá = dữ liệu ĐI VÀO node</text>
+  <text class="cap" x="280" y="300" text-anchor="middle" fill="#2b6cb0">xanh dương = dữ liệu ĐI RA từ node</text>
+</svg>

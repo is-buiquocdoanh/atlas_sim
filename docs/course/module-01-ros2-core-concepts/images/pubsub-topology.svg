@@ -1,0 +1,39 @@
+<svg viewBox="0 0 560 260" xmlns="http://www.w3.org/2000/svg" font-family="system-ui, sans-serif">
+  <style>
+    .pub { fill: #eafaf1; stroke: #1a7a4c; stroke-width: 2; rx: 8; }
+    .sub { fill: #eef4fb; stroke: #2b6cb0; stroke-width: 2; rx: 8; }
+    .topic { fill: #fef6e7; stroke: #b7791f; stroke-width: 2.5; rx: 20; }
+    .lbl { font-size: 12.5px; fill: #1a202c; }
+    .cap { font-size: 11.5px; fill: #718096; }
+    .arr { stroke: #a0aec0; stroke-width: 1.8; marker-end: url(#a); }
+  </style>
+  <defs>
+    <marker id="a" markerWidth="9" markerHeight="9" refX="5" refY="2.5" orient="auto">
+      <path d="M0,0 L5,2.5 L0,5 Z" fill="#a0aec0"/>
+    </marker>
+  </defs>
+
+  <rect class="pub" x="20" y="30" width="120" height="40"/>
+  <text class="lbl" x="80" y="54" text-anchor="middle">Publisher A</text>
+  <rect class="pub" x="20" y="190" width="120" height="40"/>
+  <text class="lbl" x="80" y="214" text-anchor="middle">Publisher B</text>
+
+  <rect class="topic" x="220" y="105" width="120" height="50"/>
+  <text class="lbl" x="280" y="134" text-anchor="middle" font-weight="600">/sensor_data</text>
+
+  <rect class="sub" x="420" y="30" width="120" height="40"/>
+  <text class="lbl" x="480" y="54" text-anchor="middle">Subscriber X</text>
+  <rect class="sub" x="420" y="110" width="120" height="40"/>
+  <text class="lbl" x="480" y="134" text-anchor="middle">Subscriber Y</text>
+  <rect class="sub" x="420" y="190" width="120" height="40"/>
+  <text class="lbl" x="480" y="214" text-anchor="middle">Subscriber Z</text>
+
+  <line class="arr" x1="140" y1="50" x2="222" y2="118"/>
+  <line class="arr" x1="140" y1="210" x2="222" y2="142"/>
+
+  <line class="arr" x1="340" y1="118" x2="422" y2="50"/>
+  <line class="arr" x1="340" y1="130" x2="422" y2="130"/>
+  <line class="arr" x1="340" y1="142" x2="422" y2="210"/>
+
+  <text class="cap" x="280" y="180" text-anchor="middle">publisher không biết ai đang nghe — chỉ phát lên topic</text>
+</svg>

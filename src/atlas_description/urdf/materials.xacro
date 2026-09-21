@@ -1,0 +1,20 @@
+<?xml version="1.0"?>
+<robot xmlns:xacro="http://www.ros.org/wiki/xacro">
+
+  <material name="atlas_white">
+    <color rgba="0.95 0.95 0.95 1.0"/>
+  </material>
+
+  <material name="atlas_dark_grey">
+    <color rgba="0.2 0.2 0.2 1.0"/>
+  </material>
+
+  <material name="atlas_orange">
+    <color rgba="1.0 0.45 0.0 1.0"/>
+  </material>
+
+  <material name="atlas_black">
+    <color rgba="0.05 0.05 0.05 1.0"/>
+  </material>
+
+</robot>
