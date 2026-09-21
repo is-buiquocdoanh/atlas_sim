@@ -1,0 +1,38 @@
+<svg viewBox="0 0 560 320" xmlns="http://www.w3.org/2000/svg" font-family="system-ui, sans-serif">
+  <style>
+    .box { fill: #eef4fb; stroke: #2b6cb0; stroke-width: 2; rx: 8; }
+    .lbl { font-size: 13px; fill: #1a202c; font-weight: 600; }
+    .cap { font-size: 11px; fill: #718096; }
+    .arr { stroke: #718096; stroke-width: 1.8; marker-end: url(#a); }
+  </style>
+  <defs>
+    <marker id="a" markerWidth="9" markerHeight="9" refX="5" refY="2.5" orient="auto">
+      <path d="M0,0 L5,2.5 L0,5 Z" fill="#718096"/>
+    </marker>
+  </defs>
+
+  <text x="280" y="24" text-anchor="middle" font-size="14" font-weight="700" fill="#1a202c">Ví dụ cây TF của 1 tay máy (robot arm) -- KHÔNG phải cây TF của Atlas</text>
+
+  <rect class="box" x="220" y="40" width="120" height="40"/>
+  <text class="lbl" x="280" y="64" text-anchor="middle">world</text>
+
+  <line class="arr" x1="280" y1="80" x2="280" y2="108"/>
+  <rect class="box" x="220" y="110" width="120" height="40"/>
+  <text class="lbl" x="280" y="134" text-anchor="middle">arm_base</text>
+
+  <!-- branch: camera (sibling) -->
+  <line class="arr" x1="340" y1="130" x2="440" y2="130"/>
+  <rect class="box" x="442" y="110" width="100" height="40"/>
+  <text class="lbl" x="492" y="134" text-anchor="middle">camera</text>
+
+  <!-- chain down -->
+  <line class="arr" x1="280" y1="150" x2="280" y2="178"/>
+  <rect class="box" x="220" y="180" width="120" height="40"/>
+  <text class="lbl" x="280" y="204" text-anchor="middle">shoulder</text>
+
+  <line class="arr" x1="280" y1="220" x2="280" y2="248"/>
+  <rect class="box" x="220" y="250" width="120" height="40"/>
+  <text class="lbl" x="280" y="274" text-anchor="middle">gripper</text>
+
+  <text class="cap" x="280" y="305" text-anchor="middle">1 frame CHA có thể có NHIỀU frame CON (nhánh) -- arm_base là cha của cả camera lẫn shoulder</text>
+</svg>

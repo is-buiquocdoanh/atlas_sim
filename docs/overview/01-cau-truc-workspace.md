@@ -11,17 +11,20 @@ atlas_sim/                         # ROS 2 workspace (colcon workspace root)
 ├── docs/                          # Tài liệu khóa học (đã có)
 │   └── course/                    # Nội dung bài học chi tiết từng module (xem 02 cho outline)
 ├── src/
-│   ├── ros2_basics/                # Module 1: node/pub-sub/service/param/launch, KHÔNG phụ
-│   │   │                            # thuộc robot Atlas -- cố tình không đặt tên atlas_*
+│   ├── ros2_basics/                # Module 1-2: node/pub-sub/service/param/launch/TF2, KHÔNG
+│   │   │                            # phụ thuộc robot Atlas -- cố tình không đặt tên atlas_*
 │   │   │                            # (nội dung generic ROS 2, không riêng gì Atlas)
 │   │   ├── ros2_basics/
 │   │   │   ├── sensor_publisher.py       # Node + Publisher + Timer + Parameter
 │   │   │   ├── data_logger.py            # Subscriber + Service server (Trigger, báo cáo)
 │   │   │   ├── stats_client.py           # Service client (Trigger)
 │   │   │   ├── add_two_ints_server.py    # Service server TÍNH TOÁN thật (AddTwoInts)
-│   │   │   └── add_two_ints_client.py    # Service client tương ứng
+│   │   │   ├── add_two_ints_client.py    # Service client tương ứng
+│   │   │   ├── tf_broadcaster.py         # Module 2: TransformBroadcaster (frame động)
+│   │   │   └── tf_listener.py            # Module 2: TransformListener + Buffer
 │   │   └── launch/
-│   │       └── demo.launch.py
+│   │       ├── demo.launch.py
+│   │       └── demo_tf.launch.py         # static + dynamic transform, cho Module 2
 │   │
 │   ├── atlas_description/         # URDF/XACRO, meshes, RViz config
 │   │   ├── urdf/

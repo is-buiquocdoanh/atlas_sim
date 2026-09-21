@@ -28,6 +28,8 @@ setup(
             "stats_client = ros2_basics.stats_client:main",
             "add_two_ints_server = ros2_basics.add_two_ints_server:main",
             "add_two_ints_client = ros2_basics.add_two_ints_client:main",
+            "tf_broadcaster = ros2_basics.tf_broadcaster:main",
+            "tf_listener = ros2_basics.tf_listener:main",
         ],
     },
 )

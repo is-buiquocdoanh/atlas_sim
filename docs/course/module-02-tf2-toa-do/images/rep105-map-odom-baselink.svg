@@ -1,0 +1,42 @@
+<svg viewBox="0 0 560 280" xmlns="http://www.w3.org/2000/svg" font-family="system-ui, sans-serif">
+  <style>
+    .box { fill: #eef4fb; stroke: #2b6cb0; stroke-width: 2; rx: 8; }
+    .boxmap { fill: #eafaf1; stroke: #1a7a4c; stroke-width: 2; rx: 8; }
+    .boxodom { fill: #fef6e7; stroke: #b7791f; stroke-width: 2; rx: 8; }
+    .lbl { font-size: 13px; fill: #1a202c; font-weight: 600; }
+    .cap { font-size: 11px; fill: #718096; }
+    .arr { stroke: #718096; stroke-width: 1.8; marker-end: url(#a); }
+  </style>
+  <defs>
+    <marker id="a" markerWidth="9" markerHeight="9" refX="5" refY="2.5" orient="auto">
+      <path d="M0,0 L5,2.5 L0,5 Z" fill="#718096"/>
+    </marker>
+  </defs>
+
+  <text x="280" y="24" text-anchor="middle" font-size="14" font-weight="700" fill="#1a202c">REP-105: chuỗi frame chuẩn của ROS</text>
+
+  <rect class="boxmap" x="30" y="60" width="130" height="46"/>
+  <text class="lbl" x="95" y="88" text-anchor="middle">map</text>
+
+  <line class="arr" x1="160" y1="83" x2="218" y2="83"/>
+  <rect class="boxodom" x="220" y="60" width="130" height="46"/>
+  <text class="lbl" x="285" y="88" text-anchor="middle">odom</text>
+
+  <line class="arr" x1="350" y1="83" x2="408" y2="83"/>
+  <rect class="box" x="410" y="60" width="130" height="46"/>
+  <text class="lbl" x="475" y="88" text-anchor="middle">base_link</text>
+
+  <text class="cap" x="95" y="120" text-anchor="middle">cố định tuyệt đối</text>
+  <text class="cap" x="285" y="120" text-anchor="middle">gốc = nơi robot khởi động</text>
+  <text class="cap" x="475" y="120" text-anchor="middle">chính robot</text>
+
+  <!-- odom drift line -->
+  <text class="cap" x="285" y="160" text-anchor="middle" fill="#b7791f" font-weight="600">odom -&gt; base_link: publish LIÊN TỤC (vd 50Hz), TRÔI DẦN theo thời gian</text>
+  <path d="M 230 175 Q 260 165, 285 178 T 340 172" stroke="#b7791f" stroke-width="1.6" fill="none"/>
+
+  <text class="cap" x="95" y="160" text-anchor="middle" fill="#1a7a4c" font-weight="600">map -&gt; odom: publish RỜI RẠC (khi AMCL "sửa" lại)</text>
+  <path d="M 60 175 L 95 190 L 60 205" stroke="#1a7a4c" stroke-width="1.6" fill="none"/>
+  <text class="cap" x="95" y="230" text-anchor="middle" fill="#1a7a4c">nhảy bậc, không liên tục</text>
+
+  <text class="cap" x="280" y="260" text-anchor="middle">2 đoạn CỘNG LẠI = map -&gt; base_link (vị trí robot thật trên bản đồ)</text>
+</svg>

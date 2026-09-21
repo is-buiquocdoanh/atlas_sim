@@ -1,0 +1,37 @@
+<svg viewBox="0 0 520 260" xmlns="http://www.w3.org/2000/svg" font-family="system-ui, sans-serif">
+  <style>
+    .axis { stroke-width: 2.2; }
+    .axisX { stroke: #c53030; }
+    .axisY { stroke: #1a7a4c; }
+    .lbl { font-size: 13px; fill: #1a202c; font-weight: 600; }
+    .cap { font-size: 11.5px; fill: #718096; }
+    .link { stroke: #2b6cb0; stroke-width: 2; stroke-dasharray: 5 4; marker-end: url(#a); }
+  </style>
+  <defs>
+    <marker id="a" markerWidth="9" markerHeight="9" refX="5" refY="2.5" orient="auto">
+      <path d="M0,0 L5,2.5 L0,5 Z" fill="#2b6cb0"/>
+    </marker>
+  </defs>
+
+  <text x="260" y="24" text-anchor="middle" font-size="15" font-weight="700" fill="#1a202c">Transform = độ lệch (tịnh tiến + xoay) từ frame cha sang frame con</text>
+
+  <!-- Parent frame A at origin -->
+  <line class="axis axisX" x1="90" y1="180" x2="150" y2="180"/>
+  <line class="axis axisY" x1="90" y1="180" x2="90" y2="120"/>
+  <circle cx="90" cy="180" r="3" fill="#1a202c"/>
+  <text class="lbl" x="90" y="205" text-anchor="middle">A (frame cha)</text>
+
+  <!-- Child frame B, translated + rotated -->
+  <g transform="translate(340,90) rotate(-25)">
+    <line class="axis axisX" x1="0" y1="0" x2="60" y2="0"/>
+    <line class="axis axisY" x1="0" y1="0" x2="0" y2="-60"/>
+    <circle cx="0" cy="0" r="3" fill="#1a202c"/>
+  </g>
+  <text class="lbl" x="340" y="45" text-anchor="middle">B (frame con)</text>
+
+  <line class="link" x1="90" y1="180" x2="335" y2="95"/>
+  <text class="cap" x="215" y="125" text-anchor="middle">transform A → B</text>
+  <text class="cap" x="215" y="140" text-anchor="middle">(x, y, z, quaternion)</text>
+
+  <text class="cap" x="260" y="240" text-anchor="middle">Trục đỏ = X, trục xanh lá = Y -- B xoay -25° và dịch so với A</text>
+</svg>

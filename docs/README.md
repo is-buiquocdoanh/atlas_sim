@@ -15,7 +15,7 @@
 | 03 | [Yêu cầu môi trường](overview/03-yeu-cau-moi-truong.md) | Hệ điều hành, phần cứng, Docker, cách học viên setup |
 | 04 | [Capstone & đánh giá](overview/04-capstone-va-danh-gia.md) | Đồ án cuối khóa, tiêu chí chấm, chứng chỉ |
 | 05 | [Kế hoạch triển khai](overview/05-ke-hoach-trien-khai.md) | Roadmap xây dựng dự án + khóa học theo giai đoạn |
-| — | [course/](course/) | Nội dung bài học chi tiết từng module (đang viết dần, xem [02](overview/02-lo-trinh-khoa-hoc.md) cho outline). Mỗi module = 1 thư mục riêng, tách theo khái niệm (vd [Module 1](course/module-01-ros2-core-concepts/00-gioi-thieu.md): 1 file/khái niệm, có định nghĩa + ví dụ thật trong dự án). |
+| — | [course/](course/) | Nội dung bài học chi tiết từng module (đang viết dần, xem [02](overview/02-lo-trinh-khoa-hoc.md) cho outline). Mỗi module = 1 thư mục riêng, tách theo khái niệm, có định nghĩa + ví dụ thật trong dự án: [Module 1 — ROS 2 core](course/module-01-ros2-core-concepts/00-gioi-thieu.md), [Module 2 — TF2 & tọa độ](course/module-02-tf2-toa-do/00-gioi-thieu.md). |
 
 ## Quyết định khung (đã chốt với người dùng)
 
