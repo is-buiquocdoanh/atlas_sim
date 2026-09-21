@@ -9,7 +9,7 @@ dụng "tiêu thụ" /scan + /odom + TF do tầng bringup cung cấp, không qua
     ros2 launch atlas_control controller.launch.py world:=maze.sdf
     # Terminal 2: SLAM
     ros2 launch atlas_slam slam.launch.py
-    # Terminal 3: lái đi khắp world để quét hết các góc (xem atlas_teleop)
+    # Terminal 3: lái đi khắp world để quét hết các góc
     ros2 run teleop_twist_keyboard teleop_twist_keyboard
 
 Tắt RViz nếu chỉ cần chạy nền: `ros2 launch atlas_slam slam.launch.py rviz:=false`

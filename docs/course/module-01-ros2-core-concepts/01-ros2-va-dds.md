@@ -36,7 +36,7 @@ ROS_DOMAIN_ID=5 ros2 topic list | grep sensor_data           # terminal 3, đún
 
 ## Ví dụ trong dự án Atlas
 
-Mọi hướng dẫn kiểu "Terminal 1 chạy X, Terminal 2 chạy Y" trong README (`atlas_bringup` + `atlas_teleop`...) không có bước "kết nối 2 terminal" nào — chúng tự thấy nhau qua DDS discovery.
+Mọi hướng dẫn kiểu "Terminal 1 chạy X, Terminal 2 chạy Y" trong README (`atlas_bringup` + `atlas_slam`...) không có bước "kết nối 2 terminal" nào — chúng tự thấy nhau qua DDS discovery.
 
 Lưu ý: **Gazebo dùng middleware riêng** (Gazebo Transport), không phải DDS — đây là lý do cần `ros_gz_bridge` (`atlas_gazebo/config/gz_bridge.yaml`, Module 4) để "dịch" dữ liệu cảm biến từ Gazebo sang ROS 2/DDS.
 

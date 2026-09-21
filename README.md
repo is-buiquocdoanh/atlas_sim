@@ -38,11 +38,10 @@ Phải `source install/setup.bash` lại mỗi khi mở terminal mới (hoặc t
 | `atlas_description` | URDF/XACRO, RViz xem robot (không cần Gazebo) | 3 |
 | `atlas_gazebo` | Spawn robot vào Gazebo Fortress, world (`empty.sdf`, `maze.sdf`), sensor LiDAR+IMU | 4, 6 |
 | `atlas_control` | `ros2_control` + `diff_drive_controller`, robot chạy được bằng `/cmd_vel` | 5 |
-| `atlas_teleop` | RViz xem robot+scan+odom khi lái tay | 7 |
 | `atlas_slam` | `slam_toolbox` tự vẽ bản đồ, lưu map; Nav2 (định vị AMCL hoặc slam_toolbox, costmap/planner/controller, 3 file config DWB/RPP/MPPI) | 8-10 |
 | `atlas_bringup` | Điểm khởi chạy chung: `bringup.launch.py` (mô phỏng), joystick teleop qua `twist_mux` | 7 (mở rộng) |
 
-Chỉ `atlas_control` tự include `atlas_gazebo` (spawn + control là 1 tầng "bringup" liền mạch); `atlas_bringup/bringup.launch.py` chỉ include lại `atlas_control/controller.launch.py`, không viết lại logic. Từ `atlas_teleop`/`atlas_slam`/`atlas_bringup` (các launch còn lại) trở lên, mỗi package là ứng dụng ĐỘC LẬP với bringup — luôn cần chạy `atlas_bringup bringup.launch.py` riêng ở terminal khác trước, rồi mới chạy package bạn cần (xem ví dụ lệnh bên dưới, luôn có "Terminal 1: bringup"). Chạy thẳng `atlas_control controller.launch.py` vẫn được (dùng khi chỉ làm việc trong phạm vi package đó, vd Module 5).
+Chỉ `atlas_control` tự include `atlas_gazebo` (spawn + control là 1 tầng "bringup" liền mạch); `atlas_bringup/bringup.launch.py` chỉ include lại `atlas_control/controller.launch.py`, không viết lại logic. Từ `atlas_slam`/`atlas_bringup` (các launch còn lại) trở lên, mỗi package là ứng dụng ĐỘC LẬP với bringup — luôn cần chạy `atlas_bringup bringup.launch.py` riêng ở terminal khác trước, rồi mới chạy package bạn cần (xem ví dụ lệnh bên dưới, luôn có "Terminal 1: bringup"). Chạy thẳng `atlas_control controller.launch.py` vẫn được (dùng khi chỉ làm việc trong phạm vi package đó, vd Module 5). Lái tay dùng thẳng `teleop_twist_keyboard` (gói chuẩn ROS 2) + tự mở RViz — không có package `atlas_teleop` riêng (đã bỏ, chỉ là 1 file `.rviz` cấu hình sẵn, không đáng 1 package).
 
 ## Lệnh chạy nhanh
 
@@ -65,15 +64,14 @@ Test nhanh không cần bàn phím:
 ros2 topic pub -r 10 /cmd_vel geometry_msgs/msg/Twist "{linear: {x: 0.2}, angular: {z: 0.0}}"
 ```
 
-**Lái bằng bàn phím + xem trực quan** (3 terminal riêng, cùng thư mục, đã `source install/setup.bash`):
+**Lái bằng bàn phím + xem trực quan** (2 terminal riêng, cùng thư mục, đã `source install/setup.bash`):
 ```bash
 # Terminal 1
 ros2 launch atlas_bringup bringup.launch.py world:=maze.sdf
 # Terminal 2
-ros2 launch atlas_teleop teleop_keyboard.launch.py
-# Terminal 3
 ros2 run teleop_twist_keyboard teleop_twist_keyboard
 ```
+Muốn xem robot/scan/odom trực quan trong lúc lái, tự mở `rviz2`, thêm display `RobotModel` + `TF` + `LaserScan (/scan)` + `Odometry (/odom)`, fixed frame `odom`.
 
 **Vẽ bản đồ (SLAM)** — `atlas_slam` KHÔNG tự spawn robot/world, chỉ chạy `slam_toolbox` (giống thực tế: SLAM là ứng dụng chạy trên bringup đã có sẵn, không quan tâm robot thật hay mô phỏng):
 ```bash

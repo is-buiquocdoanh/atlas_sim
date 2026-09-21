@@ -87,13 +87,6 @@ atlas_sim/                         # ROS 2 workspace (colcon workspace root)
 │   │                                 # cho AMCL) và slam_toolbox serialize_map (.posegraph/.data,
 │   │                                 # cho localization:=slam_toolbox) -- 2 định dạng khác nhau
 │   │
-│   ├── atlas_teleop/                # Điều khiển thủ công + xem trực quan
-│   │   ├── rviz/
-│   │   │   └── atlas_teleop.rviz    # RobotModel + TF + LaserScan(/scan) + Odometry(/odom)
-│   │   └── launch/
-│   │       └── teleop_keyboard.launch.py  # chỉ mở RViz; teleop_twist_keyboard chạy
-│   │                                        # riêng bằng `ros2 run` (cần TTY thật cho bàn phím)
-│   │
 │   ├── atlas_apps/                  # Node ứng dụng do học viên/giảng viên viết (Python)
 │   │   ├── atlas_apps/
 │   │   │   ├── waypoint_follower.py    # dùng Nav2 Simple Commander API

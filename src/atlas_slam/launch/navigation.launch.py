@@ -13,7 +13,7 @@ use_composition=True (gộp mọi node vào 1 container) bị treo hoàn toàn t
 process riêng (composition không phải lựa chọn, không phải tham số).
 
 CHỈ chạy Nav2 core + AMCL + RViz -- KHÔNG tự spawn robot/world (cùng nguyên tắc bringup tách
-tầng đã áp dụng cho atlas_slam/slam.launch.py và atlas_teleop).
+tầng đã áp dụng cho atlas_slam/slam.launch.py).
 
     # Terminal 1: bringup (mô phỏng)
     ros2 launch atlas_control controller.launch.py world:=maze.sdf

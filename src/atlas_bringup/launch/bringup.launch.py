@@ -4,7 +4,7 @@ Không viết lại logic -- chỉ include atlas_control/launch/controller.launc
 world + spawn robot + gz_ros2_control + spawner). Lý do có thêm file này dù đã có
 controller.launch.py: gom về đúng 1 package (atlas_bringup) làm điểm vào chính cho toàn bộ
 stack, để không phải nhớ "muốn chạy mô phỏng thì vào package atlas_control" -- các package
-ứng dụng phía trên (atlas_teleop/atlas_slam/atlas_bringup khác) đều có thể trỏ vào đây thay
+ứng dụng phía trên (atlas_slam, các launch khác của atlas_bringup) đều có thể trỏ vào đây thay
 vì atlas_control trực tiếp. `atlas_control/launch/controller.launch.py` vẫn giữ nguyên,
 dùng độc lập được như trước (vd khi chỉ làm việc trong phạm vi package đó).
 
