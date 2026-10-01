@@ -1,0 +1,52 @@
+<svg viewBox="0 0 640 260" xmlns="http://www.w3.org/2000/svg" font-family="system-ui, sans-serif">
+  <style>
+    .box { fill: #eef4fb; stroke: #2b6cb0; stroke-width: 2; }
+    .boxdone { fill: #eafaf0; stroke: #1a7a4c; stroke-width: 2; }
+    .arrow { stroke: #4a5568; stroke-width: 2; marker-end: url(#a1); }
+    .lbl { font-size: 12px; fill: #1a202c; text-anchor: middle; }
+    .mod { font-size: 10px; fill: #718096; text-anchor: middle; }
+    .title { font-size: 14px; font-weight: 700; fill: #1a202c; }
+  </style>
+  <defs>
+    <marker id="a1" markerWidth="9" markerHeight="9" refX="5" refY="2.5" orient="auto"><path d="M0,0 L5,2.5 L0,5 Z" fill="#4a5568"/></marker>
+  </defs>
+
+  <text x="320" y="20" text-anchor="middle" class="title">Capstone = ghép lại các khối đã học, theo 1 pipeline</text>
+
+  <rect class="boxdone" x="10" y="50" width="100" height="50"/>
+  <text class="lbl" x="60" y="72">SLAM</text>
+  <text class="mod" x="60" y="86">vẽ map</text>
+  <text class="mod" x="60" y="112">Module 8</text>
+
+  <rect class="boxdone" x="140" y="50" width="100" height="50"/>
+  <text class="lbl" x="190" y="72">AMCL</text>
+  <text class="mod" x="190" y="86">định vị</text>
+  <text class="mod" x="190" y="112">Module 9</text>
+
+  <rect class="boxdone" x="270" y="50" width="100" height="50"/>
+  <text class="lbl" x="320" y="72">Nav2 core</text>
+  <text class="mod" x="320" y="86">costmap/planner/controller</text>
+  <text class="mod" x="320" y="112">Module 10</text>
+
+  <rect class="boxdone" x="400" y="50" width="100" height="50"/>
+  <text class="lbl" x="450" y="72">Recovery/BT</text>
+  <text class="mod" x="450" y="86">tự khắc phục kẹt</text>
+  <text class="mod" x="450" y="112">Module 11</text>
+
+  <rect class="box" x="530" y="50" width="100" height="50"/>
+  <text class="lbl" x="580" y="72">patrol_node.py</text>
+  <text class="mod" x="580" y="86">tự viết, atlas_apps</text>
+  <text class="mod" x="580" y="112">Module 12</text>
+
+  <line class="arrow" x1="110" y1="75" x2="138" y2="75"/>
+  <line class="arrow" x1="240" y1="75" x2="268" y2="75"/>
+  <line class="arrow" x1="370" y1="75" x2="398" y2="75"/>
+  <line class="arrow" x1="500" y1="75" x2="528" y2="75"/>
+
+  <rect class="box" x="140" y="160" width="360" height="70" rx="6"/>
+  <text class="lbl" x="320" y="183" font-weight="700">Capstone -- việc MỚI, không có sẵn ở module nào</text>
+  <text class="mod" x="320" y="202">warehouse world + ≥3 điểm giao hàng + vật cản tĩnh ngoài map gốc</text>
+  <text class="mod" x="320" y="216">+ log thời gian/quãng đường/số lần recovery</text>
+
+  <line class="arrow" x1="320" y1="112" x2="320" y2="158"/>
+</svg>

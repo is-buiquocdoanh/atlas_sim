@@ -17,7 +17,7 @@
 | 05 | [Kế hoạch triển khai](overview/05-ke-hoach-trien-khai.md) | Roadmap xây dựng dự án + khóa học theo giai đoạn |
 | — | [course/](course/) | Nội dung bài học chi tiết từng module (đang viết dần, xem [02](overview/02-lo-trinh-khoa-hoc.md) cho outline toàn bộ 13 module). Mỗi module = 1 thư mục riêng, tách theo khái niệm, có định nghĩa + ví dụ thật trong dự án. |
 
-### Module đã viết (Giai đoạn 1-3)
+### Module đã viết (Giai đoạn 1-4, toàn bộ khóa học)
 
 - [Module 1 — ROS 2 core concepts](course/module-01-ros2-core-concepts/00-gioi-thieu.md)
 - [Module 2 — TF2 & tọa độ](course/module-02-tf2-toa-do/00-gioi-thieu.md)
@@ -31,8 +31,7 @@
 - [Module 10 — Nav2 core](course/module-10-nav2-core/00-gioi-thieu.md)
 - [Module 11 — Recovery behaviors & Behavior Tree](course/module-11-recovery-bt/00-gioi-thieu.md)
 - [Module 12 — Waypoint following & Nav2 Simple Commander](course/module-12-waypoint/00-gioi-thieu.md) *(hết Giai đoạn 3)*
-
-Module 13 (Giai đoạn 4 — Capstone) chưa viết, xem [04-capstone-va-danh-gia.md](overview/04-capstone-va-danh-gia.md).
+- [Module 13 — Đồ án cuối khóa (Capstone)](course/module-13-capstone/00-gioi-thieu.md) *(hết khóa học)*
 
 ## Quyết định khung (đã chốt với người dùng)
 
