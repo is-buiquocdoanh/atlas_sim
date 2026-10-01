@@ -1,0 +1,30 @@
+<svg viewBox="0 0 580 260" xmlns="http://www.w3.org/2000/svg" font-family="system-ui, sans-serif">
+  <style>
+    .panel { fill: #f7fafc; stroke: #cbd5e0; stroke-width: 1.5; }
+    .obs { fill: #4a5568; }
+    .path1 { stroke: #2b6cb0; stroke-width: 2.5; fill: none; }
+    .path2 { stroke: #1a7a4c; stroke-width: 2.5; fill: none; }
+    .start { fill: #1a202c; }
+    .goal { fill: #c53030; }
+    .lbl { font-size: 12.5px; font-weight: 700; fill: #1a202c; text-anchor: middle; }
+    .cap { font-size: 10.5px; fill: #718096; text-anchor: middle; }
+  </style>
+
+  <text x="290" y="20" text-anchor="middle" font-size="14" font-weight="700" fill="#1a202c">Đường đi cùng 1 bài toán, 2 thuật toán khác nhau</text>
+
+  <rect class="panel" x="20" y="35" width="260" height="190"/>
+  <text class="lbl" x="150" y="55">NavFn (A*/Dijkstra trên lưới)</text>
+  <rect class="obs" x="110" y="100" width="60" height="60"/>
+  <circle class="start" cx="50" cy="200" r="5"/>
+  <circle class="goal" cx="250" cy="60" r="5"/>
+  <path class="path1" d="M 50 200 L 90 200 L 90 160 L 90 100 L 90 60 L 250 60"/>
+  <text class="cap" x="150" y="212">bám lưới ô vuông -- đường đi "zigzag", góc vuông</text>
+
+  <rect class="panel" x="300" y="35" width="260" height="190"/>
+  <text class="lbl" x="430" y="55">Smac Hybrid-A*</text>
+  <rect class="obs" x="390" y="100" width="60" height="60"/>
+  <circle class="start" cx="330" cy="200" r="5"/>
+  <circle class="goal" cx="530" cy="60" r="5"/>
+  <path class="path2" d="M 330 200 C 360 150, 350 110, 395 95 S 480 70, 530 60"/>
+  <text class="cap" x="430" y="212">tính tới động học xe (bán kính quay) -- đường mượt hơn</text>
+</svg>

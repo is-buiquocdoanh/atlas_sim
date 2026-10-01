@@ -148,10 +148,14 @@ controller_server:
       vx_std: 0.3 # Độ lệch chuẩn cho tốc độ tuyến tính theo trục x, giúp robot đánh giá nhiều đường cong tiềm năng hơn, cải thiện khả năng lập kế hoạch và tránh chướng ngại vật của robot, đặc biệt là trong môi trường có nhiều chướng ngại vật hoặc khi robot có kích thước lớn.
       vy_std: 0.0
       wz_std: 0.3
-      vx_max: 0.7
+      vx_max: 0.5    # khớp đúng linear.x.max_velocity (atlas_control/diff_drive_controller.yaml, Module 5) --
+                      # nguyên bản tham khảo (robot thật khác) để 0.7, VƯỢT giới hạn cứng của diff_drive_controller
+                      # (0.5) -- MPPI lấy mẫu quỹ đạo tới tốc độ không bao giờ đạt được, lãng phí ngân sách
+                      # batch_size cho những quỹ đạo bất khả thi. Hạ xuống khớp phần cứng thay vì nâng giới hạn
+                      # cứng lên (an toàn hơn, không đổi hành vi diff_drive_controller).
       vx_min: 0.0
       vy_max: 0.0
-      wz_max: 2.0
+      wz_max: 1.5    # khớp đúng angular.z.max_velocity -- nguyên bản 2.0 cùng lỗi như vx_max ở trên
       ax_max: 1.0    # Gia tốc tuyến tính tối đa (m/s²)
       ax_min: -4.0   # Gia tốc tuyến tính tối thiểu (m/s²) - cho phép lùi
       az_max: 1.0    # Gia tốc góc tối đa (rad/s²)

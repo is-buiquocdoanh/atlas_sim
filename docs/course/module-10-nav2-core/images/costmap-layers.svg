@@ -1,0 +1,43 @@
+<svg viewBox="0 0 580 280" xmlns="http://www.w3.org/2000/svg" font-family="system-ui, sans-serif">
+  <style>
+    .layer { stroke-width: 1.8; opacity: 0.85; }
+    .static { fill: #4a5568; }
+    .obstacle { fill: #c53030; }
+    .inflate { fill: #ed8936; opacity: 0.35; }
+    .free { fill: #f7fafc; stroke: #cbd5e0; }
+    .lbl { font-size: 12px; fill: #1a202c; font-weight: 600; }
+    .cap { font-size: 10.5px; fill: #718096; }
+    .title { font-size: 14px; font-weight: 700; fill: #1a202c; }
+  </style>
+
+  <text x="290" y="20" text-anchor="middle" class="title">3 layer cộng lại thành 1 costmap</text>
+
+  <!-- static layer -->
+  <rect class="free" x="30" y="40" width="140" height="100"/>
+  <rect class="static" x="90" y="60" width="50" height="14"/>
+  <text class="lbl" x="100" y="160" text-anchor="middle">Static Layer</text>
+  <text class="cap" x="100" y="174" text-anchor="middle">tường từ bản đồ (Module 8)</text>
+
+  <text x="180" y="95" font-size="20" fill="#a0aec0">+</text>
+
+  <!-- obstacle layer -->
+  <rect class="free" x="210" y="40" width="140" height="100"/>
+  <rect class="static" x="270" y="60" width="50" height="14"/>
+  <circle class="obstacle" cx="250" cy="110" r="6"/>
+  <text class="lbl" x="280" y="160" text-anchor="middle">Obstacle Layer</text>
+  <text class="cap" x="280" y="174" text-anchor="middle">vật cản THẤY LÚC NÀY qua /scan</text>
+
+  <text x="360" y="95" font-size="20" fill="#a0aec0">+</text>
+
+  <!-- inflation layer -->
+  <rect class="free" x="390" y="40" width="140" height="100"/>
+  <rect class="static" x="450" y="60" width="50" height="14"/>
+  <rect class="inflate" x="440" y="50" width="70" height="34"/>
+  <circle class="obstacle" cx="430" cy="110" r="6"/>
+  <circle class="inflate" cx="430" cy="110" r="16"/>
+  <text class="lbl" x="460" y="160" text-anchor="middle">Inflation Layer</text>
+  <text class="cap" x="460" y="174" text-anchor="middle">vùng chi phí tăng dần quanh vật cản</text>
+
+  <text class="cap" x="290" y="210" text-anchor="middle">Planner (bài tiếp theo) tính đường đi trên TỔNG 3 layer -- không chỉ né đúng vật cản,</text>
+  <text class="cap" x="290" y="226" text-anchor="middle">mà còn tự giữ khoảng cách an toàn nhờ vùng cam của Inflation Layer, không cần tự code riêng.</text>
+</svg>
