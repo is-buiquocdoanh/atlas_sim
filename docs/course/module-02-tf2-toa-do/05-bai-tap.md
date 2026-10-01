@@ -32,4 +32,4 @@ Atlas là robot diff-drive gồm: 1 khung chính, 2 bánh chủ động (trái/p
 - [ ] Dùng được `view_frames` + `tf2_echo` để debug 1 launch file TF bất kỳ, không cần nhớ cú pháp (tra lại [bài Công cụ debug](04-cong-cu-debug.md)).
 - [ ] Giải thích được (không cần thuộc lòng công thức) vì sao `map`→`odom` nhảy bậc còn `odom`→`base_link` mượt, và hậu quả nếu gộp làm một.
 
-Xong hết → sang **Module 3 — Mô hình hóa robot với URDF/XACRO** *(nội dung chi tiết sẽ viết theo cùng cấu trúc, sau khi Module 2 được duyệt).*
+Xong hết → sang [**Module 3 — Mô hình hóa robot với URDF/XACRO**](../module-03-urdf-xacro/00-gioi-thieu.md), nơi cây TF bạn vừa vẽ tay sẽ được đối chiếu với URDF thật của Atlas.

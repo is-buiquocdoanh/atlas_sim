@@ -1,0 +1,59 @@
+<svg viewBox="0 0 700 380" xmlns="http://www.w3.org/2000/svg" font-family="system-ui, sans-serif">
+  <style>
+    .box { fill: #eef4fb; stroke: #2b6cb0; stroke-width: 2; rx: 8; }
+    .root { fill: #e6fffa; stroke: #2f855a; stroke-width: 2; rx: 8; }
+    .lbl { font-size: 12px; fill: #1a202c; font-weight: 600; }
+    .cap { font-size: 11px; fill: #718096; }
+    .jt { font-size: 10px; fill: #4a5568; }
+    .arr { stroke: #718096; stroke-width: 1.8; marker-end: url(#a); fill: none; }
+    .arrmv { stroke: #dd6b20; stroke-width: 1.8; marker-end: url(#b); fill: none; }
+  </style>
+  <defs>
+    <marker id="a" markerWidth="9" markerHeight="9" refX="5" refY="2.5" orient="auto">
+      <path d="M0,0 L5,2.5 L0,5 Z" fill="#718096"/>
+    </marker>
+    <marker id="b" markerWidth="9" markerHeight="9" refX="5" refY="2.5" orient="auto">
+      <path d="M0,0 L5,2.5 L0,5 Z" fill="#dd6b20"/>
+    </marker>
+  </defs>
+
+  <text x="350" y="22" text-anchor="middle" font-size="14" font-weight="700" fill="#1a202c">Cây TF thật của Atlas (8 link, 7 joint) -- đáp án bài tập Module 2</text>
+
+  <rect class="root" x="270" y="42" width="160" height="38"/>
+  <text class="lbl" x="350" y="66" text-anchor="middle">base_footprint</text>
+
+  <line class="arr" x1="350" y1="80" x2="350" y2="108"/>
+  <text class="jt" x="360" y="99">base_joint (fixed, z=+wheel_radius)</text>
+
+  <rect class="box" x="290" y="110" width="120" height="38"/>
+  <text class="lbl" x="350" y="134" text-anchor="middle">base_link</text>
+
+  <path class="arrmv" d="M290,129 L200,129 L200,218"/>
+  <rect class="box" x="120" y="220" width="160" height="38"/>
+  <text class="lbl" x="200" y="244" text-anchor="middle">left_wheel_link</text>
+
+  <path class="arrmv" d="M410,129 L500,129 L500,218"/>
+  <rect class="box" x="420" y="220" width="160" height="38"/>
+  <text class="lbl" x="500" y="244" text-anchor="middle">right_wheel_link</text>
+
+  <path class="arr" d="M320,148 L60,148 L60,298"/>
+  <rect class="box" x="10" y="300" width="150" height="38"/>
+  <text class="lbl" x="85" y="324" text-anchor="middle">front_caster_link</text>
+
+  <path class="arr" d="M335,148 L225,148 L225,298"/>
+  <rect class="box" x="170" y="300" width="145" height="38"/>
+  <text class="lbl" x="242" y="324" text-anchor="middle">rear_caster_link</text>
+
+  <path class="arr" d="M365,148 L400,148 L400,298"/>
+  <rect class="box" x="330" y="300" width="140" height="38"/>
+  <text class="lbl" x="400" y="324" text-anchor="middle">lidar_link</text>
+
+  <path class="arr" d="M380,148 L570,148 L570,298"/>
+  <rect class="box" x="490" y="300" width="160" height="38"/>
+  <text class="lbl" x="570" y="324" text-anchor="middle">imu_link</text>
+
+  <text class="cap" x="600" y="200" text-anchor="end" fill="#dd6b20">cam: continuous (/tf, đổi liên tục)</text>
+  <text class="cap" x="600" y="216" text-anchor="end">xám: fixed (/tf_static, không đổi)</text>
+
+  <text class="cap" x="350" y="362" text-anchor="middle">map -> odom -> base_footprint sẽ được NỐI THÊM lên phía trên gốc này từ Module 5 (odom) và Module 8-9 (map).</text>
+</svg>

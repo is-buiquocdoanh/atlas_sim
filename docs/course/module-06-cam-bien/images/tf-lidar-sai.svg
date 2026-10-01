@@ -1,0 +1,48 @@
+<svg viewBox="0 0 700 330" xmlns="http://www.w3.org/2000/svg" font-family="system-ui, sans-serif">
+  <style>
+    .lbl { font-size: 12.5px; fill: #1a202c; font-weight: 600; }
+    .sub { font-size: 10.5px; fill: #4a5568; }
+    .cap { font-size: 11px; fill: #718096; }
+    .wall { stroke: #2d3748; stroke-width: 5; }
+    .pts { fill: #2b6cb0; }
+    .ptsbad { fill: #c53030; }
+    .frame { fill: none; stroke: #a0aec0; stroke-width: 1.6; rx: 10; }
+  </style>
+
+  <text x="350" y="22" text-anchor="middle" font-size="14" font-weight="700" fill="#1a202c">TF sai không làm mất dữ liệu -- nó làm dữ liệu ĐÚNG hiện ra SAI CHỖ</text>
+
+  <rect class="frame" x="20" y="42" width="320" height="230"/>
+  <text class="lbl" x="180" y="64" text-anchor="middle" fill="#2f855a">TF đúng</text>
+
+  <line class="wall" x1="60" y1="100" x2="300" y2="100"/>
+  <text class="sub" x="180" y="92" text-anchor="middle">tường thật trong world</text>
+  <g class="pts">
+    <circle cx="70" cy="102" r="3"/><circle cx="100" cy="102" r="3"/><circle cx="130" cy="102" r="3"/>
+    <circle cx="160" cy="102" r="3"/><circle cx="190" cy="102" r="3"/><circle cx="220" cy="102" r="3"/>
+    <circle cx="250" cy="102" r="3"/><circle cx="280" cy="102" r="3"/>
+  </g>
+  <text class="sub" x="180" y="126" text-anchor="middle" fill="#2b6cb0">điểm /scan nằm ĐÈ lên tường</text>
+
+  <rect x="155" y="200" width="50" height="34" fill="#eef4fb" stroke="#2b6cb0" stroke-width="2" rx="4"/>
+  <text class="sub" x="180" y="222" text-anchor="middle">robot</text>
+  <text class="sub" x="180" y="256" text-anchor="middle">SLAM vẽ bản đồ khớp world</text>
+
+  <rect class="frame" x="360" y="42" width="320" height="230"/>
+  <text class="lbl" x="520" y="64" text-anchor="middle" fill="#c53030">TF lidar_link lệch 30 cm</text>
+
+  <line class="wall" x1="400" y1="100" x2="640" y2="100"/>
+  <text class="sub" x="520" y="92" text-anchor="middle">tường thật trong world</text>
+  <g class="ptsbad">
+    <circle cx="410" cy="132" r="3"/><circle cx="440" cy="132" r="3"/><circle cx="470" cy="132" r="3"/>
+    <circle cx="500" cy="132" r="3"/><circle cx="530" cy="132" r="3"/><circle cx="560" cy="132" r="3"/>
+    <circle cx="590" cy="132" r="3"/><circle cx="620" cy="132" r="3"/>
+  </g>
+  <text class="sub" x="520" y="156" text-anchor="middle" fill="#c53030">điểm /scan lệch khỏi tường đúng 30 cm</text>
+
+  <rect x="495" y="200" width="50" height="34" fill="#fff5f5" stroke="#c53030" stroke-width="2" rx="4"/>
+  <text class="sub" x="520" y="222" text-anchor="middle">robot</text>
+  <text class="sub" x="520" y="256" text-anchor="middle">SLAM vẽ tường ở sai vị trí, Nav2 đâm vào tường</text>
+
+  <text class="cap" x="350" y="296" text-anchor="middle">Số trong `ros2 topic echo /scan` VẪN ĐÚNG ở cả 2 trường hợp -- khoảng cách tới tường là thật.</text>
+  <text class="cap" x="350" y="314" text-anchor="middle">Chỉ phép đổi từ lidar_link sang base_link sai, nên không có cách nào phát hiện bằng echo. Phải nhìn RViz hoặc tf2_echo.</text>
+</svg>

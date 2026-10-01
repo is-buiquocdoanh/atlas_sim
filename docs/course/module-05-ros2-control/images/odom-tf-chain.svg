@@ -1,0 +1,43 @@
+<svg viewBox="0 0 700 340" xmlns="http://www.w3.org/2000/svg" font-family="system-ui, sans-serif">
+  <style>
+    .box { fill: #eef4fb; stroke: #2b6cb0; stroke-width: 2; rx: 8; }
+    .new { fill: #e6fffa; stroke: #2f855a; stroke-width: 2.5; rx: 8; }
+    .ghost { fill: #f7fafc; stroke: #cbd5e0; stroke-width: 2; stroke-dasharray: 6 4; rx: 8; }
+    .lbl { font-size: 12.5px; fill: #1a202c; font-weight: 600; }
+    .sub { font-size: 10.5px; fill: #4a5568; }
+    .cap { font-size: 11px; fill: #718096; }
+    .arr { stroke: #718096; stroke-width: 1.8; marker-end: url(#a); fill: none; }
+  </style>
+  <defs>
+    <marker id="a" markerWidth="9" markerHeight="9" refX="5" refY="2.5" orient="auto"><path d="M0,0 L5,2.5 L0,5 Z" fill="#718096"/></marker>
+  </defs>
+
+  <text x="350" y="22" text-anchor="middle" font-size="14" font-weight="700" fill="#1a202c">Module 5 nối thêm mắt xích `odom` lên đầu cây TF của Module 3</text>
+
+  <rect class="ghost" x="255" y="42" width="190" height="38"/>
+  <text class="lbl" x="350" y="66" text-anchor="middle" fill="#718096">map</text>
+  <text class="sub" x="460" y="66" fill="#718096">chưa có -- Module 8-9 (SLAM/AMCL)</text>
+
+  <line class="arr" x1="350" y1="80" x2="350" y2="106" stroke-dasharray="5 4"/>
+
+  <rect class="new" x="255" y="108" width="190" height="42"/>
+  <text class="lbl" x="350" y="134" text-anchor="middle">odom</text>
+  <text class="sub" x="462" y="126">MỚI: do diff_drive_controller publish</text>
+  <text class="sub" x="462" y="142">khi enable_odom_tf: true</text>
+
+  <line class="arr" x1="350" y1="150" x2="350" y2="176"/>
+  <text class="sub" x="360" y="168">tích phân từ vận tốc 2 bánh</text>
+
+  <rect class="box" x="255" y="178" width="190" height="38"/>
+  <text class="lbl" x="350" y="202" text-anchor="middle">base_footprint</text>
+
+  <line class="arr" x1="350" y1="216" x2="350" y2="242"/>
+  <rect class="box" x="255" y="244" width="190" height="38"/>
+  <text class="lbl" x="350" y="268" text-anchor="middle">base_link</text>
+  <text class="sub" x="462" y="268">robot_state_publisher (Module 3)</text>
+
+  <line class="arr" x1="290" y1="282" x2="160" y2="308"/>
+  <text class="sub" x="150" y="316" text-anchor="end">bánh xe, caster, lidar_link, imu_link...</text>
+
+  <text class="cap" x="350" y="330" text-anchor="middle">2 nguồn publish TF cùng lúc mà không giẫm chân nhau: controller lo `odom`→`base_footprint`, robot_state_publisher lo phần dưới.</text>
+</svg>

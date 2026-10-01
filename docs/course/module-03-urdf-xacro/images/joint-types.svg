@@ -1,0 +1,49 @@
+<svg viewBox="0 0 620 340" xmlns="http://www.w3.org/2000/svg" font-family="system-ui, sans-serif">
+  <style>
+    .box { fill: #eef4fb; stroke: #2b6cb0; stroke-width: 2; rx: 8; }
+    .lbl { font-size: 13px; fill: #1a202c; font-weight: 600; }
+    .sub { font-size: 11px; fill: #4a5568; }
+    .cap { font-size: 11px; fill: #718096; }
+    .mv { stroke: #dd6b20; stroke-width: 2; fill: none; marker-end: url(#o); }
+  </style>
+  <defs>
+    <marker id="o" markerWidth="9" markerHeight="9" refX="5" refY="2.5" orient="auto">
+      <path d="M0,0 L5,2.5 L0,5 Z" fill="#dd6b20"/>
+    </marker>
+  </defs>
+
+  <text x="310" y="22" text-anchor="middle" font-size="14" font-weight="700" fill="#1a202c">4 loại joint hay gặp -- khác nhau ở BẬC TỰ DO cho phép</text>
+
+  <rect class="box" x="20" y="40" width="270" height="120"/>
+  <text class="lbl" x="40" y="63">fixed</text>
+  <text class="sub" x="40" y="83">Hàn cứng, 0 bậc tự do.</text>
+  <text class="sub" x="40" y="101">Transform cha-con KHÔNG BAO GIỜ đổi.</text>
+  <text class="sub" x="40" y="119">Publish lên /tf_static, 1 lần duy nhất.</text>
+  <text class="sub" x="40" y="143" fill="#2b6cb0">Atlas: base_joint, lidar_joint, imu_joint, caster</text>
+
+  <rect class="box" x="330" y="40" width="270" height="120"/>
+  <text class="lbl" x="350" y="63">continuous</text>
+  <text class="sub" x="350" y="83">Xoay quanh 1 trục, KHÔNG giới hạn góc.</text>
+  <text class="sub" x="350" y="101">Quay mãi -- đúng bản chất bánh xe.</text>
+  <text class="sub" x="350" y="119">Cần &lt;axis&gt;, không cần &lt;limit&gt; góc.</text>
+  <text class="sub" x="350" y="143" fill="#2b6cb0">Atlas: left_wheel_joint, right_wheel_joint</text>
+  <path class="mv" d="M540,58 a14,14 0 1,1 -10,-8"/>
+
+  <rect class="box" x="20" y="180" width="270" height="120"/>
+  <text class="lbl" x="40" y="203">revolute</text>
+  <text class="sub" x="40" y="223">Xoay quanh 1 trục nhưng CÓ CHẶN góc.</text>
+  <text class="sub" x="40" y="241">Bắt buộc khai &lt;limit lower upper effort velocity&gt;.</text>
+  <text class="sub" x="40" y="259">Vd khớp tay máy, cánh tay nâng.</text>
+  <text class="sub" x="40" y="283" fill="#718096">Atlas: không dùng (robot chỉ chạy mặt phẳng)</text>
+  <path class="mv" d="M250,222 a16,16 0 0,1 12,20"/>
+
+  <rect class="box" x="330" y="180" width="270" height="120"/>
+  <text class="lbl" x="350" y="203">prismatic</text>
+  <text class="sub" x="350" y="223">Trượt thẳng dọc 1 trục, có giới hạn.</text>
+  <text class="sub" x="350" y="241">Vd cột nâng, kẹp gắp đóng/mở.</text>
+  <text class="sub" x="350" y="259">Cũng bắt buộc &lt;limit&gt;.</text>
+  <text class="sub" x="350" y="283" fill="#718096">Atlas: không dùng</text>
+  <line class="mv" x1="530" y1="222" x2="575" y2="222"/>
+
+  <text class="cap" x="310" y="328" text-anchor="middle">Joint chuyển động được (continuous/revolute/prismatic) cần /joint_states mới ra được TF; joint fixed thì không.</text>
+</svg>

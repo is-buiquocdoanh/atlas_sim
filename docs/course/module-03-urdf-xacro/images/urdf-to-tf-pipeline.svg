@@ -1,0 +1,60 @@
+<svg viewBox="0 0 660 330" xmlns="http://www.w3.org/2000/svg" font-family="system-ui, sans-serif">
+  <style>
+    .box { fill: #eef4fb; stroke: #2b6cb0; stroke-width: 2; rx: 8; }
+    .node { fill: #e6fffa; stroke: #2f855a; stroke-width: 2; rx: 8; }
+    .topic { fill: #fffaf0; stroke: #dd6b20; stroke-width: 2; rx: 14; }
+    .lbl { font-size: 12.5px; fill: #1a202c; font-weight: 600; }
+    .sub { font-size: 10.5px; fill: #4a5568; }
+    .cap { font-size: 11px; fill: #718096; }
+    .arr { stroke: #718096; stroke-width: 1.8; marker-end: url(#a); fill: none; }
+  </style>
+  <defs>
+    <marker id="a" markerWidth="9" markerHeight="9" refX="5" refY="2.5" orient="auto">
+      <path d="M0,0 L5,2.5 L0,5 Z" fill="#718096"/>
+    </marker>
+  </defs>
+
+  <text x="330" y="22" text-anchor="middle" font-size="14" font-weight="700" fill="#1a202c">Từ file XACRO tới cây TF trong RViz</text>
+
+  <rect class="box" x="20" y="45" width="140" height="52"/>
+  <text class="lbl" x="90" y="68" text-anchor="middle">atlas.urdf.xacro</text>
+  <text class="sub" x="90" y="86" text-anchor="middle">file bạn viết tay</text>
+
+  <line class="arr" x1="160" y1="71" x2="205" y2="71"/>
+  <text class="sub" x="182" y="63" text-anchor="middle">xacro</text>
+
+  <rect class="box" x="207" y="45" width="150" height="52"/>
+  <text class="lbl" x="282" y="68" text-anchor="middle">robot_description</text>
+  <text class="sub" x="282" y="86" text-anchor="middle">URDF thuần, dạng chuỗi XML</text>
+
+  <line class="arr" x1="357" y1="71" x2="402" y2="71"/>
+  <text class="sub" x="380" y="63" text-anchor="middle">param</text>
+
+  <rect class="node" x="404" y="42" width="170" height="58"/>
+  <text class="lbl" x="489" y="66" text-anchor="middle">robot_state_publisher</text>
+  <text class="sub" x="489" y="86" text-anchor="middle">node -- đọc URDF, tính TF</text>
+
+  <rect class="node" x="207" y="150" width="150" height="58"/>
+  <text class="lbl" x="282" y="174" text-anchor="middle">joint_state_publisher</text>
+  <text class="sub" x="282" y="194" text-anchor="middle">_gui (slider trong M3)</text>
+
+  <rect class="topic" x="207" y="240" width="150" height="40"/>
+  <text class="lbl" x="282" y="265" text-anchor="middle">/joint_states</text>
+
+  <line class="arr" x1="282" y1="208" x2="282" y2="238"/>
+  <path class="arr" d="M357,260 L489,260 L489,104"/>
+  <text class="sub" x="440" y="252" text-anchor="middle">góc hiện tại của joint quay được</text>
+
+  <rect class="topic" x="404" y="150" width="170" height="58"/>
+  <text class="lbl" x="489" y="174" text-anchor="middle">/tf + /tf_static</text>
+  <text class="sub" x="489" y="194" text-anchor="middle">cây TF hoàn chỉnh của robot</text>
+  <line class="arr" x1="489" y1="100" x2="489" y2="148"/>
+
+  <rect class="node" x="20" y="150" width="150" height="58"/>
+  <text class="lbl" x="95" y="174" text-anchor="middle">RViz</text>
+  <text class="sub" x="95" y="194" text-anchor="middle">RobotModel + TF display</text>
+  <path class="arr" d="M404,179 L175,179"/>
+
+  <text class="cap" x="330" y="308" text-anchor="middle">Joint FIXED -> /tf_static ngay khi khởi động. Joint QUAY ĐƯỢC -> chỉ ra /tf khi có /joint_states.</text>
+  <text class="cap" x="330" y="325" text-anchor="middle">Module 5 thay joint_state_publisher_gui bằng ros2_control (bánh xe quay vì controller thật, không vì slider).</text>
+</svg>

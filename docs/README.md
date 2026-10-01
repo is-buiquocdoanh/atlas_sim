@@ -15,7 +15,19 @@
 | 03 | [Yêu cầu môi trường](overview/03-yeu-cau-moi-truong.md) | Hệ điều hành, phần cứng, Docker, cách học viên setup |
 | 04 | [Capstone & đánh giá](overview/04-capstone-va-danh-gia.md) | Đồ án cuối khóa, tiêu chí chấm, chứng chỉ |
 | 05 | [Kế hoạch triển khai](overview/05-ke-hoach-trien-khai.md) | Roadmap xây dựng dự án + khóa học theo giai đoạn |
-| — | [course/](course/) | Nội dung bài học chi tiết từng module (đang viết dần, xem [02](overview/02-lo-trinh-khoa-hoc.md) cho outline). Mỗi module = 1 thư mục riêng, tách theo khái niệm, có định nghĩa + ví dụ thật trong dự án: [Module 1 — ROS 2 core](course/module-01-ros2-core-concepts/00-gioi-thieu.md), [Module 2 — TF2 & tọa độ](course/module-02-tf2-toa-do/00-gioi-thieu.md). |
+| — | [course/](course/) | Nội dung bài học chi tiết từng module (đang viết dần, xem [02](overview/02-lo-trinh-khoa-hoc.md) cho outline toàn bộ 13 module). Mỗi module = 1 thư mục riêng, tách theo khái niệm, có định nghĩa + ví dụ thật trong dự án. |
+
+### Module đã viết (Giai đoạn 1-2)
+
+- [Module 1 — ROS 2 core concepts](course/module-01-ros2-core-concepts/00-gioi-thieu.md)
+- [Module 2 — TF2 & tọa độ](course/module-02-tf2-toa-do/00-gioi-thieu.md)
+- [Module 3 — URDF/XACRO](course/module-03-urdf-xacro/00-gioi-thieu.md)
+- [Module 4 — Đưa robot vào Gazebo](course/module-04-gazebo/00-gioi-thieu.md)
+- [Module 5 — ros2_control](course/module-05-ros2-control/00-gioi-thieu.md)
+- [Module 6 — Cảm biến: LiDAR & IMU](course/module-06-cam-bien/00-gioi-thieu.md)
+- [Module 7 — Teleoperation & RViz](course/module-07-teleoperation/00-gioi-thieu.md) *(hết Giai đoạn 2)*
+
+Module 8-13 (Giai đoạn 3-4 — Navigation2 & Capstone) chưa viết.
 
 ## Quyết định khung (đã chốt với người dùng)
 

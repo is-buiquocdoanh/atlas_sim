@@ -1,0 +1,58 @@
+<svg viewBox="0 0 700 400" xmlns="http://www.w3.org/2000/svg" font-family="system-ui, sans-serif">
+  <style>
+    .body { fill: #eef4fb; stroke: #2b6cb0; stroke-width: 2; }
+    .wheel { fill: #2d3748; }
+    .lbl { font-size: 12.5px; fill: #1a202c; font-weight: 600; }
+    .sub { font-size: 11px; fill: #4a5568; }
+    .cap { font-size: 11px; fill: #718096; }
+    .dim { stroke: #dd6b20; stroke-width: 1.5; }
+    .axis { stroke: #2f855a; stroke-width: 2; marker-end: url(#g); }
+    .fml { font-size: 12.5px; fill: #1a202c; font-family: ui-monospace, monospace; }
+  </style>
+  <defs>
+    <marker id="g" markerWidth="9" markerHeight="9" refX="5" refY="2.5" orient="auto"><path d="M0,0 L5,2.5 L0,5 Z" fill="#2f855a"/></marker>
+  </defs>
+
+  <text x="350" y="22" text-anchor="middle" font-size="14" font-weight="700" fill="#1a202c">Động học vi sai: từ (v, ω) ra vận tốc 2 bánh</text>
+  <text x="180" y="44" text-anchor="middle" font-size="12" fill="#718096">Nhìn từ trên xuống, robot hướng theo +x</text>
+
+  <rect class="body" x="110" y="90" width="140" height="120" rx="8"/>
+  <rect class="wheel" x="96" y="120" width="14" height="46" rx="3"/>
+  <rect class="wheel" x="250" y="120" width="14" height="46" rx="3"/>
+  <circle cx="180" cy="150" r="5" fill="#2b6cb0"/>
+  <text class="sub" x="180" y="172" text-anchor="middle">base_link</text>
+
+  <line class="axis" x1="180" y1="150" x2="180" y2="76"/>
+  <text class="sub" x="192" y="84" fill="#2f855a">+x (tiến)</text>
+  <line class="axis" x1="180" y1="150" x2="86" y2="150"/>
+  <text class="sub" x="78" y="143" text-anchor="end" fill="#2f855a">+y</text>
+
+  <line class="dim" x1="103" y1="230" x2="257" y2="230"/>
+  <line class="dim" x1="103" y1="222" x2="103" y2="238"/>
+  <line class="dim" x1="257" y1="222" x2="257" y2="238"/>
+  <text class="sub" x="180" y="250" text-anchor="middle" fill="#dd6b20">wheel_separation L = 0,30 m</text>
+
+  <text class="sub" x="96" y="112" text-anchor="middle" fill="#dd6b20">v_trái</text>
+  <text class="sub" x="264" y="112" text-anchor="middle" fill="#dd6b20">v_phải</text>
+  <text class="sub" x="180" y="280" text-anchor="middle" fill="#dd6b20">wheel_radius r = 0,05 m</text>
+
+  <line x1="330" y1="70" x2="330" y2="330" stroke="#cbd5e0" stroke-width="1.5"/>
+
+  <text class="lbl" x="360" y="86">Thuận (controller làm việc này)</text>
+  <text class="fml" x="360" y="112">v_trái  = v − ω·L/2</text>
+  <text class="fml" x="360" y="134">v_phải = v + ω·L/2</text>
+  <text class="fml" x="360" y="156">ω_bánh = v_bánh / r</text>
+  <text class="sub" x="360" y="176">Chỉ bánh phải nhanh hơn bánh trái thì robot rẽ trái.</text>
+
+  <text class="lbl" x="360" y="212">Ngược (odometry -- tích phân ngược lại)</text>
+  <text class="fml" x="360" y="238">v = (v_trái + v_phải) / 2</text>
+  <text class="fml" x="360" y="260">ω = (v_phải − v_trái) / L</text>
+  <text class="sub" x="360" y="280">Sai L hoặc r → robot chạy đúng nhưng BÁO SAI vị trí.</text>
+
+  <rect x="352" y="296" width="320" height="76" fill="#f7fafc" stroke="#a0aec0" stroke-width="1.5" rx="8"/>
+  <text class="lbl" x="364" y="316">Ví dụ: v = 0,2 m/s và ω = 0,5 rad/s</text>
+  <text class="fml" x="364" y="338">v_trái  = 0,125 m/s → 2,5 rad/s</text>
+  <text class="fml" x="364" y="360">v_phải = 0,275 m/s → 5,5 rad/s</text>
+
+  <text class="cap" x="350" y="392" text-anchor="middle">Hai công thức này là TOÀN BỘ phần "thông minh" của diff_drive_controller -- phần còn lại là giới hạn tốc độ/gia tốc và publish TF.</text>
+</svg>

@@ -1,0 +1,59 @@
+<svg viewBox="0 0 700 420" xmlns="http://www.w3.org/2000/svg" font-family="system-ui, sans-serif">
+  <style>
+    .lbl { font-size: 12px; fill: #1a202c; font-weight: 600; }
+    .sub { font-size: 10.5px; fill: #4a5568; }
+    .cap { font-size: 11px; fill: #718096; }
+    .fml { font-size: 11.5px; fill: #1a202c; font-family: ui-monospace, monospace; }
+    .ray { stroke: #2b6cb0; stroke-width: 1; opacity: 0.45; }
+    .ray0 { stroke: #c53030; stroke-width: 2; }
+    .rng { stroke: #dd6b20; stroke-width: 1.6; stroke-dasharray: 5 4; fill: none; }
+  </style>
+
+  <text x="350" y="22" text-anchor="middle" font-size="14" font-weight="700" fill="#1a202c">sensor_msgs/LaserScan -- mảng `ranges` được diễn giải thế nào</text>
+
+  <circle cx="200" cy="215" r="112" class="rng"/>
+  <circle cx="200" cy="215" r="26" class="rng"/>
+
+  <g class="ray">
+    <line x1="200" y1="215" x2="312" y2="215"/><line x1="200" y1="215" x2="297" y2="159"/>
+    <line x1="200" y1="215" x2="256" y2="118"/><line x1="200" y1="215" x2="200" y2="103"/>
+    <line x1="200" y1="215" x2="144" y2="118"/><line x1="200" y1="215" x2="103" y2="159"/>
+    <line x1="200" y1="215" x2="88" y2="215"/><line x1="200" y1="215" x2="103" y2="271"/>
+    <line x1="200" y1="215" x2="144" y2="312"/><line x1="200" y1="215" x2="200" y2="327"/>
+    <line x1="200" y1="215" x2="256" y2="312"/><line x1="200" y1="215" x2="297" y2="271"/>
+  </g>
+  <line class="ray0" x1="200" y1="215" x2="312" y2="215"/>
+
+  <rect x="180" y="200" width="40" height="30" fill="#eef4fb" stroke="#2b6cb0" stroke-width="2" rx="4"/>
+  <text class="sub" x="200" y="220" text-anchor="middle">robot</text>
+
+  <text class="lbl" x="320" y="212" fill="#c53030">tia 0 = +x robot</text>
+  <text class="sub" x="320" y="228" fill="#c53030">ranges[0], góc = angle_min</text>
+
+  <text class="sub" x="200" y="96" text-anchor="middle">+y (trái)</text>
+  <text class="sub" x="200" y="348" text-anchor="middle">quét NGƯỢC chiều kim đồng hồ khi chỉ số tăng</text>
+
+  <text class="sub" x="232" y="209" fill="#dd6b20">range_min</text>
+  <text class="sub" x="318" y="160" fill="#dd6b20">range_max = 10 m</text>
+
+  <line x1="360" y1="60" x2="360" y2="370" stroke="#cbd5e0" stroke-width="1.5"/>
+
+  <text class="lbl" x="382" y="76">Cấu hình LiDAR của Atlas</text>
+  <text class="fml" x="382" y="100">angle_min = -3.14159 rad  (-180°)</text>
+  <text class="fml" x="382" y="120">angle_max = +3.14159 rad  (+180°)</text>
+  <text class="fml" x="382" y="140">samples   = 360  -> len(ranges) = 360</text>
+  <text class="fml" x="382" y="160">range_min = 0.12 m   range_max = 10.0 m</text>
+  <text class="fml" x="382" y="180">update_rate = 10 Hz</text>
+
+  <text class="lbl" x="382" y="212">Góc của tia thứ i</text>
+  <text class="fml" x="382" y="234">góc[i] = angle_min + i * angle_increment</text>
+  <text class="sub" x="382" y="252">angle_increment do bộ mô phỏng tính, ĐỪNG tự giả định --</text>
+  <text class="sub" x="382" y="268">đọc thẳng từ message bằng `ros2 topic echo`.</text>
+
+  <text class="lbl" x="382" y="300">Giá trị đặc biệt trong ranges[]</text>
+  <text class="fml" x="382" y="322">inf  -> không trúng gì (xa hơn range_max)</text>
+  <text class="fml" x="382" y="342">&lt; range_min -> phải BỎ QUA, không phải vật thật</text>
+  <text class="fml" x="382" y="362">nan  -> phép đo không hợp lệ</text>
+
+  <text class="cap" x="350" y="400" text-anchor="middle">Bỏ qua 3 giá trị đặc biệt này là lỗi kinh điển khi tự viết node xử lý /scan: min(ranges) sẽ luôn ra 0 hoặc inf.</text>
+</svg>

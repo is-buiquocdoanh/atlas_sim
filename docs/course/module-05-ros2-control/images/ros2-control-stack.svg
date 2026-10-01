@@ -1,0 +1,56 @@
+<svg viewBox="0 0 700 420" xmlns="http://www.w3.org/2000/svg" font-family="system-ui, sans-serif">
+  <style>
+    .box { fill: #eef4fb; stroke: #2b6cb0; stroke-width: 2; rx: 8; }
+    .cm { fill: #e6fffa; stroke: #2f855a; stroke-width: 2.5; rx: 8; }
+    .hw { fill: #fffaf0; stroke: #dd6b20; stroke-width: 2; rx: 8; }
+    .topic { fill: #f7fafc; stroke: #a0aec0; stroke-width: 1.8; rx: 14; }
+    .lbl { font-size: 12.5px; fill: #1a202c; font-weight: 600; }
+    .sub { font-size: 10.5px; fill: #4a5568; }
+    .cap { font-size: 11px; fill: #718096; }
+    .arr { stroke: #718096; stroke-width: 1.8; marker-end: url(#a); fill: none; }
+    .arrb { stroke: #2b6cb0; stroke-width: 1.8; marker-end: url(#b); fill: none; }
+  </style>
+  <defs>
+    <marker id="a" markerWidth="9" markerHeight="9" refX="5" refY="2.5" orient="auto"><path d="M0,0 L5,2.5 L0,5 Z" fill="#718096"/></marker>
+    <marker id="b" markerWidth="9" markerHeight="9" refX="5" refY="2.5" orient="auto"><path d="M0,0 L5,2.5 L0,5 Z" fill="#2b6cb0"/></marker>
+  </defs>
+
+  <text x="350" y="22" text-anchor="middle" font-size="14" font-weight="700" fill="#1a202c">Kiến trúc ros2_control -- 3 tầng, đổi robot chỉ đổi tầng dưới cùng</text>
+
+  <rect class="topic" x="40" y="42" width="180" height="36"/>
+  <text class="lbl" x="130" y="65" text-anchor="middle">/cmd_vel (Twist)</text>
+  <rect class="topic" x="470" y="42" width="190" height="36"/>
+  <text class="lbl" x="565" y="65" text-anchor="middle">/odom, /joint_states</text>
+
+  <rect class="box" x="40" y="100" width="260" height="66"/>
+  <text class="lbl" x="170" y="124" text-anchor="middle">diff_drive_controller</text>
+  <text class="sub" x="170" y="142" text-anchor="middle">v, ω → vận tốc 2 bánh</text>
+  <text class="sub" x="170" y="158" text-anchor="middle">+ tích phân ngược ra odometry</text>
+
+  <rect class="box" x="400" y="100" width="260" height="66"/>
+  <text class="lbl" x="530" y="124" text-anchor="middle">joint_state_broadcaster</text>
+  <text class="sub" x="530" y="142" text-anchor="middle">chỉ ĐỌC trạng thái khớp,</text>
+  <text class="sub" x="530" y="158" text-anchor="middle">không điều khiển gì</text>
+
+  <line class="arr" x1="130" y1="78" x2="130" y2="98"/>
+  <line class="arrb" x1="565" y1="98" x2="565" y2="80"/>
+  <line class="arrb" x1="230" y1="100" x2="230" y2="80"/>
+
+  <rect class="cm" x="40" y="190" width="620" height="72"/>
+  <text class="lbl" x="350" y="214" text-anchor="middle">controller_manager -- vòng lặp điều khiển 100 Hz (update_rate)</text>
+  <text class="sub" x="350" y="234" text-anchor="middle">nạp/kích hoạt controller, và cấp phát interface: mỗi command_interface chỉ 1 controller được giữ</text>
+  <text class="sub" x="350" y="251" text-anchor="middle">read() trạng thái → update() từng controller → write() lệnh xuống phần cứng</text>
+  <line class="arr" x1="170" y1="166" x2="170" y2="188"/>
+  <line class="arrb" x1="530" y1="188" x2="530" y2="168"/>
+
+  <rect class="hw" x="40" y="288" width="620" height="76"/>
+  <text class="lbl" x="350" y="311" text-anchor="middle">Hardware interface (&lt;ros2_control&gt; trong URDF)</text>
+  <text class="sub" x="350" y="331" text-anchor="middle">command_interface: velocity (ra) &#160;|&#160; state_interface: position, velocity (vào)</text>
+  <text class="sub" x="220" y="352" text-anchor="middle" fill="#dd6b20" font-weight="600">MÔ PHỎNG: gz_ros2_control/GazeboSimSystem</text>
+  <text class="sub" x="520" y="352" text-anchor="middle" fill="#dd6b20" font-weight="600">ROBOT THẬT: driver đọc/ghi encoder</text>
+  <line class="arr" x1="230" y1="262" x2="230" y2="286"/>
+  <line class="arrb" x1="470" y1="286" x2="470" y2="264"/>
+
+  <text class="cap" x="350" y="390" text-anchor="middle">Mũi tên xám = lệnh đi xuống, mũi tên xanh = trạng thái đi lên. Chuyển sang robot thật chỉ thay dòng &lt;plugin&gt; ở tầng dưới cùng:</text>
+  <text class="cap" x="350" y="408" text-anchor="middle">controller, config, Nav2 ở trên giữ nguyên không sửa một dòng. Đó là toàn bộ lý do ros2_control tồn tại.</text>
+</svg>

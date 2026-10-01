@@ -1,0 +1,58 @@
+<svg viewBox="0 0 700 320" xmlns="http://www.w3.org/2000/svg" font-family="system-ui, sans-serif">
+  <style>
+    .box { fill: #eef4fb; stroke: #2b6cb0; stroke-width: 2; rx: 8; }
+    .node { fill: #e6fffa; stroke: #2f855a; stroke-width: 2; rx: 8; }
+    .topic { fill: #fffaf0; stroke: #dd6b20; stroke-width: 2; rx: 14; }
+    .lbl { font-size: 12px; fill: #1a202c; font-weight: 600; }
+    .sub { font-size: 10.5px; fill: #4a5568; }
+    .cap { font-size: 11px; fill: #718096; }
+    .arr { stroke: #718096; stroke-width: 1.8; marker-end: url(#a); fill: none; }
+  </style>
+  <defs>
+    <marker id="a" markerWidth="9" markerHeight="9" refX="5" refY="2.5" orient="auto">
+      <path d="M0,0 L5,2.5 L0,5 Z" fill="#718096"/>
+    </marker>
+  </defs>
+
+  <text x="350" y="22" text-anchor="middle" font-size="14" font-weight="700" fill="#1a202c">spawn_robot.launch.py -- 4 việc chạy song song</text>
+
+  <rect class="box" x="20" y="45" width="150" height="58"/>
+  <text class="lbl" x="95" y="68" text-anchor="middle">worlds/empty.sdf</text>
+  <text class="sub" x="95" y="86" text-anchor="middle">sân + đèn + plugin hệ thống</text>
+  <line class="arr" x1="170" y1="74" x2="218" y2="74"/>
+  <text class="sub" x="194" y="66" text-anchor="middle">gz_args</text>
+
+  <rect class="node" x="220" y="42" width="180" height="64"/>
+  <text class="lbl" x="310" y="66" text-anchor="middle">1. gz_sim.launch.py</text>
+  <text class="sub" x="310" y="84" text-anchor="middle">mở cửa sổ Gazebo,</text>
+  <text class="sub" x="310" y="99" text-anchor="middle">cờ -r = chạy ngay, không pause</text>
+
+  <rect class="box" x="20" y="135" width="150" height="58"/>
+  <text class="lbl" x="95" y="158" text-anchor="middle">atlas.gazebo.xacro</text>
+  <text class="sub" x="95" y="176" text-anchor="middle">URDF + tag &lt;gazebo&gt;</text>
+  <line class="arr" x1="170" y1="164" x2="218" y2="164"/>
+  <text class="sub" x="194" y="156" text-anchor="middle">xacro</text>
+
+  <rect class="node" x="220" y="132" width="180" height="64"/>
+  <text class="lbl" x="310" y="156" text-anchor="middle">2. robot_state_publisher</text>
+  <text class="sub" x="310" y="174" text-anchor="middle">param robot_description</text>
+  <text class="sub" x="310" y="189" text-anchor="middle">+ use_sim_time: true</text>
+
+  <rect class="node" x="440" y="132" width="230" height="64"/>
+  <text class="lbl" x="555" y="156" text-anchor="middle">3. ros_gz_sim create</text>
+  <text class="sub" x="555" y="174" text-anchor="middle">-topic robot_description -name atlas</text>
+  <text class="sub" x="555" y="189" text-anchor="middle">-z 0.05 (thả hơi cao để không kẹt sàn)</text>
+  <line class="arr" x1="400" y1="164" x2="438" y2="164"/>
+  <path class="arr" d="M555,132 L555,110 L400,110 L400,92"/>
+  <text class="sub" x="470" y="104" text-anchor="middle">đưa robot vào world đang chạy</text>
+
+  <rect class="node" x="220" y="225" width="180" height="58"/>
+  <text class="lbl" x="310" y="248" text-anchor="middle">4. ros_gz_bridge</text>
+  <text class="sub" x="310" y="266" text-anchor="middle">config/gz_bridge.yaml</text>
+  <rect class="topic" x="440" y="228" width="230" height="52"/>
+  <text class="lbl" x="555" y="250" text-anchor="middle">/clock, /scan, /imu sang ROS 2</text>
+  <text class="sub" x="555" y="268" text-anchor="middle">thấy được bằng ros2 topic echo</text>
+  <line class="arr" x1="400" y1="254" x2="438" y2="254"/>
+
+  <text class="cap" x="350" y="308" text-anchor="middle">Robot spawn bằng CÁCH ĐỌC TOPIC robot_description, nên chỉ cần đổi file xacro ở bước 2 là spawn ra robot khác (Module 5 làm đúng vậy).</text>
+</svg>

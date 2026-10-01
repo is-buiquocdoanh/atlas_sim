@@ -1,0 +1,47 @@
+<svg viewBox="0 0 700 330" xmlns="http://www.w3.org/2000/svg" font-family="system-ui, sans-serif">
+  <style>
+    .bad { fill: #fff5f5; stroke: #c53030; stroke-width: 2; rx: 8; }
+    .good { fill: #f0fff4; stroke: #2f855a; stroke-width: 2; rx: 8; }
+    .lbl { font-size: 12.5px; fill: #1a202c; font-weight: 600; }
+    .sub { font-size: 10.5px; fill: #4a5568; }
+    .cap { font-size: 11px; fill: #718096; }
+    .gr { stroke: #a0aec0; stroke-width: 2; }
+  </style>
+
+  <text x="350" y="22" text-anchor="middle" font-size="14" font-weight="700" fill="#1a202c">Triệu chứng khi khối lượng / inertia sai -- nhận mặt để khỏi đi tìm nhầm chỗ</text>
+
+  <rect class="bad" x="15" y="42" width="160" height="150"/>
+  <text class="lbl" x="95" y="64" text-anchor="middle">mass hoặc inertia = 0</text>
+  <line class="gr" x1="30" y1="150" x2="160" y2="150"/>
+  <rect x="70" y="95" width="50" height="30" fill="#feb2b2" stroke="#c53030" transform="rotate(35 95 110)"/>
+  <text class="sub" x="95" y="168" text-anchor="middle">Robot nảy tung, xoay loạn,</text>
+  <text class="sub" x="95" y="183" text-anchor="middle">văng ra khỏi màn hình</text>
+
+  <rect class="bad" x="190" y="42" width="160" height="150"/>
+  <text class="lbl" x="270" y="64" text-anchor="middle">inertia quá nhỏ so với mass</text>
+  <line class="gr" x1="205" y1="150" x2="335" y2="150"/>
+  <rect x="245" y="120" width="50" height="30" fill="#feb2b2" stroke="#c53030"/>
+  <path d="M255,112 a18,18 0 1,1 -12,-9" fill="none" stroke="#c53030" stroke-width="2"/>
+  <text class="sub" x="270" y="168" text-anchor="middle">Rung lắc liên tục tại chỗ,</text>
+  <text class="sub" x="270" y="183" text-anchor="middle">bánh xe giật cục</text>
+
+  <rect class="bad" x="365" y="42" width="160" height="150"/>
+  <text class="lbl" x="445" y="64" text-anchor="middle">mass quá lớn / step quá to</text>
+  <line class="gr" x1="380" y1="150" x2="510" y2="150"/>
+  <rect x="420" y="150" width="50" height="30" fill="#feb2b2" stroke="#c53030"/>
+  <text class="sub" x="445" y="200" text-anchor="middle">Lún xuống, rơi xuyên sàn</text>
+
+  <rect class="good" x="540" y="42" width="145" height="150"/>
+  <text class="lbl" x="612" y="64" text-anchor="middle">Đúng</text>
+  <line class="gr" x1="552" y1="150" x2="675" y2="150"/>
+  <rect x="587" y="120" width="50" height="30" fill="#9ae6b4" stroke="#2f855a"/>
+  <circle cx="587" cy="150" r="6" fill="#2f855a"/>
+  <circle cx="637" cy="150" r="6" fill="#2f855a"/>
+  <text class="sub" x="612" y="176" text-anchor="middle">Đứng yên tuyệt đối,</text>
+  <text class="sub" x="612" y="191" text-anchor="middle">RTF ~1.0</text>
+
+  <text class="cap" x="350" y="230" text-anchor="middle">Quy tắc thực dụng: mass thật (kg) + inertia tính từ công thức hình khối (inertial_macros.xacro) là đủ chính xác.</text>
+  <text class="cap" x="350" y="250" text-anchor="middle">Bộ giải vật lý cần tỉ lệ mass/inertia HỢP LÝ với nhau hơn là cần con số tuyệt đối đúng.</text>
+  <text class="cap" x="350" y="278" text-anchor="middle">Thứ tự kiểm tra khi robot cư xử lạ: (1) inertia có =0 không → (2) mass các link chênh nhau quá nhiều không</text>
+  <text class="cap" x="350" y="296" text-anchor="middle">→ (3) collision có chồng lấn nhau không → (4) max_step_size trong world có quá lớn không.</text>
+</svg>
