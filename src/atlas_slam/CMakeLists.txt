@@ -9,7 +9,7 @@ install(
 )
 
 install(
-  PROGRAMS scripts/send_goal_and_time.py
+  PROGRAMS scripts/send_goal_and_time.py scripts/waypoint_demo.py
   DESTINATION lib/${PROJECT_NAME}
 )
 

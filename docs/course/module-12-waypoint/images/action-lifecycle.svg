@@ -1,0 +1,45 @@
+<svg viewBox="0 0 580 280" xmlns="http://www.w3.org/2000/svg" font-family="system-ui, sans-serif">
+  <style>
+    .actor { fill: #eef4fb; stroke: #2b6cb0; stroke-width: 2; rx: 8; }
+    .lifeline { stroke: #cbd5e0; stroke-width: 1.5; stroke-dasharray: 3 3; }
+    .goal { stroke: #2b6cb0; stroke-width: 2; marker-end: url(#a1); }
+    .fb { stroke: #b7791f; stroke-width: 1.6; stroke-dasharray: 4 3; marker-end: url(#a2); }
+    .res { stroke: #1a7a4c; stroke-width: 2; marker-end: url(#a3); }
+    .cancel { stroke: #c53030; stroke-width: 2; marker-end: url(#a4); }
+    .lbl { font-size: 11.5px; fill: #1a202c; }
+    .cap { font-size: 10px; fill: #718096; }
+    .title { font-size: 14px; font-weight: 700; fill: #1a202c; }
+  </style>
+  <defs>
+    <marker id="a1" markerWidth="9" markerHeight="9" refX="5" refY="2.5" orient="auto"><path d="M0,0 L5,2.5 L0,5 Z" fill="#2b6cb0"/></marker>
+    <marker id="a2" markerWidth="9" markerHeight="9" refX="5" refY="2.5" orient="auto"><path d="M0,0 L5,2.5 L0,5 Z" fill="#b7791f"/></marker>
+    <marker id="a3" markerWidth="9" markerHeight="9" refX="5" refY="2.5" orient="auto"><path d="M0,0 L5,2.5 L0,5 Z" fill="#1a7a4c"/></marker>
+    <marker id="a4" markerWidth="9" markerHeight="9" refX="5" refY="2.5" orient="auto"><path d="M0,0 L5,2.5 L0,5 Z" fill="#c53030"/></marker>
+  </defs>
+
+  <text x="290" y="20" text-anchor="middle" class="title">Action: 1 goal, NHIỀU feedback, rồi 1 result (hoặc hủy giữa chừng)</text>
+
+  <rect class="actor" x="40" y="35" width="120" height="34"/>
+  <text class="lbl" x="100" y="57" text-anchor="middle">Client (patrol_node)</text>
+  <line class="lifeline" x1="100" y1="69" x2="100" y2="260"/>
+
+  <rect class="actor" x="420" y="35" width="120" height="34"/>
+  <text class="lbl" x="480" y="57" text-anchor="middle">Server (bt_navigator)</text>
+  <line class="lifeline" x1="480" y1="69" x2="480" y2="260"/>
+
+  <line class="goal" x1="100" y1="90" x2="478" y2="90"/>
+  <text class="cap" x="290" y="83" text-anchor="middle">goal (followWaypoints)</text>
+
+  <line class="fb" x1="478" y1="120" x2="102" y2="120"/>
+  <text class="cap" x="290" y="113" text-anchor="middle">feedback: current_waypoint=0</text>
+  <line class="fb" x1="478" y1="150" x2="102" y2="150"/>
+  <text class="cap" x="290" y="143" text-anchor="middle">feedback: current_waypoint=1</text>
+  <line class="fb" x1="478" y1="180" x2="102" y2="180"/>
+  <text class="cap" x="290" y="173" text-anchor="middle">feedback: current_waypoint=2 ...</text>
+
+  <line class="cancel" x1="100" y1="205" x2="478" y2="205"/>
+  <text class="cap" x="290" y="198" text-anchor="middle" fill="#c53030">cancelTask() -- Ctrl+C, hoặc logic tự quyết định hủy</text>
+
+  <line class="res" x1="478" y1="230" x2="102" y2="230"/>
+  <text class="cap" x="290" y="223" text-anchor="middle">result: CANCELED (hoặc SUCCEEDED nếu không hủy)</text>
+</svg>
