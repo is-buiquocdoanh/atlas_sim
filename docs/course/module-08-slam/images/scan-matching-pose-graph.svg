@@ -1,0 +1,40 @@
+<svg viewBox="0 0 580 260" xmlns="http://www.w3.org/2000/svg" font-family="system-ui, sans-serif">
+  <style>
+    .node { fill: #eef4fb; stroke: #2b6cb0; stroke-width: 2; }
+    .edge { stroke: #718096; stroke-width: 1.8; }
+    .loop { stroke: #1a7a4c; stroke-width: 2.2; stroke-dasharray: 5 4; }
+    .lbl { font-size: 11px; fill: #1a202c; }
+    .cap { font-size: 11px; fill: #718096; }
+    .title { font-size: 14px; font-weight: 700; fill: #1a202c; }
+  </style>
+
+  <text x="290" y="22" text-anchor="middle" class="title">Pose graph: mỗi chấm 1 vị trí robot đã quét, cạnh nối = độ lệch đo được</text>
+
+  <circle class="node" cx="60" cy="150" r="14"/>
+  <circle class="node" cx="140" cy="100" r="14"/>
+  <circle class="node" cx="230" cy="70" r="14"/>
+  <circle class="node" cx="330" cy="70" r="14"/>
+  <circle class="node" cx="420" cy="110" r="14"/>
+  <circle class="node" cx="480" cy="180" r="14"/>
+  <circle class="node" cx="420" cy="220" r="14"/>
+  <circle class="node" cx="300" cy="210" r="14"/>
+  <circle class="node" cx="180" cy="200" r="14"/>
+
+  <line class="edge" x1="60" y1="150" x2="140" y2="100"/>
+  <line class="edge" x1="140" y1="100" x2="230" y2="70"/>
+  <line class="edge" x1="230" y1="70" x2="330" y2="70"/>
+  <line class="edge" x1="330" y1="70" x2="420" y2="110"/>
+  <line class="edge" x1="420" y1="110" x2="480" y2="180"/>
+  <line class="edge" x1="480" y1="180" x2="420" y2="220"/>
+  <line class="edge" x1="420" y1="220" x2="300" y2="210"/>
+  <line class="edge" x1="300" y1="210" x2="180" y2="200"/>
+  <line class="edge" x1="180" y1="200" x2="60" y2="150"/>
+
+  <text class="cap" x="100" y="128" text-anchor="middle">scan matching</text>
+  <text class="cap" x="100" y="140" text-anchor="middle">(2 scan liên tiếp)</text>
+
+  <line class="loop" x1="60" y1="150" x2="420" y2="220"/>
+  <text class="cap" x="240" y="200" text-anchor="middle" fill="#1a7a4c" font-weight="600">loop closure: "chỗ này giống chỗ đã qua" → sửa sai số dồn cả vòng</text>
+
+  <text class="lbl" x="60" y="178" text-anchor="middle">start</text>
+</svg>

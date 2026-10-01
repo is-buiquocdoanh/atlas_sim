@@ -6,7 +6,7 @@ dụng "tiêu thụ" /scan + /odom + TF do tầng bringup cung cấp, không qua
 đang chạy hay robot là thật hay mô phỏng. atlas_control đã đóng vai bringup đó.
 
     # Terminal 1: bringup (mô phỏng)
-    ros2 launch atlas_control controller.launch.py world:=maze.sdf
+    ros2 launch atlas_bringup bringup.launch.py world:=maze.sdf
     # Terminal 2: SLAM
     ros2 launch atlas_slam slam.launch.py
     # Terminal 3: lái đi khắp world để quét hết các góc

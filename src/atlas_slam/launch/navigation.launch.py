@@ -16,7 +16,7 @@ CHỈ chạy Nav2 core + AMCL + RViz -- KHÔNG tự spawn robot/world (cùng ngu
 tầng đã áp dụng cho atlas_slam/slam.launch.py).
 
     # Terminal 1: bringup (mô phỏng)
-    ros2 launch atlas_control controller.launch.py world:=maze.sdf
+    ros2 launch atlas_bringup bringup.launch.py world:=maze.sdf
     # Terminal 2: Nav2, mặc định AMCL + controller MPPI
     ros2 launch atlas_slam navigation.launch.py
     # ...hoặc chọn controller khác bằng cách đổi file config, không phải sửa code:

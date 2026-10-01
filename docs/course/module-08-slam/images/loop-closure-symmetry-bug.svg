@@ -1,0 +1,36 @@
+<svg viewBox="0 0 580 260" xmlns="http://www.w3.org/2000/svg" font-family="system-ui, sans-serif">
+  <style>
+    .wall { stroke: #4a5568; stroke-width: 4; }
+    .pos { fill: #c53030; }
+    .lbl { font-size: 12px; fill: #1a202c; font-weight: 600; }
+    .cap { font-size: 11px; fill: #718096; }
+    .title { font-size: 14px; font-weight: 700; fill: #1a202c; }
+    .bad { stroke: #c53030; stroke-width: 2; stroke-dasharray: 4 3; marker-end: url(#x); }
+  </style>
+  <defs>
+    <marker id="x" markerWidth="9" markerHeight="9" refX="5" refY="2.5" orient="auto">
+      <path d="M0,0 L5,2.5 L0,5 Z" fill="#c53030"/>
+    </marker>
+  </defs>
+
+  <text x="290" y="20" text-anchor="middle" class="title">Lỗi thật đã gặp: world đối xứng tâm 180°</text>
+
+  <!-- symmetric box -->
+  <line class="wall" x1="60" y1="40" x2="520" y2="40"/>
+  <line class="wall" x1="60" y1="220" x2="520" y2="220"/>
+  <line class="wall" x1="60" y1="40" x2="60" y2="220"/>
+  <line class="wall" x1="520" y1="40" x2="520" y2="220"/>
+  <line class="wall" x1="120" y1="40" x2="120" y2="110"/>
+  <line class="wall" x1="460" y1="150" x2="460" y2="220"/>
+
+  <circle class="pos" cx="150" cy="150" r="7"/>
+  <text class="lbl" x="150" y="175" text-anchor="middle">vị trí A</text>
+
+  <circle class="pos" cx="430" cy="110" r="7"/>
+  <text class="lbl" x="430" y="95" text-anchor="middle">vị trí B</text>
+
+  <path class="bad" d="M 155 145 C 280 60, 320 200, 425 115"/>
+  <text class="cap" x="290" y="155" text-anchor="middle" fill="#c53030" font-weight="600">slam_toolbox: 2 scan "giống hệt nhau" → tưởng A = B</text>
+
+  <text class="cap" x="290" y="245" text-anchor="middle">2 vách đối xứng qua tâm khiến tia LiDAR tại A và B đo ra hình dạng GIỐNG HỆT NHAU — bản đồ "nhảy" rồi lệch vĩnh viễn. Fix: vẽ world KHÔNG đối xứng (độ dài vách khác nhau).</text>
+</svg>
