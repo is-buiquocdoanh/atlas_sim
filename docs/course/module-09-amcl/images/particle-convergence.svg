@@ -1,0 +1,35 @@
+<svg viewBox="0 0 580 230" xmlns="http://www.w3.org/2000/svg" font-family="system-ui, sans-serif">
+  <style>
+    .panel { fill: #f7fafc; stroke: #cbd5e0; stroke-width: 1.5; }
+    .p { fill: #2b6cb0; opacity: 0.75; }
+    .robot { fill: #c53030; }
+    .cap { font-size: 11.5px; fill: #718096; text-anchor: middle; }
+    .title { font-size: 13px; font-weight: 700; fill: #1a202c; text-anchor: middle; }
+  </style>
+
+  <text x="290" y="18" class="title">Particle cloud hội tụ dần khi robot di chuyển + quan sát thêm /scan</text>
+
+  <rect class="panel" x="20" y="30" width="165" height="150"/>
+  <text class="cap" x="102" y="195">Lúc khởi tạo: rải đều khắp map</text>
+  <!-- scattered particles -->
+  <circle class="p" r="2.2" cx="40" cy="50"/><circle class="p" r="2.2" cx="70" cy="45"/><circle class="p" r="2.2" cx="100" cy="60"/>
+  <circle class="p" r="2.2" cx="130" cy="40"/><circle class="p" r="2.2" cx="160" cy="55"/><circle class="p" r="2.2" cx="50" cy="90"/>
+  <circle class="p" r="2.2" cx="90" cy="100"/><circle class="p" r="2.2" cx="130" cy="95"/><circle class="p" r="2.2" cx="160" cy="110"/>
+  <circle class="p" r="2.2" cx="35" cy="140"/><circle class="p" r="2.2" cx="75" cy="150"/><circle class="p" r="2.2" cx="110" cy="130"/>
+  <circle class="p" r="2.2" cx="145" cy="160"/><circle class="p" r="2.2" cx="170" cy="140"/><circle class="p" r="2.2" cx="55" cy="170"/>
+  <circle class="robot" r="3" cx="102" cy="105"/>
+
+  <rect class="panel" x="207" y="30" width="165" height="150"/>
+  <text class="cap" x="289" y="195">Đi vài bước: hạt sai bị loại dần</text>
+  <circle class="p" r="2.2" cx="260" cy="90"/><circle class="p" r="2.2" cx="275" cy="100"/><circle class="p" r="2.2" cx="285" cy="85"/>
+  <circle class="p" r="2.2" cx="300" cy="105"/><circle class="p" r="2.2" cx="265" cy="115"/><circle class="p" r="2.2" cx="310" cy="95"/>
+  <circle class="p" r="2.2" cx="320" cy="110"/><circle class="p" r="2.2" cx="340" cy="90"/><circle class="p" r="1.6" cx="230" cy="140"/>
+  <circle class="p" r="1.6" cx="350" cy="130"/>
+  <circle class="robot" r="3" cx="296" cy="100"/>
+
+  <rect class="panel" x="394" y="30" width="165" height="150"/>
+  <text class="cap" x="476" y="195">Hội tụ: hạt tụm quanh vị trí thật</text>
+  <circle class="p" r="2" cx="470" cy="98"/><circle class="p" r="2" cx="474" cy="102"/><circle class="p" r="2" cx="478" cy="97"/>
+  <circle class="p" r="2" cx="472" cy="104"/><circle class="p" r="2" cx="476" cy="100"/><circle class="p" r="2" cx="480" cy="103"/>
+  <circle class="robot" r="3" cx="475" cy="100"/>
+</svg>

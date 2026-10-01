@@ -1,0 +1,26 @@
+<svg viewBox="0 0 580 260" xmlns="http://www.w3.org/2000/svg" font-family="system-ui, sans-serif">
+  <style>
+    .panel { fill: #f7fafc; stroke: #cbd5e0; stroke-width: 1.5; }
+    .global { fill: #2b6cb0; opacity: 0.12; stroke: #2b6cb0; stroke-width: 1.5; stroke-dasharray: 4 3; }
+    .local { fill: #b7791f; opacity: 0.15; stroke: #b7791f; stroke-width: 1.5; stroke-dasharray: 4 3; }
+    .robot { fill: #c53030; }
+    .lbl { font-size: 12.5px; font-weight: 700; fill: #1a202c; text-anchor: middle; }
+    .cap { font-size: 11px; fill: #718096; text-anchor: middle; }
+  </style>
+
+  <text x="290" y="20" font-size="14" font-weight="700" fill="#1a202c" text-anchor="middle">Phạm vi tìm kiếm khi định vị: toàn cục vs cục bộ</text>
+
+  <rect class="panel" x="20" y="35" width="260" height="190"/>
+  <text class="lbl" x="150" y="58">AMCL (particle filter)</text>
+  <circle class="global" cx="150" cy="140" r="85"/>
+  <circle class="robot" r="4" cx="150" cy="140"/>
+  <text class="cap" x="150" y="210">hạt rải TOÀN BẢN ĐỒ -- tự tìm lại được</text>
+  <text class="cap" x="150" y="224">dù pose ban đầu sai nhiều</text>
+
+  <rect class="panel" x="300" y="35" width="260" height="190"/>
+  <text class="lbl" x="430" y="58">slam_toolbox (mode: localization)</text>
+  <circle class="local" cx="430" cy="140" r="35"/>
+  <circle class="robot" r="4" cx="430" cy="140"/>
+  <text class="cap" x="430" y="210">chỉ dò quanh pose đã cho (correlation</text>
+  <text class="cap" x="430" y="224">search_space_dimension) -- sai nhiều là lạc</text>
+</svg>
