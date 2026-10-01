@@ -1,0 +1,54 @@
+<svg viewBox="0 0 600 320" xmlns="http://www.w3.org/2000/svg" font-family="system-ui, sans-serif">
+  <style>
+    .node { fill: #eef4fb; stroke: #2b6cb0; stroke-width: 1.8; rx: 6; }
+    .leaf { fill: #eafaf1; stroke: #1a7a4c; stroke-width: 1.6; rx: 6; }
+    .fallback { fill: #fef6e7; stroke: #b7791f; stroke-width: 1.8; rx: 6; }
+    .lbl { font-size: 11px; fill: #1a202c; font-weight: 600; text-anchor: middle; }
+    .cap { font-size: 9.5px; fill: #718096; text-anchor: middle; }
+    .line { stroke: #a0aec0; stroke-width: 1.4; }
+    .title { font-size: 14px; font-weight: 700; fill: #1a202c; }
+  </style>
+
+  <text x="300" y="18" text-anchor="middle" class="title">Cấu trúc thật của navigate_to_pose_w_replanning_and_recovery.xml</text>
+
+  <rect class="node" x="210" y="30" width="180" height="34"/>
+  <text class="lbl" x="300" y="51">RecoveryNode (6 lần)</text>
+
+  <line class="line" x1="260" y1="64" x2="150" y2="95"/>
+  <line class="line" x1="340" y1="64" x2="460" y2="95"/>
+
+  <rect class="node" x="60" y="97" width="180" height="34"/>
+  <text class="lbl" x="150" y="118">PipelineSequence</text>
+  <text class="cap" x="150" y="80">việc chính: tính đường + bám đường</text>
+
+  <rect class="fallback" x="370" y="97" width="180" height="34"/>
+  <text class="lbl" x="460" y="118">ReactiveFallback</text>
+  <text class="cap" x="460" y="80">chỉ chạy khi việc chính THẤT BẠI</text>
+
+  <line class="line" x1="110" y1="131" x2="70" y2="160"/>
+  <line class="line" x1="190" y1="131" x2="230" y2="160"/>
+  <rect class="leaf" x="20" y="162" width="100" height="30"/>
+  <text class="lbl" x="70" y="181" font-size="10">ComputePathToPose</text>
+  <rect class="leaf" x="180" y="162" width="100" height="30"/>
+  <text class="lbl" x="230" y="181" font-size="10">FollowPath</text>
+
+  <line class="line" x1="460" y1="131" x2="460" y2="160"/>
+  <rect class="node" x="380" y="162" width="160" height="30"/>
+  <text class="lbl" x="460" y="181" font-size="10">RoundRobin (xoay vòng)</text>
+
+  <line class="line" x1="420" y1="192" x2="330" y2="230"/>
+  <line class="line" x1="440" y1="192" x2="410" y2="230"/>
+  <line class="line" x1="470" y1="192" x2="490" y2="230"/>
+  <line class="line" x1="500" y1="192" x2="570" y2="230"/>
+
+  <rect class="leaf" x="280" y="232" width="100" height="30"/>
+  <text class="lbl" x="330" y="251" font-size="9.5">ClearCostmap</text>
+  <rect class="leaf" x="370" y="232" width="80" height="30"/>
+  <text class="lbl" x="410" y="251" font-size="9.5">Spin</text>
+  <rect class="leaf" x="460" y="232" width="80" height="30"/>
+  <text class="lbl" x="490" y="251" font-size="9.5">Wait</text>
+  <rect class="leaf" x="530" y="232" width="80" height="30"/>
+  <text class="lbl" x="570" y="251" font-size="9.5">BackUp</text>
+
+  <text class="cap" x="300" y="290" text-anchor="middle">Việc chính FAIL → thử lần lượt 4 hành động xoay vòng → RecoveryNode gốc thử lại việc chính (tối đa 6 lần)</text>
+</svg>
