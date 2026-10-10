@@ -1,0 +1,58 @@
+<h1>Vì sao cần Gazebo</h1>
+<p class="lead">Module 3 dừng lại ở hình học thuần túy: URDF mô tả robot trông như thế nào và các frame quan hệ ra sao, nhưng không có gì <em>xảy ra</em> cả — robot không rơi, không va chạm, không nặng nhẹ gì. Từ module này, Atlas đứng trong một thế giới có trọng lực, ma sát, và va chạm thật — mô phỏng bằng <strong>Gazebo</strong>.</p>
+
+<p>Atlas dùng <strong>Gazebo Fortress</strong> (tên nội bộ <code>gz-sim</code>, gói ROS 2 <code>ros-humble-ros-gz</code>) — <strong>không phải</strong> "Gazebo Classic" (<code>gazebo11</code>, gói <code>ros-humble-gazebo-*</code>). Hai dòng phần mềm khác hẳn nhau dù tên gần giống, không tương thích plugin/world của nhau. Mọi thứ trong module này nói về gz-sim.</p>
+
+<div class="goals">
+  <h3>Sau module này bạn sẽ</h3>
+  <ul>
+    <li>Đọc được cấu trúc một file world SDF: physics engine, ánh sáng, mặt đất, plugin hệ thống</li>
+    <li>Giải thích được <code>&lt;gazebo reference="..."&gt;</code> gắn thêm thuộc tính vật lý vào đúng link nào trong URDF, và vì sao bánh chủ động với caster cần ma sát khác hẳn nhau</li>
+    <li>Nói được chính xác <code>&lt;inertial&gt;</code> sai/thiếu gây hậu quả gì <strong>trong Gazebo</strong> dù RViz không hề báo lỗi — đúng lời hứa còn nợ từ <a href="lesson.html?m=3&amp;l=02-link">Module 3</a></li>
+    <li>Đọc được từng dòng <code>spawn_robot.launch.py</code>: world mở ra sao, robot vào world bằng cách nào, dữ liệu gì cần bridge sang ROS 2 ở bước này</li>
+  </ul>
+</div>
+
+<div class="callout tip"><p>Robot <strong>chưa di chuyển được</strong> ở module này — chưa có <code>ros2_control</code>/<code>diff_drive_controller</code> (đó là <a href="lesson.html?m=5&amp;l=00-gioi-thieu">Module 5</a>). Mục tiêu ở đây chỉ là: robot đứng vững trong Gazebo, không rung/lật/xuyên sàn, va chạm với world đúng như vật lý thật.</p></div>
+
+<h2>Package mới: atlas_gazebo</h2>
+<p>Giống cách <code>atlas_description</code> tách biệt với mọi thứ liên quan simulator (đã nói ở <a href="lesson.html?m=3&amp;l=06-doc-urdf-atlas">Module 3 bài 6</a>), phần mở rộng cho Gazebo nằm trong một package riêng — <strong>atlas_gazebo</strong> — chứ không sửa trực tiếp vào <code>atlas_description</code>:</p>
+<div class="filetree">
+  <details open><summary>atlas_gazebo/</summary>
+    <ul>
+      <li>
+        <details open><summary>urdf/</summary>
+          <ul><li class="ft-file">atlas.gazebo.xacro <span class="ft-note"># include atlas.urdf.xacro + thêm &lt;gazebo&gt; tag</span></li></ul>
+        </details>
+      </li>
+      <li>
+        <details><summary>worlds/</summary>
+          <ul>
+            <li class="ft-file">empty.sdf</li>
+            <li class="ft-file">maze.sdf</li>
+            <li class="ft-file">warehouse.sdf</li>
+          </ul>
+        </details>
+      </li>
+      <li>
+        <details open><summary>config/</summary>
+          <ul><li class="ft-file">gz_bridge.yaml <span class="ft-note"># ánh xạ topic Gazebo Transport &lt;-&gt; ROS 2</span></li></ul>
+        </details>
+      </li>
+      <li>
+        <details open><summary>launch/</summary>
+          <ul><li class="ft-file">spawn_robot.launch.py</li></ul>
+        </details>
+      </li>
+    </ul>
+  </details>
+</div>
+<p>Nhờ tách lớp này, <code>atlas_description</code> không "cõng" theo cấu hình mô phỏng — sau này chuyển sang robot thật, package đó dùng lại nguyên vẹn, chỉ <code>atlas_gazebo</code> là không cần tới nữa.</p>
+
+<h2>Bản đồ module</h2>
+<div class="cards">
+  <div class="mini"><b>World (SDF)</b><span>physics engine, ánh sáng, mặt đất — sân khấu để robot đứng vào</span></div>
+  <div class="mini"><b>&lt;gazebo&gt; tag</b><span>gắn ma sát, cảm biến vào đúng link đã có trong URDF</span></div>
+  <div class="mini"><b>Inertial</b><span>vô hình ở RViz, quyết định robot có đứng vững trong Gazebo hay không</span></div>
+  <div class="mini"><b>spawn_robot.launch.py</b><span>mở world, publish robot_description, spawn, bridge /clock</span></div>
+</div>

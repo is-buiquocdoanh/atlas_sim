@@ -1,0 +1,64 @@
+<h1>Scan matching</h1>
+<p class="lead">Encoder bánh xe (Module 5) cho biết robot <em>nghĩ</em> nó đã đi bao xa — nhưng bánh trượt, sàn không hoàn toàn phẳng, sai số tích lũy dần theo thời gian. <strong>Scan matching</strong> là cách kiểm tra lại bằng chính thế giới xung quanh: so 2 lần quét LiDAR liên tiếp, tìm phép dịch chuyển (dx, dy, dθ) khiến chúng <strong>khớp nhau nhất</strong> — đó chính là chuyển động thật.</p>
+
+<h2>Trực giác: xoay vặn cho tới khi khớp</h2>
+<p>Hai góc tường tạo một hình đặc trưng (không phải đường thẳng đơn thuần — đường thẳng trượt dọc theo chính nó vẫn "khớp", không xác định được dịch chuyển dọc trục). Quét A (xanh) cố định; quét B (cam) là <strong>cùng bức tường đó</strong>, nhìn từ một vị trí robot đã dịch chuyển tới. Kéo (dx, dy, dθ) cho tới khi 2 tập điểm trùng khít — đúng việc thuật toán scan matching làm tự động hàng chục lần mỗi giây:</p>
+<div class="scene" data-scene="scan-matching-align"></div>
+
+<h2>Toán học cốt lõi: tương quan trên lưới đã làm mờ</h2>
+<p>Dễ đoán nhầm đây là ICP (Iterative Closest Point) — ghép từng điểm với điểm gần nhất rồi chỉnh dần. <code>slam_toolbox</code> dùng engine <strong>Karto</strong> (<code>karto_sdk</code>), và theo đúng mã nguồn cài trên máy (<code>/opt/ros/humble/include/karto_sdk/Mapper.h</code>), thuật toán thật là <strong>Correlative Scan Matching</strong> — khác hẳn ICP về bản chất: không lặp chỉnh dần một hướng, mà <strong>dò vét toàn bộ lưới ứng viên</strong> rồi chọn ứng viên có điểm số cao nhất. Mô hình kéo-thả ở trên dùng RMSE giữa 2 tập điểm để trực quan hoá "khớp" cho dễ cảm nhận — thuật toán thật không tính RMSE, nó tính một đại lượng gọi là <strong>response</strong> theo cách dưới đây.</p>
+
+<h3>Bước 1 — làm mờ bản đồ cũ thành một trường xác suất</h3>
+<p>Trước khi so, <code>slam_toolbox</code> dựng một "lưới tương quan" (<code>CorrelationGrid</code>) từ các quét đã ghép trước đó: mỗi ô từng bị chạm (occupied) không chỉ đánh dấu đúng ô đó, mà còn "làm mờ" sang các ô lân cận bằng một kernel Gauss — nguyên văn công thức trong mã nguồn:</p>
+<pre><code>z = exp(-0.5 × (d / σ)²)
+kernelValue = round(z × 100)   # 100 = GridStates_Occupied, giá trị "chạm thật"</code></pre>
+<p><code>d</code> là khoảng cách (m) từ ô đang xét tới ô chạm tường thật, <code>σ</code> chính là <code>correlation_search_space_smear_deviation</code> — 0.1 trong <code>mapper_params.yaml</code> của Atlas. Thử 2 điểm để thấy độ mờ này "mượt" cỡ nào:</p>
+<pre><code>d = 0.05m (cách tường 1 ô 5cm)
+  z = exp(-0.5 × (0.05/0.1)²) = exp(-0.125) ≈ 0.88  → giá trị ô ≈ 88/100
+
+d = 0.20m (= 2σ, đúng rìa kernel)
+  z = exp(-0.5 × (0.20/0.1)²) = exp(-2)     ≈ 0.14  → giá trị ô ≈ 14/100</code></pre>
+<p>Comment gốc trong <code>Mapper.h</code> ghi rõ bán kính kernel lấy đúng <strong>2 lần độ lệch chuẩn</strong> ("to get 95% region") — với Atlas là 2 × 0.1 = <strong>0.2m</strong> quanh mỗi điểm chạm tường thật. Không làm mờ, điểm số sẽ nhảy bậc thang mỗi khi ứng viên lệch qua ranh giới 1 ô — rất dễ khiến phép dò vét bị kẹt ở một đỉnh giả. Làm mờ biến điểm số thành một mặt cong trơn, dò vét 1cm một bước vẫn "cảm" được hướng nào gần đúng hơn.</p>
+
+<h3>Bước 2 — response: chấm điểm một ứng viên (dx, dy, dθ)</h3>
+<p>Với mỗi ứng viên phép biến đổi, lấy toàn bộ điểm quét mới, áp phép biến đổi đó, rồi tra giá trị ô tương ứng trên lưới đã làm mờ ở bước 1 — <strong>response</strong> là điểm trung bình (chuẩn hoá 0–1) trên toàn bộ điểm:</p>
+<pre><code>response(dx, dy, dθ)
+  = trung bình [ lưới( biến_đổi(điểm_i, dx, dy, dθ) ) ]
+    với mọi điểm i trong quét mới</code></pre>
+<p>Response càng gần 1, điểm quét mới càng rơi đúng vào vùng từng là tường thật. Đây chính xác là đại lượng đã gặp ở <a href="lesson.html?m=8&amp;l=03-loop-closure">bài loop closure</a> — <code>loop_match_minimum_response_coarse/fine</code> (0.45 / 0.55) là ngưỡng trên chính thang điểm response này, không phải một con số tách biệt.</p>
+
+<h3>Bước 3 — dò vét, không dò gradient</h3>
+<p>Thay vì chỉnh dần theo hướng giảm sai số (dễ kẹt ở cực trị cục bộ nếu world có cấu trúc lặp lại — chính là nguyên nhân sâu xa của bug đối xứng ở bài loop closure), Karto <strong>tính response cho mọi ứng viên trong cả cửa sổ tìm kiếm</strong> rồi chọn đỉnh cao nhất — đảm bảo tìm đúng điểm tốt nhất trong cửa sổ, không có khái niệm "kẹt". Với đúng 2 số thật của Atlas:</p>
+<pre><code>correlation_search_space_dimension:  0.5m   → dò mỗi trục trong ±0.25m
+correlation_search_space_resolution: 0.01m  → bước nhảy 1cm
+
+số ứng viên tịnh tiến: (0.5 / 0.01 + 1)²
+                      ≈ 51 × 51 ≈ 2 601 ứng viên (dx, dy)</code></pre>
+<p>Góc xoay không nằm trong <code>mapper_params.yaml</code> của Atlas — dùng nguyên giá trị mặc định của thư viện <code>slam_toolbox</code> (chưa bị override):</p>
+<pre><code>coarse_search_angle_offset: 0.349 rad (≈20°)
+coarse_angle_resolution:    0.0349 rad (≈2°)    → ~21 góc ứng viên ở bước thô
+
+fine_search_angle_offset:   0.00349 rad (≈0.2°) → dò lại hẹp quanh
+                                                   góc tốt nhất của bước thô</code></pre>
+<p>Nhân lại: vòng dò thô kiểm tra khoảng <strong>2 601 × 21 ≈ 54 600 ứng viên (dx, dy, dθ)</strong> cho mỗi lần scan matching — mỗi ứng viên lại phải tra cứu toàn bộ điểm quét. Đây chính là cái giá phải trả để đổi lấy sự chắc chắn "tìm đúng đỉnh trong cửa sổ, không đoán mò" — và cũng là lý do <code>correlation_search_space_dimension</code> không thể cứ thế tăng vô tội vạ cho "chắc ăn": tăng gấp đôi cửa sổ gần như tăng gấp 4 số ứng viên tịnh tiến.</p>
+<div class="callout"><p><strong>Vì sao "quá 0.5m thì tìm sai hẳn" (bài trên) giờ có thể giải thích bằng toán:</strong> cửa sổ tìm kiếm chỉ rộng ±0.25m quanh vị trí odometry báo. Nếu vị trí thật lệch hơn 0.25m khỏi đó, response cao nhất <strong>trong cửa sổ</strong> vẫn được chọn — nhưng nó không còn là đỉnh thật của hàm số, chỉ là đỉnh giả tốt nhất trong vùng bị giới hạn. Thuật toán không "nhầm" theo nghĩa thông thường — nó đơn giản chưa từng nhìn thấy ứng viên đúng.</p></div>
+
+<h2>Khi nào mới quét thêm</h2>
+<p><code>slam_toolbox</code> không quét liên tục vô tội vạ — tốn tính toán vô ích nếu robot gần như đứng yên. Đúng 2 tham số thật trong <code>mapper_params.yaml</code> quyết định:</p>
+<pre><code>minimum_travel_distance: 0.2   # mét
+minimum_travel_heading: 0.2    # rad ≈ 11.5°</code></pre>
+<p>Chỉ khi odometry báo robot đã đi <strong>ít nhất</strong> 0.2m HOẶC xoay ít nhất 0.2rad kể từ lần quét trước, <code>slam_toolbox</code> mới chụp quét mới và chạy scan matching. Độ dịch chuyển mặc định giữa quét A và B trong mô hình trên (0.18m ngang + 0.08m dọc ≈ 0.2m, xoay 0.2rad) cố tình đặt đúng ngưỡng này.</p>
+
+<h2>Vùng tìm kiếm — không phải dò vô hạn</h2>
+<pre><code>correlation_search_space_dimension: 0.5     # mét, tìm quanh vị trí odometry báo
+correlation_search_space_resolution: 0.01   # bước nhảy khi dò (1cm)
+correlation_search_space_smear_deviation: 0.1</code></pre>
+<p>Thuật toán không dò toàn bản đồ — nó tin odometry <strong>gần đúng</strong>, chỉ tìm trong ô vuông 0.5m quanh vị trí odometry báo, bước 1cm một. Đây là lý do scan matching nhanh: bài toán tối ưu cục bộ, không phải tìm kiếm toàn cục. Hệ quả trực tiếp: nếu odometry sai lệch hơn 0.5m giữa 2 lần quét (bánh trượt mạnh, dữ liệu mất một đoạn), scan matching có thể tìm sai hẳn — đúng vùng giới hạn chính là giới hạn của phương pháp này.</p>
+
+<h2>Thử ngay</h2>
+<pre><code>ros2 launch atlas_bringup bringup.launch.py world:=maze.sdf</code></pre>
+<pre><code># terminal khác
+ros2 launch atlas_slam slam.launch.py</code></pre>
+<pre><code># terminal khác
+ros2 run teleop_twist_keyboard teleop_twist_keyboard</code></pre>
+<p>Lái robot chậm rãi, quan sát trong RViz: bản đồ (occupancy grid, bài 5) chỉ "dày" thêm từng mảng khi robot thật sự đã di chuyển đủ xa — đứng yên tại chỗ, bản đồ ngừng cập nhật dù LiDAR vẫn đang quét liên tục.</p>

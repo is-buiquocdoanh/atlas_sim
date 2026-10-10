@@ -1,0 +1,36 @@
+<h1>Bài tập: cây TF của Atlas</h1>
+<p class="lead">Áp dụng <a href="lesson.html?m=2&amp;l=01-frame-va-transform">Frame/Transform</a>, <a href="lesson.html?m=2&amp;l=02-tf-tree">TF tree</a>, <a href="lesson.html?m=2&amp;l=03-rep103-rep105">REP-105</a> — làm bài này <strong>trước khi đọc Module 3</strong>, nơi URDF thật của Atlas sẽ "lộ" đáp án.</p>
+
+<h2>Đề bài</h2>
+<p>Atlas là robot diff-drive gồm: một khung chính (<code>base_link</code>), 2 bánh chủ động trái/phải, 2 bánh đỡ (caster) trước/sau, 1 LiDAR, 1 IMU. Chọn frame cha cho từng frame bên dưới rồi bấm "Kiểm tra" — đã cố tình để sẵn 1 lựa chọn sai, giống nhầm lẫn người mới hay gặp:</p>
+
+<div class="scene" data-scene="tf-tree-builder"></div>
+
+<div class="callout key"><p><code>map</code> và <code>odom</code> (<a href="lesson.html?m=2&amp;l=03-rep103-rep105">REP-105</a>) KHÔNG nằm trong bài tập này — chúng chỉ xuất hiện khi có <code>slam_toolbox</code>/<code>amcl</code> chạy (Module 8-9), chưa liên quan tới URDF tĩnh của robot.</p></div>
+
+<h2>Hai câu hỏi suy luận</h2>
+<p><strong>1. Joint nối các frame trên với <code>base_link</code> nên là loại chuyển động được hay cố định?</strong> Bánh chủ động phải <em>quay được</em> (joint <code>continuous</code> — xoay không giới hạn góc). LiDAR và IMU không di chuyển so với khung robot (joint <code>fixed</code> — liên hệ <code>static_transform_publisher</code> ở <a href="lesson.html?m=2&amp;l=04-cong-cu-debug">bài trước</a>). Bánh đỡ (caster) trong URDF thật của Atlas cũng khai báo <code>fixed</code> — mô phỏng không model việc viên bi/bánh đỡ tự xoay tự do, chỉ quan tâm vị trí GẮN của nó trên khung.</p>
+<p><strong>2. Nếu robot đứng yên tại chỗ nhưng 2 bánh vẫn quay (kẹt trên mặt trơn)</strong>: transform <code>base_link</code> → bánh xe <em>có</em> đổi theo thời gian (góc quay của khớp đổi liên tục). Transform <code>map</code> → <code>base_link</code> thì <em>không</em> đổi (robot không di chuyển trong không gian thật) — phân biệt "transform đổi vì khớp xoay tại chỗ" và "transform đổi vì cả cụm dịch chuyển".</p>
+
+<h2>Tự kiểm tra</h2>
+<div class="goals">
+  <h3>Đã xong khi</h3>
+  <ul>
+    <li>Công cụ ở trên báo đúng cả 6/6</li>
+    <li>Giải thích được (không chỉ đoán) vì sao cả 6 frame cùng một cha, không phân cấp qua nhau</li>
+    <li>Trả lời được 2 câu hỏi suy luận ở trên bằng lời của riêng bạn</li>
+    <li>Sau khi đọc Module 3, so cây vừa chọn với <code>atlas_description/urdf/atlas.urdf.xacro</code> thật</li>
+  </ul>
+</div>
+
+<h2>Tự kiểm tra trước khi qua Module 3</h2>
+<div class="goals">
+  <ul>
+    <li>Giải thích được frame khác transform ở điểm nào</li>
+    <li>Vẽ được (nói bằng lời) cây TF bất kỳ chỉ từ mô tả một robot khác, không cần đúng của Atlas</li>
+    <li>Dùng được <code>view_frames</code> + <code>tf2_echo</code> để debug một launch file TF bất kỳ, không cần nhớ cú pháp</li>
+    <li>Giải thích được (không cần thuộc công thức) vì sao <code>map</code>→<code>odom</code> nhảy bậc còn <code>odom</code>→<code>base_link</code> mượt, và hậu quả nếu gộp làm một</li>
+  </ul>
+</div>
+
+<p>Xong hết → sang <strong>Module 3 — Mô hình hóa robot với URDF/XACRO</strong> (sắp có trên trang này), nơi cây TF bạn vừa chọn sẽ được đối chiếu với URDF thật của Atlas.</p>

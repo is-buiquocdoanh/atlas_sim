@@ -1,0 +1,38 @@
+<h1>Frame và Transform</h1>
+<p class="lead"><strong>Frame</strong> (hệ tọa độ) là một gốc tọa độ có tên, gắn với một vật hoặc vị trí cụ thể — thân robot, một cảm biến, một điểm trên bản đồ. <strong>Transform</strong> là độ lệch giữa hai frame: tịnh tiến (x, y, z) cộng một phép xoay, mô tả "frame con nằm ở đâu, hướng nào, nhìn từ frame cha".</p>
+<p>Mọi message có <code>header.frame_id</code> trong ROS 2 (gần như mọi dữ liệu cảm biến, mọi lệnh định vị) đều đang nói: "các con số này đo từ frame có tên này" — một con số tọa độ không kèm frame là vô nghĩa.</p>
+
+<h2>Kéo thử: đổi transform, xem frame con di chuyển</h2>
+<p>Frame cha (bên trái, cố định) không đổi. Frame con di chuyển và xoay theo đúng 3 số bạn chỉnh: x, y, yaw.</p>
+<div class="scene" data-scene="frame-transform"></div>
+
+<h2>Một chiều, không đối xứng</h2>
+<p>Transform luôn có <strong>hướng</strong>: cha → con. Biết A→B thì suy ra được B→A (nghịch đảo), nhưng khai báo một transform là khai báo đúng một chiều. Bạn không tự làm phép cộng/nghịch đảo ma trận tay — <code>tf2</code> lo việc đó. Công việc của bạn chỉ có hai phần:</p>
+<div class="cards">
+  <div class="mini"><b>Publish điều bạn biết</b><span>qua <code>TransformBroadcaster</code></span></div>
+  <div class="mini"><b>Hỏi điều bạn cần</b><span>qua <code>Buffer.lookup_transform()</code>, kể cả khi 2 frame không nối trực tiếp</span></div>
+</div>
+
+<h2>Ví dụ trong dự án: tf_broadcaster.py</h2>
+<p>Publish một transform <strong>động</strong> <code>world → moving_frame</code>, tự xoay tròn quanh gốc — đúng công thức dùng trong ô "Tự xoay" ở mô hình trên:</p>
+<pre><code>t.header.frame_id = "world"          # frame CHA
+t.child_frame_id = "moving_frame"    # frame CON
+
+t.transform.translation.x = radius * math.cos(angle)
+t.transform.translation.y = radius * math.sin(angle)
+t.transform.rotation.z = math.sin(angle / 2.0)   # quaternion cho xoay quanh trục Z
+t.transform.rotation.w = math.cos(angle / 2.0)
+self.broadcaster.sendTransform(t)</code></pre>
+<p><code>tf_listener.py</code> hỏi lại transform đó mà không cần biết bên kia publish thế nào:</p>
+<pre><code>t = self.buffer.lookup_transform("world", "moving_frame", rclpy.time.Time())</code></pre>
+
+<h2>Thử ngay</h2>
+<p>Cần 2 terminal (đã <code>source install/setup.bash</code>, xem <a href="lesson.html?m=0&amp;l=00-cai-dat">Module 0</a>):</p>
+<pre><code># Terminal 1 — để chạy, đừng tắt
+ros2 launch ros2_basics demo_tf.launch.py</code></pre>
+<pre><code># Terminal 2
+ros2 run ros2_basics tf_listener</code></pre>
+<p>Terminal 2 in ra vị trí <code>moving_frame</code> mỗi giây — đúng số bạn vừa thấy trong mô hình, chỉ là đọc bằng <code>lookup_transform()</code> thay vì kéo thanh trượt.</p>
+
+<h2>Ví dụ trong dự án Atlas</h2>
+<p><code>atlas_description/urdf/atlas.urdf.xacro</code> (Module 3) — mỗi <code>&lt;joint&gt;</code> giữa hai <code>&lt;link&gt;</code> chính là khai báo một transform tĩnh cha→con (ví dụ <code>base_link</code> → <code>lidar_link</code>, lệch đúng vị trí gắn LiDAR thật trên khung robot). Bạn sẽ không tự gọi <code>TransformBroadcaster</code> cho các frame này — <code>robot_state_publisher</code> tự đọc URDF và publish hết.</p>

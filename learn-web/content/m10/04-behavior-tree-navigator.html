@@ -1,0 +1,38 @@
+<h1>bt_navigator: ai điều phối ai</h1>
+<p class="lead"><code>bt_navigator</code> là node ĐIỀU PHỐI — nhận goal, gọi <code>planner_server</code> tính đường, gọi <code>controller_server</code> bám đường, gọi <code>behavior_server</code> khi gặp sự cố (<a href="lesson.html?m=11&amp;l=00-gioi-thieu">Module 11</a>) — theo đúng kịch bản mô tả trong <strong>1 file XML behavior tree</strong>, không phải code cứng trong node.</p>
+
+<h2>Toàn cảnh kiến trúc: ai gọi ai</h2>
+<p>Phỏng theo đúng sơ đồ kiến trúc chính thức của Nav2, đối chiếu lại từng ô với <code>navigation.launch.py</code> thật của Atlas — 2 chỗ cố tình khác bản gốc vì đó là khác biệt THẬT của dự án:</p>
+<div class="scene" data-scene="nav2-architecture"></div>
+<ul>
+  <li>Không có <strong>Route Server</strong> — tính năng mới hơn của Nav2, Atlas chưa dùng tới (không xuất hiện trong danh sách node của <code>navigation.launch.py</code>).</li>
+  <li><strong>Smoother Server</strong> không có ô "Costmap Sub." — đọc đúng config thật: chỉ <code>behavior_server</code> có tham số <code>costmap_topic</code>/<code>footprint_topic</code>, <code>smoother_server</code> thì không.</li>
+</ul>
+<div class="callout"><p>Sơ đồ gốc của Nav2 có thêm 1 nhánh <code>Collision Monitor</code> sau <code>Velocity Smoother</code>. Atlas CÓ <code>collision_monitor</code> thật (Module 7), nhưng nó KHÔNG nằm trong chuỗi này — đọc đúng comment trong <code>navigation.launch.py</code>: <code>velocity_smoother</code> phát thẳng ra <code>/cmd_vel</code>, không qua <code>collision_monitor</code>. 2 hệ thống độc lập: <code>collision_monitor</code> chạy khi lái tay qua joystick (Module 7), Nav2 core tự lo an toàn bằng chính costmap + critic của controller (Module 10 bài 1, 3) khi chạy tự động.</p></div>
+
+<h2>Behavior Tree, không phải if/else lồng nhau</h2>
+<p>Nav2 không tự viết điều phối bằng code — dùng <strong>Behavior Tree</strong> (XML mô tả 1 cây hành vi, đọc từ trên xuống, trái sang phải): mỗi "lá" là 1 hành động cụ thể (gọi planner, gọi controller...), các nút cha quyết định thứ tự/điều kiện chạy con. Lợi ích: đổi kịch bản điều hướng = sửa file XML, không build lại code — bạn sẽ tự sửa 1 file như vậy ở Module 11.</p>
+<p>Module này chỉ cần biết: <code>bt_navigator</code> tồn tại và <strong>không tự mình tính toán gì cả</strong> — mọi "trí thông minh" nằm ở planner/controller/behavior, nó chỉ gọi đúng thứ tự. Nhìn lại sơ đồ tổng thể ở đầu module — <code>bt_navigator</code> đứng tách biệt, không nối dây dữ liệu vào costmap/planner/controller, vì việc nó làm là <strong>gọi hàm</strong> (action client nội bộ), không phải đọc/ghi topic.</p>
+
+<h2>Danh sách node thật — nhiều hơn tưởng tượng</h2>
+<p><code>bt_navigator</code> trong config Atlas khai hơn 40 <code>plugin_lib_names</code> — mỗi tên là 1 loại "lá"/"nút" BT có thể dùng trong file XML, dù file mặc định đi kèm Nav2 (chưa tùy chỉnh ở module này) chỉ dùng một phần nhỏ trong đó:</p>
+<pre><code>plugin_lib_names:
+  - nav2_compute_path_to_pose_action_bt_node   # gọi planner_server
+  - nav2_follow_path_action_bt_node             # gọi controller_server
+  - nav2_spin_action_bt_node                    # gọi behavior_server (Module 11)
+  - nav2_back_up_action_bt_node                 # gọi behavior_server (Module 11)
+  - nav2_recovery_node_bt_node        # thử lại khi 1 nhánh con fail
+  - nav2_is_stuck_condition_bt_node   # kiểm tra: robot có đang kẹt không
+  # ... hơn 40 node, phần lớn thuộc Module 11 (recovery/behavior)</code></pre>
+<p>Tên node đã tự nói rõ việc: <code>*_action_bt_node</code> là 1 hành động cụ thể (gọi 1 node khác), <code>*_condition_bt_node</code> là 1 điều kiện kiểm tra trạng thái, <code>nav2_recovery_node_bt_node</code> là 1 nút ĐIỀU KHIỂN (quyết định thử lại nhánh con hay bỏ qua).</p>
+
+<h2>Ví dụ trong dự án Atlas</h2>
+<pre><code># atlas_slam/launch/navigation.launch.py
+Node(package="nav2_bt_navigator", executable="bt_navigator",
+     name="bt_navigator", ...)</code></pre>
+<p>Action <code>NavigateToPose</code> (gửi goal, <a href="lesson.html?m=10&amp;l=05-gui-cli-goal">bài tiếp theo</a>) chính là lời gọi TỚI <code>bt_navigator</code> — không phải tới planner hay controller trực tiếp. Đây là lý do action này có <code>controller_id</code>/<code>planner_id</code> để CHỌN plugin, nhưng bản thân người gọi không cần biết chi tiết bên trong chạy thế nào.</p>
+
+<h2>Thử ngay</h2>
+<pre><code>ros2 node list | grep bt_navigator</code></pre>
+<pre><code>ros2 node info /bt_navigator | grep -A3 "Action Servers"</code></pre>
+<p>Xác nhận <code>/navigate_to_pose</code> nằm trong danh sách Action Server của chính <code>bt_navigator</code> — không phải của <code>controller_server</code> hay <code>planner_server</code>.</p>

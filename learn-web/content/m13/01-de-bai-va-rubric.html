@@ -1,0 +1,38 @@
+<h1>Đề bài chi tiết & rubric chấm điểm</h1>
+<p class="lead">Chủ đề gợi ý: <strong>"Atlas Delivery"</strong> — robot giao hàng tự động trong kho mô phỏng. Đây là dạng đề tài rất phổ biến trong đồ án tốt nghiệp ngành Cơ điện tử/Tự động hóa/CNTT tại Việt Nam — bạn có thể dùng gần như nguyên bản làm báo cáo, chỉ cần thêm phần lý thuyết và biến thể riêng. Đủ mở để phân hóa độ khó: làm bản tối thiểu (đi 1 điểm) vẫn qua được, mở rộng (nhiều điểm, vật cản động, tối ưu thời gian) thì cộng điểm.</p>
+
+<h2>Yêu cầu chức năng tối thiểu (bắt buộc)</h2>
+<ol>
+  <li>Robot Atlas tự vẽ được bản đồ world "warehouse"/"maze" bằng SLAM (<a href="lesson.html?m=8&amp;l=00-gioi-thieu">Module 8</a>).</li>
+  <li>Load bản đồ, robot tự định vị đúng bằng AMCL (<a href="lesson.html?m=9&amp;l=00-gioi-thieu">Module 9</a>).</li>
+  <li>Robot nhận danh sách ≥ 3 điểm giao hàng (waypoint), tự động đi lần lượt qua từng điểm bằng Nav2 (<a href="lesson.html?m=10&amp;l=00-gioi-thieu">Module 10</a>, <a href="lesson.html?m=12&amp;l=00-gioi-thieu">Module 12</a>).</li>
+  <li>Robot tự né được vật cản tĩnh không có trong bản đồ gốc (đặt thêm hộp mô phỏng hàng hóa) — kiểm tra costmap + inflation hoạt động đúng.</li>
+  <li>Có log/report: tổng thời gian, quãng đường, số lần phải recovery (spin/backup).</li>
+</ol>
+
+<h2>Mở rộng tùy chọn (cho học viên khá/giỏi, cộng điểm)</h2>
+<ul>
+  <li>Vật cản <strong>động</strong> (một actor/robot khác di chuyển trong world) — kiểm tra local costmap cập nhật theo thời gian thực.</li>
+  <li>Tối ưu <strong>thứ tự</strong> ghé các điểm giao hàng (bài toán kiểu TSP đơn giản) trước khi gửi cho Nav2 — mở rộng sang thuật toán tối ưu, không chỉ ROS.</li>
+  <li>Giao diện đơn giản (web dashboard hoặc RViz panel tùy chỉnh) để nhập điểm giao hàng thay vì hard-code trong script.</li>
+  <li>So sánh định lượng 2 bộ controller (DWB vs MPPI, <a href="lesson.html?m=10&amp;l=03-local-controller">Module 10</a>) trên cùng kịch bản, đưa ra khuyến nghị — phần này rất hợp để làm chương "kết quả thực nghiệm" trong báo cáo tốt nghiệp.</li>
+</ul>
+
+<h2>Tiêu chí đánh giá (rubric)</h2>
+<table>
+  <thead><tr><th>Tiêu chí</th><th>Trọng số</th><th>Mô tả</th></tr></thead>
+  <tbody>
+    <tr><td>Chạy được end-to-end</td><td>30%</td><td>SLAM → map → Nav2 → giao đủ các điểm, không crash</td></tr>
+    <tr><td>Chất lượng code</td><td>20%</td><td>Package tách hợp lý, launch file dùng lại được, có comment/README</td></tr>
+    <tr><td>Hiểu lý thuyết</td><td>25%</td><td>Giải thích được vì sao chọn planner/controller này, đọc hiểu costmap/BT — có thể chấm qua phỏng vấn ngắn hoặc câu hỏi viết</td></tr>
+    <tr><td>Mở rộng/sáng tạo</td><td>15%</td><td>Có làm thêm phần tùy chọn ở trên hoặc biến thể riêng</td></tr>
+    <tr><td>Báo cáo/trình bày</td><td>10%</td><td>Video demo + báo cáo ngắn (kiến trúc hệ thống, kết quả, hạn chế)</td></tr>
+  </tbody>
+</table>
+
+<div class="callout">
+<p><strong>25% rubric là "Hiểu lý thuyết"</strong> — chạy được không đủ, phải giải thích được VÌ SAO. Ôn lại <a href="lesson.html?m=10&amp;l=03-local-controller">so sánh DWB/RPP/MPPI</a> và <a href="lesson.html?m=11&amp;l=02-doc-bt-xml">cây BT thật</a> trước khi bảo vệ đồ án — 2 bài đó là nơi hay bị hỏi nhất.</p>
+</div>
+
+<h2>Thử ngay</h2>
+<p>Đọc tiếp <a href="lesson.html?m=13&amp;l=02-cach-bat-dau">Cách bắt đầu & nộp bài</a> để xem 5 bước thực hiện cụ thể và ví dụ minh họa 1 lượt chạy hoàn chỉnh.</p>

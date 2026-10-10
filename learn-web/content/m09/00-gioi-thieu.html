@@ -1,0 +1,26 @@
+<h1>SLAM vs Localization: tạo bản đồ khác dùng bản đồ</h1>
+<p class="lead">Module 8 trả lời "bản đồ hình thành thế nào". Module này trả lời một câu hỏi khác hẳn: <strong>đã có sẵn bản đồ rồi, robot mới bật lên — nó đang ở đâu trên bản đồ đó?</strong> Dễ nhầm 2 việc này vì cả hai đều publish TF <code>map → odom</code>, nhìn bề ngoài giống hệt nhau trong RViz.</p>
+
+<div class="goals">
+  <h3>Sau module này bạn sẽ</h3>
+  <ul>
+    <li>Giải thích đúng 3 bước <strong>predict / update / resample</strong> của particle filter bằng lời của riêng bạn, không chỉ "nó tự sửa"</li>
+    <li>Đọc được công thức thật AMCL dùng để chấm điểm một hạt (likelihood field model) và mô hình nhiễu khi hạt "di chuyển" (odometry motion model)</li>
+    <li>Phân biệt rạch ròi AMCL và <code>slam_toolbox</code> ở <code>mode: localization</code> — cùng việc, khác thuật toán, khác hẳn cách khởi động</li>
+    <li>Giải thích được (không cần đọc lại code) vì sao panel Nav2 trong RViz báo "Localization: Inactive" khi dùng <code>slam_toolbox</code>, dù hệ thống chạy đúng — đọc thẳng từ mã nguồn thật, không phải bug</li>
+    <li>Đọc hiểu <code>/amcl_pose</code> — phân biệt pose ước lượng và độ không chắc chắn (hiệp phương sai) trong cùng 1 message</li>
+  </ul>
+</div>
+
+<h2>Bức tranh tổng thể: 2 cách, 1 nhiệm vụ</h2>
+<p>Dự án Atlas hỗ trợ cả 2 cách định vị trên cùng một bản đồ đã lưu, chọn qua đúng 1 tham số launch. Bấm chọn từng nhánh để xem dữ liệu đi đường nào:</p>
+<div class="scene" data-scene="localization-overview"></div>
+
+<h2>Vì sao không dùng lại chính <code>slam_toolbox</code> ở <code>mode: mapping</code>?</h2>
+<p>Về lý thuyết <code>slam_toolbox</code> vẫn có thể "định vị" bằng cách tiếp tục vẽ map như Module 8 — nhưng vậy thì bản đồ sẽ bị sửa/mở rộng mỗi lần chạy, mất hết ý nghĩa "bản đồ cố định dùng lại nhiều lần". <code>mode: localization</code> (của <code>slam_toolbox</code>) và AMCL đều giải quyết đúng vấn đề đó: khoá bản đồ lại, chỉ còn ước lượng pose robot trên bản đồ tĩnh — khác nhau ở <strong>thuật toán</strong> dùng để ước lượng pose đó.</p>
+
+<h2>Chuẩn bị</h2>
+<pre><code>cd ~/atlas_sim
+colcon build --packages-select atlas_slam
+source install/setup.bash</code></pre>
+<p>Cần bản đồ đã lưu từ <a href="lesson.html?m=8&amp;l=07-bai-tap">Module 8</a> — dùng <code>src/atlas_slam/maps/maze_map.yaml</code> có sẵn trong repo, hoặc bản đồ tự vẽ ở bài tập Module 8. Nếu định dùng <code>localization:=slam_toolbox</code>, cần thêm file <code>.posegraph</code>/<code>.data</code> cùng tên (serialize, không phải <code>map_saver_cli</code> — đúng gotcha đã học ở Module 8 bài 5).</p>

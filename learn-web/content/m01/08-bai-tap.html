@@ -1,0 +1,35 @@
+<h1>Bài tập: temperature_monitor</h1>
+<p class="lead">Tự viết lại từ đầu để nhớ kiến thức, không copy <code>ros2_basics</code> rồi đổi tên. Mục tiêu là hiểu, không phải chạy đúng từng dòng.</p>
+
+<div class="goals">
+  <h3>Bạn cần làm</h3>
+  <ul>
+    <li><strong>temp_sensor</strong>: publish nhiệt độ mỗi giây, kiểu <code>std_msgs/Float64</code>, có parameter giá trị nền</li>
+    <li><strong>temp_alert</strong>: subscribe topic đó, log <code>WARN</code> khi vượt <code>threshold_celsius</code> (mặc định 28.0), ngược lại log <code>INFO</code></li>
+    <li><strong>Launch file</strong> chạy cả hai, cho phép đổi ngưỡng qua tham số dòng lệnh</li>
+  </ul>
+</div>
+
+<h2>Hình dung luồng dữ liệu</h2>
+<p>Trước khi viết, hãy vẽ ra giấy: node nào publish, topic tên gì, node nào subscribe, và tham số nào nằm ở đâu. Đối chiếu với mô hình dưới để kiểm tra.</p>
+
+<div class="scene" data-scene="ros-graph"></div>
+
+<h2>Gợi ý</h2>
+<ul>
+  <li>Đọc <code>threshold_celsius</code> một lần hay mỗi lần trong callback? Trả lời được câu này cần hiểu bài Parameter.</li>
+  <li>Muốn test nhanh mà không viết <code>temp_sensor</code>, dùng tạm <code>sensor_publisher</code> và đổi <code>base_temperature</code> bằng <code>ros2 param set</code> để vượt ngưỡng.</li>
+</ul>
+
+<h2>Tự kiểm tra</h2>
+<div class="goals">
+  <h3>Đã xong khi</h3>
+  <ul>
+    <li><code>ros2 run</code> chạy được từng node riêng lẻ</li>
+    <li><code>ros2 launch</code> chạy cả hai cùng lúc, đổi <code>threshold_celsius:=</code> thì hành vi đổi theo</li>
+    <li>Nhiệt độ vượt ngưỡng thì log hiện <code>WARN</code>, không phải <code>INFO</code></li>
+    <li>Giải thích được vì sao nhiệt độ liên tục dùng topic, không dùng service</li>
+  </ul>
+</div>
+
+<div class="callout tip"><p>Làm xong bài này là kết thúc Module 1. Module 2 sẽ dạy cách biểu diễn vị trí và hướng của robot trong không gian (TF2).</p></div>

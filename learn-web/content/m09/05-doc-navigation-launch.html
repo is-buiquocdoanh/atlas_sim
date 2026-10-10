@@ -1,0 +1,54 @@
+<h1>Đọc navigation.launch.py (phần localization)</h1>
+<p class="lead">1 file, 2 phương án định vị chọn qua tham số, cộng thêm toàn bộ node Nav2 core (costmap/planner/controller — <a href="lesson.html?m=10&amp;l=00-gioi-thieu">Module 10</a>). Bài này chỉ đọc phần liên quan tới localization — đủ để hiểu 2 lỗi thật đã gặp và cách dự án né chúng.</p>
+
+<h2>7 tham số điều khiển, không sửa code</h2>
+<pre><code>map            -- đường dẫn .yaml bản đồ, dùng CHUNG cho cả AMCL và slam_toolbox
+controller     -- dwb | rpp | mppi (Module 10)
+localization   -- amcl | slam_toolbox
+use_sim_time, autostart, rviz
+initial_pose_x/y/z/yaw  -- CHỈ dùng khi localization:=slam_toolbox</code></pre>
+<p>Cùng 1 tham số <code>map</code> phục vụ cả 2 kiểu định vị theo 2 cách khác nhau: AMCL đọc thẳng file <code>.yaml</code>; <code>slam_toolbox</code> tự suy ra đường dẫn <code>.posegraph</code>/<code>.data</code> bằng cách bỏ đuôi <code>.yaml</code>, giả định chúng nằm cùng thư mục cùng tên gốc — đúng như <code>map_saver_cli</code> + <code>serialize_map</code> tạo ra nếu chạy cùng lúc (Module 8 bài 5):</p>
+<pre><code>slam_map_file = PythonExpression(["'", map_yaml_file, "'[:-5]"])</code></pre>
+
+<h2>GroupAction + IfCondition: 2 nhánh loại trừ nhau</h2>
+<pre><code>is_amcl = PythonExpression([
+    "'", LaunchConfiguration("localization"), "' == 'amcl'"])
+is_slam_toolbox = PythonExpression([
+    "'", LaunchConfiguration("localization"), "' == 'slam_toolbox'"])
+
+amcl_localization_nodes = GroupAction(
+    condition=IfCondition(is_amcl), actions=[...])
+slam_toolbox_localization_nodes = GroupAction(
+    condition=IfCondition(is_slam_toolbox), actions=[...])</code></pre>
+<p>Cả 2 <code>GroupAction</code> đều được thêm vào <code>LaunchDescription</code> — launch system tự chỉ chạy nhánh có <code>condition</code> đúng, nhánh kia coi như không tồn tại. Không có <code>if/else</code> Python thường ở đây vì toàn bộ danh sách action phải dựng xong TRƯỚC khi biết giá trị thật của tham số launch (chỉ có lúc chạy mới biết).</p>
+
+<h2>Gotcha thật #1: RewrittenYaml biến list số thành chuỗi</h2>
+<p>Comment thật trong file giải thích vì sao <code>map_start_pose</code> KHÔNG được tiêm qua <code>RewrittenYaml</code> như các tham số khác:</p>
+<pre><code># RewrittenYaml chỉ convert_types cho scalar (bool/int/float), chuỗi
+# "[0.0, 0.0, 0.0]" bị ghi thành STRING trong YAML cuối cùng thay vì
+# list số thực, khiến slam_toolbox crash (SIGABRT) vì đọc sai kiểu.</code></pre>
+<p><code>map_start_pose</code> cần kiểu <code>double[]</code> (3 số thực) — nhưng cơ chế rewrite YAML chuẩn chỉ xử lý từng giá trị đơn (string/bool/số), không parse được cú pháp list lồng bên trong 1 chuỗi thay thế. Thử tiêm theo cách thông thường, slam_toolbox nhận một chuỗi ký tự thay vì mảng số — crash ngay khi khởi động.</p>
+
+<h2>Gotcha thật #2: nối Substitution lại thành 1 chuỗi dính liền</h2>
+<p>Cách né gotcha #1 tưởng hợp lý — truyền thẳng 1 list 3 <code>LaunchConfiguration</code> vào <code>parameters=[{"map_start_pose": [...]}]</code> — cũng KHÔNG hoạt động, theo đúng comment đã tự kiểm chứng trong code:</p>
+<pre><code># Node(parameters=[{"key": [Substitution, Substitution, ...]}]) KHÔNG
+# tách 3 phần tử thành 3 số double riêng -- launch nối chúng lại thành
+# 1 chuỗi duy nhất (đã tự kiểm chứng: "0.0"+"0.0"+"0.0" -> "0.00.00.0")</code></pre>
+<p>Giải pháp thật — <code>OpaqueFunction</code>, gọi <code>.perform(context)</code> trên từng <code>LaunchConfiguration</code> RIÊNG LẺ ngay lúc launch để lấy ra 3 chuỗi số thật, tự <code>float()</code> rồi mới ghép thành 1 list Python:</p>
+<pre><code>def _make_slam_toolbox_node(context, *args, **kwargs):
+    start_pose = [
+        float(LaunchConfiguration("initial_pose_x").perform(context)),
+        float(LaunchConfiguration("initial_pose_y").perform(context)),
+        float(LaunchConfiguration("initial_pose_yaw").perform(context)),
+    ]
+    node = Node(..., parameters=[slam_toolbox_localization_params,
+                                  {"map_start_pose": start_pose}])
+    return [node]</code></pre>
+<p><code>OpaqueFunction</code> trì hoãn việc build Node tới đúng lúc launch system đã có toàn bộ giá trị thật của tham số — đây là cách duy nhất tạo được 1 tham số kiểu <code>double[]</code> mà giá trị lấy từ launch argument, theo đúng 2 gotcha đã xác minh ở trên.</p>
+
+<h2>AMCL không cần trò này</h2>
+<p>Vì AMCL không có tham số kiểu list cần tiêm — <code>configured_params</code> (dùng chung cho mọi node AMCL/Nav2 core) chỉ cần <code>RewrittenYaml</code> bình thường, tiêm 3 scalar <code>use_sim_time</code>/<code>autostart</code>/<code>yaml_filename</code>. 2 gotcha trên chỉ xuất hiện ở nhánh <code>slam_toolbox</code>, đúng lý do nhánh đó cần hẳn 1 <code>OpaqueFunction</code> riêng còn nhánh AMCL thì không.</p>
+
+<h2>Thử ngay</h2>
+<pre><code>cat -n src/atlas_slam/launch/navigation.launch.py | sed -n '1,40p'</code></pre>
+<p>Đọc nguyên văn docstring đầu file — liệt kê sẵn mọi cách chạy (AMCL mặc định, đổi controller, dùng slam_toolbox). Thử cố tình tạo lại lỗi SIGABRT: tạm sửa <code>_make_slam_toolbox_node</code> thành tiêm <code>map_start_pose</code> thẳng qua <code>RewrittenYaml</code> như các tham số khác, chạy lại với <code>localization:=slam_toolbox</code>, quan sát crash — rồi <code>git checkout</code> trả lại nguyên trạng.</p>

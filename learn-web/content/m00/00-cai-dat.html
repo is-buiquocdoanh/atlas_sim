@@ -1,0 +1,63 @@
+<h1>Cài đặt & build</h1>
+<p class="lead">Làm một lần, xong là dùng cho mọi module. Các bài học từ đây trở đi giả định đúng bước đã làm trong trang này: workspace đã build, terminal đã source.</p>
+
+<div class="goals">
+  <h3>Sau bài này bạn sẽ có</h3>
+  <ul>
+    <li>ROS 2 Humble và Gazebo Fortress chạy được trên máy</li>
+    <li>Repo <code>atlas_sim</code> đã clone và build sạch bằng <code>colcon</code></li>
+    <li>Một lệnh mẫu chạy thành công để xác nhận mọi thứ đúng</li>
+  </ul>
+</div>
+
+<h2>1. Hệ điều hành</h2>
+<p>Cần <strong>Ubuntu 22.04</strong> (cài trực tiếp, dual-boot, hoặc WSL2 trên Windows). Các bước dưới đây chạy trong terminal của Ubuntu đó.</p>
+
+<h2>2. Cài ROS 2 Humble</h2>
+<p>Bỏ qua bước này nếu máy đã có ROS 2 Humble (<code>echo $ROS_DISTRO</code> ra <code>humble</code>).</p>
+<pre><code>locale  # kiểm tra UTF-8, nếu thiếu thì chạy 3 dòng dưới
+sudo apt update && sudo apt install locales
+sudo locale-gen en_US en_US.UTF-8
+sudo update-locale LC_ALL=en_US.UTF-8 LANG=en_US.UTF-8</code></pre>
+<pre><code>sudo apt install software-properties-common
+sudo add-apt-repository universe
+sudo apt update && sudo apt install curl -y
+sudo curl -sSL https://raw.githubusercontent.com/ros/rosdistro/master/ros.key -o /usr/share/keyrings/ros-archive-keyring.gpg
+echo "deb [arch=$(dpkg --print-architecture) signed-by=/usr/share/keyrings/ros-archive-keyring.gpg] http://packages.ros.org/ros2/ubuntu $(. /etc/os-release && echo $UBUNTU_CODENAME) main" | sudo tee /etc/apt/sources.list.d/ros2.list > /dev/null</code></pre>
+<pre><code>sudo apt update
+sudo apt install ros-humble-desktop ros-dev-tools
+source /opt/ros/humble/setup.bash</code></pre>
+<div class="callout warn"><p>Đây là quy trình chuẩn của ROS 2 tại thời điểm viết bài. Nếu một lệnh báo lỗi do phía ROS đổi key/URL, tìm "ros2 humble install ubuntu debian" để lấy bản cập nhật.</p></div>
+
+<h2>3. Cài Gazebo Fortress và các gói Atlas cần</h2>
+<p>Atlas dùng <strong>Gazebo Fortress</strong> qua <code>ros-humble-ros-gz</code> — không phải Gazebo Classic (<code>ros-humble-gazebo-*</code>, tên gần giống nhưng là bản cũ, không tương thích).</p>
+<pre><code>sudo apt-get update
+sudo apt-get install -y ros-humble-ros-gz ros-humble-gz-ros2-control \
+  ros-humble-slam-toolbox ros-humble-navigation2 ros-humble-nav2-bringup \
+  ros-humble-teleop-twist-keyboard ros-humble-joy ros-humble-teleop-twist-joy \
+  ros-humble-twist-mux</code></pre>
+
+<h2>4. Clone và build repo</h2>
+<pre><code>git clone https://github.com/is-buiquocdoanh/atlas_sim.git ~/atlas_sim
+cd ~/atlas_sim
+source /opt/ros/humble/setup.bash
+colcon build
+source install/setup.bash</code></pre>
+<div class="callout key"><p><code>source install/setup.bash</code> chỉ có tác dụng cho terminal hiện tại. Mở terminal mới thì phải chạy lại — hoặc thêm 2 dòng <code>source</code> vào cuối <code>~/.bashrc</code> để khỏi gõ lại mỗi lần.</p></div>
+
+<h2>5. Kiểm tra mọi thứ đúng</h2>
+<p>Lệnh này chỉ mở RViz xem robot, chưa cần Gazebo — nhẹ, phù hợp để kiểm tra nhanh:</p>
+<pre><code>ros2 launch atlas_description display.launch.py</code></pre>
+<p>Thấy cửa sổ RViz hiện lên với mô hình robot Atlas là build đã đúng. Đóng cửa sổ (Ctrl+C trong terminal) rồi thử tiếp bước nặng hơn — mở Gazebo thật:</p>
+<pre><code>ros2 launch atlas_control controller.launch.py world:=maze.sdf</code></pre>
+<p>Thấy robot đứng trong mê cung ở Gazebo là máy đã sẵn sàng cho toàn bộ khóa học.</p>
+
+<h2>Quy ước dùng trong mọi bài học</h2>
+<div class="callout tip"><p>Từ Module 1 trở đi, mọi lệnh <code>ros2</code> giả định: bạn đang ở thư mục <code>~/atlas_sim</code>, trong một terminal đã <code>source install/setup.bash</code>. Khi một bài cần chạy nhiều lệnh <strong>cùng lúc</strong> (ví dụ một lệnh giữ terminal chạy mãi), bài học sẽ ghi rõ "Terminal 1", "Terminal 2" — mở đúng số terminal đó rồi copy từng khối lệnh vào đúng chỗ.</p></div>
+
+<h2>Lỗi hay gặp lúc cài đặt</h2>
+<div class="cards">
+  <div class="mini"><b>gz sim: command not found</b><span>Bản Fortress chưa có cú pháp <code>gz sim</code>. Dùng <code>ign gazebo</code> thay thế.</span></div>
+  <div class="mini"><b>colcon: command not found</b><span>Thiếu <code>python3-colcon-common-extensions</code>: <code>sudo apt install python3-colcon-common-extensions</code></span></div>
+  <div class="mini"><b>Package 'atlas_xxx' not found</b><span>Quên <code>source install/setup.bash</code> ở terminal đang dùng, hoặc chưa <code>colcon build</code> xong.</span></div>
+</div>

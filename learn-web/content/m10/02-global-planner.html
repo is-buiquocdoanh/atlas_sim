@@ -1,0 +1,65 @@
+<h1>Global planner: NavFn — Dijkstra vs A*</h1>
+<p class="lead"><strong>Global planner</strong> tính 1 đường đi hoàn chỉnh từ vị trí hiện tại tới goal, trên global costmap (bài trước) — chạy 1 lần (hoặc định kỳ chậm), KHÔNG quan tâm robot bẻ lái mượt hay không, đó là việc của controller (bài sau). <code>nav2_navfn_planner</code> cài CẢ HAI thuật toán kinh điển nhất của tìm đường trên lưới — bài này học cả hai, không chỉ cái Atlas đang dùng.</p>
+
+<h2>Trực giác: cùng 1 câu hỏi, khác cách đặt độ ưu tiên</h2>
+<ul>
+  <li><strong>Dijkstra</strong> — duyệt đều mọi hướng ra từ điểm xuất phát như sóng lan toả trên mặt nước, không hề biết đích nằm ở đâu, luôn tìm đúng đường ngắn nhất tuyệt đối.</li>
+  <li><strong>A*</strong> — dùng thêm 1 hàm ước lượng khoảng cách tới đích để "hướng" sóng lan nhanh về phía goal, duyệt ít ô hơn hẳn — nhưng vẫn ra đúng đường ngắn nhất tuyệt đối, KHÔNG phải đánh đổi độ chính xác lấy tốc độ (lý do toán học ở dưới).</li>
+</ul>
+<p>NavFn không biết gì về động học robot (bán kính quay tối thiểu) — đường đi có thể có góc vuông mà robot khó bám sát ngay lập tức.</p>
+
+<h2>Tự chạy cả 2 trên cùng 1 lưới — tự chọn cả điểm đầu/cuối</h2>
+<p>Bấm "📍 Đặt điểm xuất phát" hoặc "🚩 Đặt đích" rồi bấm vào 1 ô trống trên lưới để tự đặt lại — đổi điểm sẽ xoá sạch kết quả cũ (so sánh cũ không còn ý nghĩa với cặp điểm mới). Rồi bấm từng nút thuật toán — xem ô nào bị "duyệt" (tô màu) trước khi tìm ra đường. Với cặp điểm mặc định, Dijkstra tô gần như toàn bộ phần bản đồ đi được, đối xứng quanh điểm xuất phát; A* tô ÍT HƠN thấy rõ (thường ~20-25% ít hơn) — nhưng không ít tới mức "1 đường thẳng tới đích": bức tường chắn giữa buộc A* phải dò rộng ra khi hướng heuristic trỏ tới bị chặn, trước khi "nhận ra" phải vòng qua khe hở. Đây là giới hạn thật của heuristic: nó ước lượng tốt khi đường thẳng tới đích gần như đi được, kém hiệu quả hơn khi vật cản phá vỡ giả định đó — không phải lúc nào A* cũng "thần kỳ". Thử tự đặt 1 cặp điểm cùng phía bức tường (không cần vòng qua khe hở) — chênh lệch Dijkstra/A* sẽ lớn hơn hẳn, đúng dự đoán từ lý thuyết. Số ô duyệt VÀ thời gian tính toán đều được đo thật (<code>performance.now()</code>, trung bình qua 300 lần chạy liên tiếp — lưới nhỏ quá để tin 1 lần đo đơn lẻ), so sánh trực tiếp ngay khi chạy đủ cả 2. Đường cam 2 lần chạy có thể lệch hình dạng đôi chút dù dài bằng nhau — khi có nhiều đường cùng ngắn nhất, thứ tự duyệt khác nhau chọn ra đường khác nhau, cả 2 vẫn đúng:</p>
+<div class="scene" data-scene="navfn-dijkstra-path"></div>
+
+<h2>Toán học cốt lõi: best-first search với f(n) = g(n) + h(n)</h2>
+<p>Cả Dijkstra lẫn A* đều là 1 thuật toán <strong>best-first search</strong> duy nhất: giữ 1 hàng đợi ưu tiên các ô "biên giới" (đã biết tới được nhưng chưa xử lý), luôn lấy ra ô có độ ưu tiên <code>f(n)</code> thấp nhất để xử lý tiếp. Khác biệt duy nhất nằm ở công thức tính <code>f(n)</code>:</p>
+<pre><code>g(n) = chi phí THẬT đã đi từ điểm xuất phát tới ô n (số bước lưới)
+h(n) = ước lượng chi phí CÒN LẠI từ n tới đích (heuristic)
+
+Dijkstra:  f(n) = g(n)            (bỏ qua h -- không "nhìn" về phía đích)
+A*:        f(n) = g(n) + h(n)     (cộng thêm ước lượng, "hướng" việc dò)</code></pre>
+<p>Hệ quả trực tiếp: <strong>Dijkstra chính là A* với h(n) ≡ 0</strong> — không phải 2 thuật toán riêng biệt, mà là 1 công thức, 2 cách chọn heuristic. Scene ở trên code y hệt 1 hàm <code>search(weight)</code> cho cả 2, chỉ khác tham số <code>weight</code> nhân vào <code>h(n)</code> — đúng bằng chứng cho nhận định này.</p>
+
+<h2>Vì sao A* vẫn đúng tuyệt đối — không phải đoán mò</h2>
+<p>Chìa khóa là khái niệm <strong>heuristic admissible (thừa nhận được)</strong>: <code>h(n)</code> không bao giờ được ước lượng CAO HƠN chi phí thật còn lại. Scene dùng khoảng cách đường thẳng Euclid tới đích làm <code>h(n)</code>:</p>
+<pre><code>h(n) = √[(n.x - đích.x)² + (n.y - đích.y)²]</code></pre>
+<p>Trên lưới 4 hướng (chỉ đi ngang/dọc, mỗi bước chi phí 1), đường đi thật luôn dài HƠN HOẶC BẰNG đường thẳng Euclid nối 2 điểm — đường thẳng là quãng đường ngắn nhất có thể trong mọi hình học, lưới chỉ có thể làm nó dài thêm (phải vòng tránh vật cản, phải đi theo trục ngang/dọc), không bao giờ ngắn hơn. Vậy <code>h(n)</code> không bao giờ overestimate → admissible → A* vẫn được toán học đảm bảo tìm đúng đường ngắn nhất, y hệt Dijkstra, chỉ khác là nó bỏ qua được phần lớn những ô "rõ ràng đi sai hướng" mà Dijkstra vẫn phải duyệt tới.</p>
+
+<h2>Chính thuật toán ở dạng pipeline (lưu đồ)</h2>
+<p>Cùng 1 chu trình lặp cho cả 2 — nhìn trực tiếp như 1 pipeline có vòng quay lại, đúng từng bước với hàm <code>search(weight)</code> đã chạy ở scene trên. Dijkstra và A* chỉ khác đúng 1 khung duy nhất: công thức đẩy hàng xóm vào <code>open</code> ở cuối:</p>
+<div class="scene" data-scene="astar-algorithm-flowchart"></div>
+<p>Nhìn lưu đồ sẽ thấy ngay vì sao "Dijkstra = A* với h≡0" không phải chỉ là 1 câu nói — toàn bộ pipeline giống hệt nhau, duy nhất khung "mở rộng hàng xóm" tính <code>f(m) = g'+weight·h(m)</code>, đặt <code>weight=0</code> là xoá hẳn phần "hướng đích" ra khỏi quyết định thứ tự xử lý.</p>
+
+<h2>Cơ chế thật trong mã nguồn — phức tạp hơn bản minh hoạ</h2>
+<p>Scene trên dùng chi phí bước đơn vị (unit-cost) cho dễ hiểu. <code>nav2_navfn_planner</code> thật (đọc trực tiếp <code>navfn.cpp</code>) tinh vi hơn — không lan theo bước nguyên, mà giải 1 "trường thế năng" liên tục bằng nội suy bậc 2 giữa 2 ô lân cận thấp nhất mỗi lần cập nhật, dùng hàng đợi ưu tiên kiểu "xô" (bucket) thay vì hàng đợi nhị phân (heap) để chạy nhanh hơn trên vi xử lý robot. Với A*, công thức cộng thêm đúng 1 dòng:</p>
+<pre><code>// navfn.cpp -- updateCellAstar()
+float dist = hypot(x - start[0], y - start[1]) * COST_NEUTRAL;  // = h(n)
+potarr[n] = pot;    // g(n) thật vẫn lưu nguyên, không bị h(n) làm sai lệch
+pot += dist;         // f(n)=g(n)+h(n) chỉ dùng để QUYẾT ĐỊNH thứ tự xử lý</code></pre>
+<div class="callout"><p><strong>Phát hiện khi đọc kỹ mã nguồn:</strong> cả 2 chế độ (đọc thẳng <code>navfn_planner.cpp</code>) đều dừng SỚM ngay khi tính xong thế năng của đúng ô xuất phát — không phải "chỉ A* mới dừng sớm, Dijkstra chạy hết bản đồ" như hay bị hiểu nhầm. Khác biệt tốc độ thật sự tới từ THỨ TỰ duyệt (A* hướng thẳng về phía ô xuất phát sớm hơn nhiều), không phải từ việc có dừng sớm hay không.</p></div>
+
+<h2>Cấu hình thật trong dự án Atlas</h2>
+<pre><code>planner_server:
+  ros__parameters:
+    planner_plugins: ["GridBased"]
+    GridBased:
+      plugin: "nav2_navfn_planner/NavfnPlanner"
+      use_astar: false      # Dijkstra, KHÔNG phải A*
+      allow_unknown: true    # cho phép vạch đường qua vùng CHƯA quét (xám)</code></pre>
+<p><code>use_astar: false</code> là lựa chọn CÓ CHỦ ĐÍCH — world Atlas đủ nhỏ để chênh lệch tốc độ giữa 2 thuật toán không đáng kể (đếm thử bằng scene ở trên: chênh nhau vài chục ô trên lưới nhỏ), trong khi Dijkstra có 1 lợi điểm thực dụng: hành vi dễ đoán hơn (không phụ thuộc chọn heuristic nào), dễ debug hơn khi có sự cố. <code>allow_unknown: true</code> cũng có chủ đích: nếu world chưa quét hết (vùng xám, Module 8), goal nằm trong vùng đó sẽ bị planner từ chối thẳng nếu tắt cờ này — risky (robot có thể đi vào chỗ chưa biết chắc an toàn) nhưng cần thiết để không bị kẹt cứng với bản đồ chưa hoàn chỉnh.</p>
+<p><code>planner_server</code> giống hệt ở cả 3 file cấu hình controller (<code>nav2_params_dwb/rpp/mppi.yaml</code>) — không đổi theo controller, khác hẳn khối <code>FollowPath</code> (bài sau).</p>
+
+<h2>Vì sao không dùng Smac/Hybrid-A*</h2>
+<p><code>nav2_smac_planner</code> (họ Hybrid-A*/lattice, không cấu hình sẵn trong Atlas) tính TỚI động học — robot không thể quay tại chỗ theo mọi góc tùy ý nếu là xe có bán kính quay tối thiểu — đường ra mượt hơn, sát thực tế hơn, nhưng tốn tính toán hơn NavFn. Robot diff-drive (quay tại chỗ được, Module 5) không hưởng lợi nhiều từ việc tính thêm ràng buộc đó — đây là lý do NavFn đơn giản vẫn đủ dùng cho Atlas. Không có lựa chọn "luôn đúng": với robot có bán kính quay tối thiểu thật (xe hơi, xe kéo), NavFn sẽ ra đường robot không thể bám theo chính xác.</p>
+
+<h2>Thử ngay</h2>
+<pre><code>ros2 launch atlas_bringup bringup.launch.py world:=maze.sdf</code></pre>
+<pre><code>ros2 launch atlas_slam navigation.launch.py \
+  map:=$(pwd)/src/atlas_slam/maps/maze_map.yaml</code></pre>
+<p>Gửi goal qua RViz ("Nav2 Goal", chi tiết ở <a href="lesson.html?m=10&amp;l=05-gui-cli-goal">bài 5</a>) tới 1 điểm sau góc cua — quan sát đường màu xanh (topic <code>/plan</code>) hiện ra NGAY LẬP TỨC (không cần robot nhúc nhích), xác nhận planner tính 1 lần trước khi controller bắt đầu bám theo.</p>
+<pre><code>ros2 topic echo /plan --once --no-arr | grep frame_id</code></pre>
+<p>Phải ra <code>"map"</code> — global planner luôn làm việc trên frame <code>map</code>, không phải <code>odom</code> (khác controller, bài sau).</p>
+<pre><code># thử đổi use_astar: true trong nav2_params_mppi.yaml, chạy lại, so sánh
+# đường đi + thời gian ra /plan -- rồi git checkout trả lại nguyên trạng
+ros2 param get /planner_server GridBased.use_astar</code></pre>

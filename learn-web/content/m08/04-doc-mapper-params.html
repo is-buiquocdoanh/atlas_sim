@@ -1,0 +1,64 @@
+<h1>Đọc trọn mapper_params.yaml</h1>
+<p class="lead">Các bài trước đã trích từng đoạn liên quan tới scan matching/loop closure. Bài này đi hết file <code>atlas_slam/config/mapper_params.yaml</code> theo đúng thứ tự thật, nhóm theo chức năng — không bỏ sót tham số nào.</p>
+
+<h2>Khung & dữ liệu vào</h2>
+<pre><code>solver_plugin: solver_plugins::CeresSolver
+ceres_linear_solver: SPARSE_NORMAL_CHOLESKY
+ceres_preconditioner: SCHUR_JACOBI
+ceres_trust_strategy: LEVENBERG_MARQUARDT
+ceres_dogleg_type: TRADITIONAL_DOGLEG
+ceres_loss_function: None
+
+odom_frame: odom
+map_frame: map
+base_frame: base_footprint
+scan_topic: /scan
+mode: mapping</code></pre>
+<p><code>solver_plugin</code>/<code>ceres_*</code> đã nói ở bài Pose graph — Ceres giải bài toán tối ưu phi tuyến mỗi khi graph đổi. 3 frame khớp đúng cây TF đã xây từ Module 3 (<code>map</code> là frame mới, do <code>slam_toolbox</code> tự publish — nó chính là node tạo ra <code>map → odom</code> mà Module 3 từng nói "chưa có ai publish"). <code>mode: mapping</code> — chạy để <strong>tạo</strong> bản đồ mới; giá trị khác (<code>localization</code>) dùng ở Module 9 khi nạp lại bản đồ đã lưu để chỉ định vị, không sửa bản đồ nữa.</p>
+
+<h2>Giới hạn phần cứng LiDAR</h2>
+<pre><code>min_laser_range: 0.12
+max_laser_range: 9.5</code></pre>
+<p>Không phải tham số tuỳ chọn — phải khớp giới hạn vật lý thật của LiDAR mô phỏng (Module 6). Đặt sai (ví dụ <code>max_laser_range</code> cao hơn LiDAR thật) không gây lỗi rõ ràng, chỉ khiến <code>slam_toolbox</code> tin vào các điểm quét ở xa mà bản thân cảm biến không đáng tin ở khoảng đó.</p>
+
+<h2>Khi nào quét thêm (bài 1)</h2>
+<pre><code>minimum_travel_distance: 0.2
+minimum_travel_heading: 0.2
+scan_buffer_size: 10</code></pre>
+<p><code>scan_buffer_size</code> chưa nói ở bài 1: số lần quét gần nhất <code>slam_toolbox</code> giữ trong bộ nhớ đệm để so khớp — không phải giới hạn tổng số node trong pose graph (pose graph giữ toàn bộ lịch sử), mà là cửa sổ trượt dùng cho các phép so khớp "lân cận gần" nhanh.</p>
+
+<h2>Vùng tìm kiếm scan matching thường (bài 1)</h2>
+<pre><code>correlation_search_space_dimension: 0.5
+correlation_search_space_resolution: 0.01
+correlation_search_space_smear_deviation: 0.1</code></pre>
+
+<h2>Loop closure (bài 3)</h2>
+<pre><code>do_loop_closing: true
+loop_search_maximum_distance: 3.0
+loop_match_minimum_chain_size: 10
+loop_match_maximum_variance_coarse: 3.0
+loop_match_minimum_response_coarse: 0.45
+loop_match_minimum_response_fine: 0.55
+loop_search_space_dimension: 8.0
+loop_search_space_resolution: 0.05
+loop_search_space_smear_deviation: 0.03</code></pre>
+<p>So với vùng tìm kiếm scan-matching thường (0.5m/1cm bước), vùng tìm loop closure rộng hơn nhiều (8m/5cm bước) — hợp lý: loop closure phải tìm một vị trí <em>đã lâu không ghé qua</em>, không thể tin odometry định vị gần đúng như scan matching liên tiếp. Đổi lại bước nhảy thô hơn (5cm so với 1cm) vì vùng tìm rộng hơn 16× — phải đánh đổi độ chính xác dò để không nổ số bước tính toán.</p>
+
+<h2>Trọng số khi tối ưu graph</h2>
+<pre><code>distance_variance_penalty: 0.5
+angle_variance_penalty: 1.0</code></pre>
+<p>Khi Ceres giải graph, mỗi cạnh có một "độ tin cậy" — cạnh tin cậy cao kéo node mạnh hơn cạnh tin cậy thấp. 2 tham số này là hệ số phạt phương sai cho sai lệch khoảng cách/góc tương ứng — đặt <code>angle_variance_penalty</code> gấp đôi <code>distance_variance_penalty</code> nghĩa là sai lệch góc bị "phạt" nặng hơn sai lệch khoảng cách khi tối ưu, phản ánh thực tế: một chút sai góc ở đầu một đoạn dài gây lệch vị trí rất xa ở cuối đoạn (lỗi hình học quen thuộc của mọi hệ odometry).</p>
+
+<h2>Xuất bản đồ cuối (bài 5)</h2>
+<pre><code>resolution: 0.05
+occupancy_threshold: 0.1</code></pre>
+<p>Chi tiết đầy đủ ở bài sau — đây là 2 tham số quyết định occupancy grid cuối cùng được "render" ra từ pose graph như thế nào.</p>
+
+<h2>Publish TF & cập nhật bản đồ</h2>
+<pre><code>transform_publish_period: 0.02   # 50Hz — publish map→odom
+map_update_interval: 2.0          # giây, chu kỳ render lại /map</code></pre>
+<p><code>transform_publish_period</code> rất nhanh (50Hz) vì TF cần mượt cho RViz/Nav2 theo kịp theo thời gian thực; <code>map_update_interval</code> chậm hơn hẳn (mỗi 2 giây) vì render lại toàn bộ occupancy grid từ pose graph là phép tính nặng hơn — không cần làm ở tần số TF.</p>
+
+<div class="callout">
+<p><strong>Không có tham số "cứ để mặc định" ở đây.</strong> Mỗi giá trị đều gắn với một ràng buộc thật: giới hạn phần cứng LiDAR, kích thước robot, hoặc — như bài 3 đã kể — một lỗi thật đã xảy ra và được sửa bằng đúng 2 con số trong file này.</p>
+</div>

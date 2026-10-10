@@ -1,0 +1,52 @@
+<h1>Bài tập: tạo tình huống kẹt, tùy chỉnh Behavior Tree</h1>
+<p class="lead">Áp dụng <a href="lesson.html?m=11&amp;l=01-behavior-tree-vs-state-machine">BT vs state machine</a>, <a href="lesson.html?m=11&amp;l=02-doc-bt-xml">Đọc BT XML</a>, <a href="lesson.html?m=11&amp;l=03-recovery-behaviors">Recovery behaviors</a>.</p>
+
+<h2>Phần A — Quan sát recovery tự kích hoạt</h2>
+<ol>
+  <li>Gửi 1 goal ở phía bên kia 1 bức tường dài trong <code>maze.sdf</code> (buộc robot phải đi vòng xa).</li>
+  <li>Trong lúc robot đang di chuyển, mở Gazebo, <strong>kéo thả 1 khối hộp</strong> (từ thư viện có sẵn, hoặc <em>Insert</em> → <em>Box</em>) chặn ngang đúng đường robot sắp đi qua.</li>
+  <li>Quan sát terminal chạy <code>navigation.launch.py</code> — tìm log <code>ClearingActions</code>/<code>Spin</code>/<code>Wait</code>/<code>BackUp</code> (tên các node trong BT XML) xuất hiện.</li>
+  <li>Ghi lại: recovery nào kích hoạt trước, robot có vượt qua được chướng ngại mới không, hay cuối cùng vẫn <code>FAILED</code> sau 6 lần thử (<code>number_of_retries="6"</code>).</li>
+</ol>
+
+<h2>Phần B — Tùy chỉnh Behavior Tree</h2>
+<ol>
+  <li>Copy file BT mặc định ra vị trí riêng:
+    <pre><code>mkdir -p src/atlas_slam/behavior_trees
+cp /opt/ros/humble/share/nav2_bt_navigator/behavior_trees/\
+navigate_to_pose_w_replanning_and_recovery.xml \
+   src/atlas_slam/behavior_trees/atlas_recovery.xml</code></pre>
+  </li>
+  <li>Mở file vừa copy, thêm <strong><code>DriveOnHeading</code></strong> vào trong <code>&lt;RoundRobin&gt;</code> (plugin đã nạp sẵn, chỉ thiếu node gọi nó — bài 3):
+    <pre><code>&lt;DriveOnHeading dist_to_travel="0.3" speed="0.1" time_allowance="5"/&gt;</code></pre>
+  </li>
+  <li>Trỏ <code>bt_navigator</code> dùng file mới — thêm vào <code>nav2_params_mppi.yaml</code> (khối <code>bt_navigator</code>):
+    <pre><code>default_nav_to_pose_bt_xml: "src/atlas_slam/behavior_trees/atlas_recovery.xml"</code></pre>
+    (dùng đường dẫn tuyệt đối thật khi chạy — cùng gotcha đường dẫn tuyệt đối đã gặp ở <code>serialize_map</code>, Module 8.)
+  </li>
+  <li>Lặp lại Phần A — <code>RoundRobin</code> giờ xoay qua <strong>5</strong> hành vi thay vì 4, xác nhận bằng cách đặt vật cản nhiều lần, chờ đủ lâu để thấy <code>DriveOnHeading</code> xuất hiện trong log.</li>
+</ol>
+
+<h2>Gợi ý</h2>
+<ul>
+  <li>Robot "thất bại" sau 6 lần thử KHÔNG phải lỗi — đó là thiết kế có chủ đích (tránh robot kẹt vĩnh viễn, báo lại cho tầng trên biết để xử lý khác, vd thông báo người dùng) — đúng hiệu ứng đã thấy ở scene cây BT bài 2 khi đếm đủ 6 lần.</li>
+  <li>Nếu không thấy recovery kích hoạt dù đã chặn đường — kiểm tra lại vật cản có thật sự nằm trong tầm <code>/scan</code> không (Module 6), costmap có "thấy" nó không trước khi nghi ngờ BT.</li>
+</ul>
+
+<h2>Tự kiểm tra</h2>
+<ul>
+  <li>Có log thật ghi lại ít nhất 2 recovery behavior khác nhau kích hoạt trong 1 lần kẹt.</li>
+  <li>File <code>atlas_recovery.xml</code> chạy được, <code>bt_navigator</code> nạp đúng file mới (không rơi về file mặc định do đường dẫn sai).</li>
+  <li>Quan sát được <code>DriveOnHeading</code> thật sự chạy (robot tiến 1 đoạn ngắn, không chỉ xem trong file XML).</li>
+</ul>
+
+<h2>Tự kiểm tra trước khi qua Module 12</h2>
+<div class="goals">
+  <ul>
+    <li>Vẽ được (nói bằng lời) cấu trúc BT mặc định của Atlas từ gốc tới lá, không cần mở lại file</li>
+    <li>Giải thích được khác biệt <code>Sequence</code> và <code>Fallback</code>, và vì sao <code>GoalUpdated</code> đứng trước <code>RoundRobin</code></li>
+    <li>Sửa được 1 BT XML và trỏ <code>bt_navigator</code> dùng file mới mà không cần sửa code</li>
+    <li>Giải thích được vì sao <code>RoundRobin</code> (xoay vòng) hợp lý hơn luôn thử đúng 1 cách khi robot kẹt</li>
+  </ul>
+</div>
+<p>Xong hết → sang <strong>Module 12 — Waypoint following &amp; Nav2 Simple Commander API</strong>, nơi bạn tự viết code điều khiển Nav2 thay vì chỉ cấu hình nó.</p>

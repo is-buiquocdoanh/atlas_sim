@@ -1,0 +1,45 @@
+<h1>Occupancy grid: 2 định dạng bản đồ</h1>
+<p class="lead">Pose graph (bài 2) là thứ <code>slam_toolbox</code> thật sự suy luận trên — nhưng không ai lái robot bằng pose graph. Cuối cùng mọi thứ phải "render" ra một lưới ô vuông đơn giản: <strong>occupancy grid</strong>, mỗi ô mang một xác suất "có vật cản ở đây không".</p>
+
+<h2>Từ pose graph ra lưới ô vuông</h2>
+<p>Mỗi node trong pose graph mang theo đúng 1 lần quét LiDAR gốc + vị trí robot lúc quét. "Render" bản đồ nghĩa là: với mỗi node, chiếu từng điểm quét của nó lên lưới ô vuông toạ độ <code>map</code> (dùng vị trí robot <em>đã được Ceres tối ưu</em>, không phải vị trí odometry gốc), cộng dồn thống kê qua toàn bộ node. Ô nào thường xuyên "có điểm quét chạm vào" → xác suất occupied cao; ô nằm giữa robot và điểm quét (ánh sáng đi qua, không chạm gì) → xác suất free cao; ô chưa từng được quét tới → unknown.</p>
+<pre><code>resolution: 0.05           # 1 ô = 5cm × 5cm
+occupancy_threshold: 0.1   # xác suất > 0.1 → coi là occupied khi xuất ảnh</code></pre>
+
+<h2>Thử trực quan: kéo ngưỡng, xem lưới đổi màu</h2>
+<p>Mỗi ô dưới đây mang một xác suất occupied cố định (giống kết quả tích lũy từ nhiều lần quét chồng lên một góc tường). Kéo ngưỡng để xem ô nào bị xếp occupied/free thay đổi ra sao — đúng cơ chế <code>occupancy_threshold</code> làm khi xuất ảnh cuối:</p>
+<div class="scene" data-scene="occupancy-threshold"></div>
+
+<h2>Toàn cảnh: robot vừa đi vừa xây bản đồ</h2>
+<p>Ô tĩnh ở trên cho thấy <em>kết quả</em> của việc phân loại — còn bản đồ <em>hình thành</em> thế nào theo thời gian thực? Mô phỏng dưới đây ghép lại mọi mảnh đã học trong module: robot đi vòng quanh một cột trụ, LiDAR 36 tia quét theo chu kỳ, mỗi tia tô trắng các ô nó xuyên qua (free) và tô đen ô nó chạm phải (occupied) — đúng quy ước trắng/đen/xám vừa học ở trên. Pose graph (bài 2) rơi một node mỗi 0.5m đi được, và mỗi lần khép kín một vòng quanh cột trụ, một cạnh loop closure (bài 3) xuất hiện. Đây là mô hình minh hoạ <strong>nguyên lý raycasting</strong> cập nhật occupancy grid nói chung — không phải chi tiết nội bộ chính xác của <code>slam_toolbox</code> (vốn dùng lưới tương quan Gauss, <a href="lesson.html?m=8&amp;l=01-scan-matching">bài 1</a>), mà là cách trực quan nhất để thấy <em>vì sao</em> bản đồ "dày" dần lên khi robot di chuyển:</p>
+<div class="scene" data-scene="slam-live-mapping"></div>
+
+<h2>Định dạng 1 — <code>.pgm</code> + <code>.yaml</code> (Nav2/AMCL dùng)</h2>
+<pre><code>ros2 run nav2_map_server map_saver_cli -f ten_ban_do</code></pre>
+<p>Xuất ra đúng 1 ảnh grayscale (<code>.pgm</code>) + 1 file mô tả (<code>.yaml</code>). File thật của dự án, <code>maps/maze_map.yaml</code>:</p>
+<pre><code>image: maze_map.pgm
+mode: trinary
+resolution: 0.05
+origin: [-3.43, -2.34, 0]
+negate: 0
+occupied_thresh: 0.65
+free_thresh: 0.25</code></pre>
+<p><code>mode: trinary</code> nghĩa là ảnh chỉ còn <strong>3 mức</strong> (không phải xác suất liên tục nữa): trắng = free, đen = occupied, xám = unknown — mỗi pixel đã bị lượng tử hoá dứt khoát bằng <code>occupied_thresh</code>/<code>free_thresh</code> ngay lúc lưu. <code>origin</code> là toạ độ thật (mét, trong frame <code>map</code>) của góc pixel (0,0) — không phải tâm ảnh. <code>maze_map.pgm</code> có kích thước 140×100 pixel, đúng 140×0.05 = 7.0m × 100×0.05 = 5.0m — khớp kích thước world mê cung thật đã dựng từ Module 4.</p>
+<p>Định dạng này <strong>mất thông tin</strong>: một khi đã lưu, không còn pose graph, không còn Ceres để tối ưu lại gì nữa — chỉ còn 1 ảnh tĩnh. Đây là định dạng AMCL (Module 9) đọc để định vị.</p>
+
+<h2>Định dạng 2 — <code>.posegraph</code> + <code>.data</code> (slam_toolbox dùng)</h2>
+<pre><code>ros2 service call /slam_toolbox/serialize_map slam_toolbox/srv/SerializePoseGraph \
+  "{filename: '/home/you/atlas_sim/src/atlas_slam/maps/ten_ban_do'}"</code></pre>
+<p>Lưu <strong>toàn bộ pose graph gốc</strong> — mọi node, mọi cạnh, mọi quét LiDAR thô, chưa lượng tử hoá. Nạp lại bằng <code>/slam_toolbox/deserialize_map</code> (hoặc panel SlamToolboxPlugin trong RViz, bài 2) cho phép <strong>tiếp tục vẽ bản đồ</strong> từ đúng chỗ dừng lại, hoặc chạy <code>slam_toolbox</code> ở chế độ <code>localization</code> (Module 9 có tuỳ chọn <code>localization:=slam_toolbox</code> thay AMCL) — việc <code>.pgm</code> tĩnh không thể làm được vì nó đã bỏ hết pose graph.</p>
+
+<div class="callout"><p><strong>Gotcha thật, ghi trong <code>maps/README.md</code>:</strong> <code>filename</code> của <code>serialize_map</code> phải là <strong>đường dẫn tuyệt đối</strong>. Đường dẫn tương đối bị phân giải theo thư mục làm việc <em>của node <code>slam_toolbox</code></em> — thường là thư mục nó được launch từ, không phải thư mục bạn đang gõ lệnh <code>ros2 service call</code> ở terminal khác — rất dễ lưu nhầm chỗ mà không báo lỗi gì.</p></div>
+
+<h2>2 định dạng không thay thế nhau được</h2>
+<table>
+<tr><th></th><th><code>.pgm</code>/<code>.yaml</code></th><th><code>.posegraph</code>/<code>.data</code></th></tr>
+<tr><td>Lưu bằng</td><td><code>map_saver_cli</code></td><td>service <code>serialize_map</code></td></tr>
+<tr><td>Nội dung</td><td>ảnh 3 mức, tĩnh</td><td>pose graph đầy đủ</td></tr>
+<tr><td>Dùng cho</td><td>AMCL (Module 9)</td><td>slam_toolbox localization, tiếp tục mapping</td></tr>
+<tr><td>Sửa lại được?</td><td>Không</td><td>Có (nạp lại, đi thêm, lưu lại)</td></tr>
+</table>
+<p>README thật của dự án khuyên: lưu <strong>cả 2</strong> trong cùng một lần mapping, vì không có cách nào chuyển đổi từ <code>.pgm</code> ngược lại thành pose graph.</p>

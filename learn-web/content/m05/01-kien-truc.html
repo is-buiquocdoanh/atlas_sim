@@ -1,0 +1,32 @@
+<h1>Kiến trúc ros2_control</h1>
+<p class="lead"><code>ros2_control</code> không phải một node — nó là một <strong>framework</strong> gồm nhiều mảnh ghép cùng chạy trong một tiến trình (<code>controller_manager</code>), nói chuyện với nhau qua 2 khái niệm trung tâm: <strong>command interface</strong> và <strong>state interface</strong>.</p>
+
+<h2>3 lớp, 3 việc khác nhau</h2>
+<ul>
+  <li><strong>Hardware Interface</strong> — lớp chạm vào phần cứng thật (hoặc Gazebo). Với Atlas, đây là plugin <code>gz_ros2_control</code>: nó "giả vờ" là driver động cơ, đọc/ghi trực tiếp vào mô phỏng. Khai báo bao nhiêu <strong>interface</strong> (bao nhiêu con số đọc/ghi được) là việc của <code>&lt;ros2_control&gt;</code> trong URDF (bài sau).</li>
+  <li><strong>Controller Manager</strong> — vòng lặp trung tâm, chạy ở một tần số cố định (Atlas: 100Hz). Mỗi chu kỳ nó: đọc toàn bộ state interface từ hardware interface → đưa cho các controller đang <em>active</em> → gom command interface controller vừa ghi → gửi xuống hardware interface.</li>
+  <li><strong>Controller</strong> — logic thật sự. Atlas dùng 2 controller cùng lúc: <strong>diff_drive_controller</strong> (nhận <code>/cmd_vel</code>, tính vận tốc từng bánh, publish <code>/odom</code>) và <strong>joint_state_broadcaster</strong> (chỉ đọc state interface, publish lại thành <code>/joint_states</code> — chính là nguồn mà <code>robot_state_publisher</code> đã chờ từ <a href="lesson.html?m=3&amp;l=05-robot-state-publisher">Module 3</a>).</li>
+</ul>
+
+<h2>Command interface và state interface</h2>
+<p>Mỗi <strong>joint</strong> có thể khai báo nhiều interface, mỗi interface là <strong>một con số duy nhất</strong>:</p>
+<table>
+  <tr><th>Loại</th><th>Chiều</th><th>Ý nghĩa</th><th>Atlas dùng gì</th></tr>
+  <tr><td>command interface</td><td>controller → hardware</td><td>"tôi muốn joint này làm gì"</td><td><code>velocity</code> — tốc độ quay mong muốn (rad/s)</td></tr>
+  <tr><td>state interface</td><td>hardware → controller</td><td>"joint này đang thế nào"</td><td><code>position</code> + <code>velocity</code> — góc và tốc độ thật</td></tr>
+</table>
+<p>Atlas <strong>không</strong> dùng command interface <code>position</code> hay <code>effort</code> — 2 bánh xe là <code>continuous</code> (<a href="lesson.html?m=3&amp;l=03-joint">Module 3</a>, quay vô hạn), ra lệnh bằng "góc mong muốn" vô nghĩa với loại khớp này. Chỉ tốc độ mới hợp lý.</p>
+
+<h2>Sơ đồ — bấm từng luồng</h2>
+<p>3 luồng dữ liệu cùng tồn tại song song mỗi chu kỳ 100Hz:</p>
+<div class="scene" data-scene="ros2-control-architecture"></div>
+
+<h2>Vì sao tách controller_manager khỏi node ứng dụng</h2>
+<p>Bạn gõ <code>ros2 topic pub /cmd_vel ...</code> ở bài trước — đó là một node hoàn toàn độc lập, không biết gì về Gazebo hay <code>ros2_control</code>. Nó chỉ publish lên một topic tên <code>/cmd_vel</code>. <code>diff_drive_controller</code> subscribe đúng topic đó. Thay node phát lệnh (gõ tay → <code>teleop_twist_keyboard</code> ở Module 7 → Nav2 ở Module 10) không cần đổi gì ở tầng <code>ros2_control</code> — đúng kiểu tách lớp đã thấy xuyên suốt dự án.</p>
+
+<h2>Thử ngay</h2>
+<pre><code>ros2 launch atlas_control controller.launch.py</code></pre>
+<pre><code>ros2 control list_hardware_interfaces</code></pre>
+<p>Xem đúng 4 interface của 2 bánh: <code>velocity</code> command + <code>position</code>/<code>velocity</code> state cho mỗi bánh, đúng những gì bảng trên liệt kê — không hơn không kém.</p>
+<pre><code>ros2 control list_controllers</code></pre>
+<p>2 controller, cả hai ở trạng thái <code>active</code> (bài 5 giải thích trạng thái này đến từ đâu).</p>

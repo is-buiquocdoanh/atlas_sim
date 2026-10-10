@@ -1,0 +1,49 @@
+<h1>Particle Filter (Monte Carlo Localization)</h1>
+<p class="lead"><strong>AMCL</strong> (Adaptive Monte Carlo Localization) định vị robot trên bản đồ <strong>đã có</strong> bằng particle filter: thay vì tính ra 1 pose duy nhất, nó duy trì hàng trăm/nghìn giả thuyết song song — mỗi "hạt" (particle) là 1 pose <code>(x, y, yaw)</code> khả dĩ — liên tục lọc bớt giả thuyết sai, giữ lại giả thuyết khớp dữ liệu cảm biến nhất.</p>
+
+<h2>Trực giác: predict → update → resample</h2>
+<p>Vòng lặp 3 bước, lặp lại mỗi khi robot di chuyển đủ xa:</p>
+<ul>
+  <li><strong>Predict</strong> — mỗi hạt tự "di chuyển" theo đúng lệnh vận tốc robot vừa chạy, cộng thêm nhiễu ngẫu nhiên nhỏ (robot thật không di chuyển chính xác tuyệt đối).</li>
+  <li><strong>Update</strong> — so <code>/scan</code> thật với "nếu đứng ở vị trí hạt này thì sẽ thấy gì" (tính từ bản đồ) — hạt khớp thực tế hơn được trọng số cao hơn.</li>
+  <li><strong>Resample</strong> — hạt trọng số thấp bị loại, nhân bản thêm hạt quanh vị trí trọng số cao — đám mây hạt tự "co" dần về vị trí đúng.</li>
+</ul>
+<p>Rải hạt khắp map lúc khởi tạo chính là cách biểu diễn "không biết robot ở đâu" — rải càng rộng, càng chắc chắn vị trí thật nằm trong tập giả thuyết ban đầu.</p>
+
+<h2>Tự tay chạy particle filter</h2>
+<p>Robot thật (tam giác xanh, có thể ẩn) di chuyển trong 1 phòng nhỏ. 60 hạt (chấm cam, có vạch chỉ hướng) bắt đầu rải ngẫu nhiên khắp phòng. Bấm "Bước tiếp" hoặc bật tự động — mỗi bước chạy đúng 3 giai đoạn predict/update/resample ở trên:</p>
+<div class="scene" data-scene="particle-filter-mcl"></div>
+
+<h2>Toán học cốt lõi — predict: nhiễu "rot1 → trans → rot2"</h2>
+<p>AMCL dùng <code>robot_model_type: "nav2_amcl::DifferentialMotionModel"</code> — đúng mô hình kinh điển trong sách Probabilistic Robotics (comment gốc trong mã nguồn ghi thẳng "Prob Rob p 136"). Chuyển động giữa 2 bước odometry được tách thành 3 thành phần:</p>
+<pre><code>rot1  = góc quay để hướng về điểm đến
+trans = quãng đường thẳng đã đi
+rot2  = góc quay thêm để khớp hướng cuối cùng</code></pre>
+<p>Mỗi hạt không cộng thẳng <code>(rot1, trans, rot2)</code> — nó cộng một phiên bản <strong>đã nhiễu</strong> bằng nhiễu Gauss, phương sai tính từ chính 5 hệ số <code>alpha1-alpha5</code>:</p>
+<pre><code>var(rot1)  = alpha1 × rot1² + alpha2 × trans²
+var(trans) = alpha3 × trans² + alpha4 × (rot1² + rot2²)
+var(rot2)  = alpha1 × rot2² + alpha2 × trans²</code></pre>
+<p>Atlas đặt cả 5 hệ số bằng nhau: <code>alpha1=alpha2=alpha3=alpha4=alpha5=0.2</code>. Trực giác quan trọng nằm ở chỗ phương sai tỉ lệ <strong>bình phương</strong> quãng đường/góc đã đi — đi gấp đôi xa, nhiễu vị trí không tăng gấp đôi mà tăng gấp 4 lần (var ∝ trans²) — đúng lý do hạt "xoè rộng" nhanh dần mỗi bước predict, chứ không xoè đều.</p>
+
+<h2>Toán học cốt lõi — update: likelihood field model</h2>
+<p>Atlas đặt <code>laser_model_type: "likelihood_field"</code>. Trước khi lọc, AMCL dựng sẵn 1 lần (không phải mỗi hạt) một "trường khoảng cách": mỗi ô trống trên bản đồ được gán sẵn khoảng cách Euclid tới ô vật cản gần nhất, tính trong bán kính <code>laser_likelihood_max_dist = 2.0</code>m. Nhờ bước chuẩn bị này, chấm điểm 1 tia laser cho 1 hạt chỉ còn là <strong>tra bảng</strong>, không phải raycast lại từ đầu:</p>
+<pre><code>z  = khoảng cách từ điểm chạm tia (tính từ pose hạt) tới
+     vật cản gần nhất trên trường đã dựng sẵn
+pz = z_hit × exp(-z² / (2×sigma_hit²)) + z_rand × (1/range_max)</code></pre>
+<p>Số hạng đầu là 1 hàm Gauss: hạt càng khớp thật (z nhỏ), điểm càng cao. Số hạng sau là một sàn xác suất đều — luôn cộng thêm dù z có lớn tới đâu, đại diện cho khả năng đọc nhiễu/vật thể lạ không có trên bản đồ. Với 1 lần quét, điểm từng tia được gộp lại — nguyên văn từ mã nguồn (kèm comment thật của chính tác giả):</p>
+<pre><code>p += pz × pz × pz   // "ad-hoc weighting scheme... works well, though"
+sample.weight *= p  // nhân dồn qua mọi tia trong 1 lần quét</code></pre>
+<p>Ngay cả code gốc cũng tự gọi đây là "ad-hoc" (tạm, không suy ra chặt chẽ từ lý thuyết) — lập phương chỉ đơn giản là cách khuếch đại chênh lệch giữa hạt khớp tốt và khớp tệ trước khi nhân dồn, không có ý nghĩa xác suất học thuật nào sâu xa hơn.</p>
+<p>Với số thật của Atlas — <code>z_hit=0.5</code>, <code>z_rand=0.5</code>, <code>sigma_hit=0.2</code>, <code>laser_max_range=10.0</code>:</p>
+<pre><code>z = 0.0  (hạt khớp hoàn hảo):
+  pz = 0.5×exp(0) + 0.5×(1/10) = 0.5 + 0.05 = 0.55
+
+z = 0.4m (lệch 2× sigma_hit):
+  pz = 0.5×exp(-0.4²/(2×0.2²)) + 0.05 = 0.5×exp(-2) + 0.05 ≈ 0.118</code></pre>
+<p>Một tia lệch 0.4m so với bản đồ chỉ còn đóng góp ≈ 0.118³ ≈ 0.0016 vào <code>p</code>, so với 0.55³ ≈ 0.166 nếu khớp hoàn hảo — gấp khoảng 100 lần. Đây chính là cơ chế khiến hạt "sai nhiều tia" bị trọng số rớt rất nhanh qua vòng resample.</p>
+
+<div class="callout warn"><p><strong>2 tham số có trong config nhưng không hề được dùng.</strong> <code>z_max: 0.05</code> và <code>z_short: 0.05</code> cũng xuất hiện trong <code>amcl:</code> của Atlas — nhưng đọc thẳng mã nguồn: constructor của <code>LikelihoodFieldModel</code> chỉ nhận <code>z_hit, z_rand, sigma_hit</code>, không hề có <code>z_max</code>/<code>z_short</code>. Hai tham số đó thuộc về <code>BeamModel</code> — model khác, chỉ kích hoạt khi <code>laser_model_type: "beam"</code>. Atlas dùng <code>"likelihood_field"</code> nên 2 số này tồn tại trong file config nhưng không có tác dụng gì — giống hệt phát hiện <code>command_interface</code> không enforce min/max ở Module 5: khai báo không có nghĩa là được áp dụng.</p></div>
+
+<h2>Thử ngay</h2>
+<pre><code>grep -A20 "^amcl:" src/atlas_slam/config/nav2_params_mppi.yaml</code></pre>
+<p>Chưa cần chạy AMCL ở bài này — xem trước cấu trúc tham số, ghi nhớ <code>min_particles: 500</code>, <code>max_particles: 2000</code> để đối chiếu với tốc độ hội tụ thật ở <a href="lesson.html?m=9&amp;l=03-amcl-thuc-hanh">bài thực hành</a>.</p>

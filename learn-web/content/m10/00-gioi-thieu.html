@@ -1,0 +1,34 @@
+<h1>Bức tranh Nav2: costmap → planner → controller</h1>
+<p class="lead">Module 9 trả lời "robot đang ở đâu". Module này — <strong>module trọng tâm của khóa học</strong> — trả lời câu hỏi lớn hơn: robot tự đi từ A đến B, tự né vật cản, không còn cần bạn cầm bàn phím. Hiểu đủ sâu kiến trúc Nav2 để <strong>tự chọn và tinh chỉnh</strong> thuật toán cho bài toán cụ thể, không chỉ chạy được config có sẵn.</p>
+
+<div class="goals">
+  <h3>Sau module này bạn sẽ</h3>
+  <ul>
+    <li>Vẽ được (nói bằng lời) đường đi dữ liệu: costmap → global planner → <code>/plan</code> → local controller → <code>/cmd_vel</code></li>
+    <li>Giải thích được vì sao local costmap dùng frame <code>odom</code>, global costmap dùng frame <code>map</code> — không phải tình cờ, liên hệ lại REP-105 (Module 2)</li>
+    <li>Phân biệt NavFn (Dijkstra, Atlas đang dùng) với A*/Smac — và vì sao lựa chọn đó hợp lý cho robot vi sai</li>
+    <li>So sánh DWB, RPP, MPPI bằng cơ chế thật, không chỉ bằng cảm giác — đủ để trích vào báo cáo đồ án</li>
+    <li>Phát hiện được 1 cấu hình Nav2 không khớp giới hạn <code>ros2_control</code> chỉ bằng cách đọc 2 file YAML, không cần chạy thử — đúng lỗi thật dự án từng gặp</li>
+  </ul>
+</div>
+
+<h2>Bức tranh tổng thể</h2>
+<p><code>bt_navigator</code> điều phối — không tự tính toán gì — gọi lần lượt các node bên dưới đúng kịch bản trong 1 file XML (Behavior Tree, bài 4). Bấm từng nút để xem dữ liệu đi đường nào:</p>
+<div class="scene" data-scene="nav2-pipeline-overview"></div>
+
+<h2>Vì sao costmap, không dùng thẳng bản đồ Module 8</h2>
+<p>Bản đồ <code>.pgm</code> chỉ có đúng 3 giá trị (free/occupied/unknown, Module 8) — không đủ để planner "biết" nên tránh xa tường bao nhiêu mới an toàn, và hoàn toàn không biết gì về vật cản mới xuất hiện (người đi ngang qua) sau khi map đã lưu. Costmap (bài 1) giải quyết cả 2: thêm lớp chi phí tăng dần quanh vật cản (inflation), và thêm lớp đọc <code>/scan</code> sống để thấy vật cản bản đồ tĩnh không biết.</p>
+
+<h2>Chuẩn bị</h2>
+<pre><code>cd ~/atlas_sim
+colcon build --packages-select atlas_slam
+source install/setup.bash</code></pre>
+<p>Cần robot đã định vị đúng (Module 9) trước khi gửi goal — Nav2 sẽ <strong>không tự chạy</strong> nếu chưa biết robot đang ở đâu trên bản đồ.</p>
+
+<h2>Bản đồ module</h2>
+<div class="cards">
+  <div class="mini"><b>Costmap</b><span>3 layer cộng dồn: static + obstacle + inflation, 2 instance global/local</span></div>
+  <div class="mini"><b>Global planner</b><span>NavFn/Dijkstra — 1 đường đi hoàn chỉnh, tính 1 lần</span></div>
+  <div class="mini"><b>Local controller</b><span>DWB/RPP/MPPI — ra lệnh cmd_vel liên tục, né vật cản tức thời</span></div>
+  <div class="mini"><b>bt_navigator</b><span>điều phối theo kịch bản XML, không tự tính gì</span></div>
+</div>

@@ -1,0 +1,39 @@
+<h1>Node</h1>
+<p class="lead">Node là đơn vị tính toán nhỏ nhất trong ROS 2: về bản chất là một tiến trình (process) có một cái tên duy nhất trong hệ thống, bên trong có thể khai báo publisher, subscription, timer, service, parameter...</p>
+<p>Một chương trình robot phức tạp không viết thành một file khổng lồ, mà tách thành nhiều node nhỏ, mỗi node chịu trách nhiệm đúng một việc (đọc một cảm biến, chạy một thuật toán, điều khiển một cơ cấu chấp hành) — nhờ vậy có thể khởi động lại, thay thế hay gỡ lỗi từng phần mà không ảnh hưởng phần còn lại. Mọi code ROS 2 bạn viết, dù chỉ vài dòng, đều phải nằm trong một node.</p>
+
+<h2>Một node bên trong có gì?</h2>
+<div class="cards">
+  <div class="mini"><b>Publisher</b><span>Đẩy dữ liệu lên topic</span></div>
+  <div class="mini"><b>Subscription</b><span>Nhận dữ liệu, gọi callback</span></div>
+  <div class="mini"><b>Timer</b><span>Gọi hàm định kỳ</span></div>
+  <div class="mini"><b>Executor</b><span>Vòng lặp lấy việc và chạy</span></div>
+</div>
+
+<h2>Executor: một luồng, làm lần lượt</h2>
+<p>Mặc định, một node chạy các callback trên <strong>một luồng</strong>, lần lượt từng việc. Message đến nhanh hơn tốc độ xử lý sẽ phải xếp hàng. Kéo thanh trượt để thấy điều này.</p>
+
+<div class="scene" data-scene="callback"></div>
+
+<div class="callout warn"><p>Callback chậm làm <strong>mọi</strong> callback khác của cùng node bị trễ, không chỉ callback đó. Đừng để callback làm việc nặng hoặc chờ đợi lâu bên trong.</p></div>
+
+<h2>Đọc thông tin một node đang chạy</h2>
+<p>Lệnh <code>ros2 node info</code> liệt kê sáu nhóm. Mỗi nhóm là một kiểu giao tiếp mà node đó tham gia:</p>
+<table>
+  <tr><th>Nhóm</th><th>Ý nghĩa</th></tr>
+  <tr><td>Subscribers</td><td>Topic node này <em>nghe</em></td></tr>
+  <tr><td>Publishers</td><td>Topic node này <em>phát</em>, kèm kiểu message</td></tr>
+  <tr><td>Service Servers</td><td>Service node này <em>cung cấp</em> cho người khác gọi</td></tr>
+  <tr><td>Service Clients</td><td>Service node này <em>gọi</em> tới node khác</td></tr>
+  <tr><td>Action Servers</td><td>Tác vụ dài node này <em>thực hiện</em> (có feedback, hủy được)</td></tr>
+  <tr><td>Action Clients</td><td>Tác vụ dài node này <em>giao</em> cho node khác</td></tr>
+</table>
+
+<h2>Thử ngay</h2>
+<p>Cần 2 terminal: một giữ node chạy, một để gõ lệnh xem (cả hai đã <code>source install/setup.bash</code>, xem <a href="lesson.html?m=0&amp;l=00-cai-dat">Module 0</a>).</p>
+<pre><code># Terminal 1 — để chạy, đừng tắt
+ros2 launch ros2_basics demo.launch.py</code></pre>
+<pre><code># Terminal 2
+ros2 node list
+ros2 node info /sensor_publisher</code></pre>
+<p>Node <code>sensor_publisher</code> trong Atlas có các publisher <code>/sensor_data</code> và các service <code>describe_parameters</code>, <code>get_parameters</code>... do chính ROS 2 tự tạo cho mọi node để quản lý parameter.</p>

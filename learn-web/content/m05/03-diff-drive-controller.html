@@ -1,0 +1,48 @@
+<h1>diff_drive_controller.yaml</h1>
+<p class="lead">File tham số được nạp bởi chính plugin đã đọc ở bài trước — không có dòng code nào trong dự án đọc file này ngoài plugin đó. Mọi hành vi lái Atlas (giới hạn tốc độ, khung tọa độ odom, vì sao lệnh gõ tay có lúc không chạy) nằm hết ở đây.</p>
+
+<h2>controller_manager: ai được nạp, tần số bao nhiêu</h2>
+<pre><code>controller_manager:
+  ros__parameters:
+    update_rate: 100 # Hz
+    joint_state_broadcaster:
+      type: joint_state_broadcaster/JointStateBroadcaster
+    diff_drive_controller:
+      type: diff_drive_controller/DiffDriveController</code></pre>
+<p><code>update_rate: 100</code> — đúng con số đã nhắc ở bài 1: toàn bộ vòng lặp đọc state/ghi command chạy 100 lần/giây. <code>type</code> của mỗi controller là tên plugin thật (gói <code>diff_drive_controller</code>/<code>joint_state_broadcaster</code>, cài cùng <code>ros-humble-ros2-controllers</code>) — đổi tên ở đây tương đương đổi hẳn loại controller, không phải tham số chỉnh hành vi.</p>
+
+<h2>diff_drive_controller: biết gì về robot</h2>
+<pre><code>diff_drive_controller:
+  ros__parameters:
+    left_wheel_names: ["left_wheel_joint"]
+    right_wheel_names: ["right_wheel_joint"]
+    wheel_separation: 0.30
+    wheel_radius: 0.05
+    odom_frame_id: odom
+    base_frame_id: base_footprint</code></pre>
+<p><code>wheel_separation</code>/<code>wheel_radius</code> — đúng 2 số từ <code>atlas_description/urdf/atlas.urdf.xacro</code> (<a href="lesson.html?m=3&amp;l=07-bai-tap">Module 3</a>), chép tay sang đây. Comment thật trong file cảnh báo đúng điều này:</p>
+<div class="callout warn"><p><code># Phải khớp đúng với wheel_radius/wheel_separation trong atlas_description/urdf/atlas.urdf.xacro</code> — không có cơ chế nào tự đồng bộ 2 file. Đổi kích thước bánh ở URDF mà quên đổi ở đây: robot vẫn chạy, nhưng <code>/odom</code> tính sai quãng đường đã đi — sai âm thầm, khó phát hiện hơn nhiều so với lỗi crash.</p></div>
+<p><code>odom_frame_id</code>/<code>base_frame_id</code> — đúng 2 frame của cặp TF <code>odom</code>→<code>base_footprint</code> mà <a href="lesson.html?m=2&amp;l=03-rep103-rep105">REP-105</a> (Module 2) đã mô tả. Đây là nơi <strong>đầu tiên</strong> trong dự án cặp transform này thật sự được publish — trước giờ chỉ là lý thuyết.</p>
+
+<h2>open_loop và enable_odom_tf</h2>
+<pre><code>    open_loop: false
+    enable_odom_tf: true
+    publish_rate: 50.0</code></pre>
+<p><code>open_loop: false</code> — <code>/odom</code> tính từ <strong>state interface thật</strong> (bánh xe đã quay bao nhiêu, đọc ngược từ Gazebo) chứ không phải từ lệnh vừa gửi xuống. Đặt <code>true</code> thì odom chỉ "tưởng tượng" dựa trên lệnh, sai ngay khi bánh trượt — hợp lý cho test nhanh, không hợp lý cho dữ liệu đưa vào Nav2 (Module 10) sau này. <code>enable_odom_tf: true</code> là công tắc bật hẳn việc publish TF <code>odom→base_footprint</code>; tắt đi thì vẫn có topic <code>/odom</code> nhưng cây TF thiếu một cạnh.</p>
+
+<h2>use_stamped_vel — gotcha thật của bản Humble</h2>
+<pre><code>    use_stamped_vel: false</code></pre>
+<div class="callout warn"><p>Comment thật trong file: bản <code>diff_drive_controller</code> đi kèm ROS 2 Humble <strong>mặc định</strong> <code>use_stamped_vel: true</code> — chờ <code>geometry_msgs/msg/TwistStamped</code> trên <code>/cmd_vel</code>. Nhưng <code>teleop_twist_keyboard</code> (Module 7) và <code>ros2 topic pub</code> tay đều phát <code>Twist</code> thường (không stamp). Để mặc định true: mọi thứ khác đúng hết, robot vẫn đứng im, không log lỗi nào dễ thấy — một trong những lỗi khó đoán nhất nếu không biết trước.</p></div>
+<p>Atlas đặt tường minh <code>false</code> để tránh hẳn lớp bẫy này.</p>
+
+<h2>Giới hạn tốc độ — nền cho bài động học vi sai</h2>
+<pre><code>    linear.x.max_velocity: 0.5
+    linear.x.max_acceleration: 1.0
+    angular.z.max_velocity: 1.5
+    angular.z.max_acceleration: 3.0</code></pre>
+<p><code>diff_drive_controller</code> tự <strong>cắt bớt</strong> (clamp) mọi lệnh <code>/cmd_vel</code> vượt quá các số này <em>trước khi</em> quy đổi ra vận tốc từng bánh — gửi <code>linear.x: 5.0</code> cũng chỉ ra hiệu lực 0.5. Nhưng việc cắt bớt này diễn ra <strong>độc lập</strong> với giới hạn <code>min="-10" max="10"</code> ở command interface (bài trước) — 2 lớp giới hạn khác nhau, không lớp nào tự biết lớp kia. Bài 4 sẽ tính tay xem 2 lớp này có thật sự khớp nhau không.</p>
+
+<h2>Thử ngay</h2>
+<pre><code>ros2 launch atlas_control controller.launch.py</code></pre>
+<pre><code>ros2 topic echo /odom --once</code></pre>
+<p><code>pose.pose.position</code> gần như (0,0,0) lúc mới spawn. Đẩy robot chạy một đoạn (bài tập cuối module), <code>echo</code> lại — số đổi theo đúng quãng đường đã đi, tính từ <code>wheel_radius</code> vừa đọc ở trên.</p>

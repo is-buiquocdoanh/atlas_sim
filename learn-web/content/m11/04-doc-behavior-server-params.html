@@ -1,0 +1,38 @@
+<h1>Đọc trọn cấu hình behavior_server</h1>
+<p class="lead">2 bài trước đã trích <code>behavior_plugins</code> và tham số riêng của từng thẻ BT XML. Bài này đọc hết khối <code>behavior_server:</code> trong <code>nav2_params_mppi.yaml</code> — những tham số KHÔNG nằm trong BT XML, mà cấu hình cách <code>behavior_server</code> tự vận hành.</p>
+
+<h2>Khung & dữ liệu vào</h2>
+<pre><code>behavior_server:
+  ros__parameters:
+    use_sim_time: True
+    costmap_topic: local_costmap/costmap_raw
+    footprint_topic: local_costmap/published_footprint
+    cycle_frequency: 10.0</code></pre>
+<p><code>costmap_topic</code>/<code>footprint_topic</code> trỏ đúng <strong>local costmap</strong> (Module 10 bài 1) — mọi behavior (<code>Spin</code>, <code>BackUp</code>...) đều phải kiểm tra costmap cục bộ trước khi di chuyển, để không tự đâm vào đúng vật cản vừa gây ra sự cố. <code>cycle_frequency: 10.0</code> — tần số vòng lặp nội bộ của <code>behavior_server</code> khi đang thực thi 1 behavior (kiểm tra tiến trình, va chạm) — không liên quan tới tần số tick của BT (đó là <code>bt_loop_duration</code> trong cấu hình <code>bt_navigator</code>).</p>
+
+<h2>Frame & dung sai TF</h2>
+<pre><code>global_frame: odom
+robot_base_frame: base_footprint
+transform_tolerance: 0.1</code></pre>
+<p><code>global_frame: odom</code> — KHÔNG phải <code>map</code>. Giống lý do local costmap dùng <code>odom</code> (Module 10 bài 1): các behavior (<code>Spin</code>, <code>BackUp</code>...) cần chuyển động liên tục, mượt, không bị "giật" mỗi khi AMCL/slam_toolbox sửa lại ước lượng vị trí — đúng REP-105 (Module 2) một lần nữa.</p>
+
+<h2>Giới hạn chuyển động khi thực thi behavior</h2>
+<pre><code>simulate_ahead_time: 2.0
+max_rotational_vel: 1.0
+min_rotational_vel: 0.4
+rotational_acc_lim: 3.2</code></pre>
+<p><code>simulate_ahead_time: 2.0</code> — trước khi thật sự quay/lùi, behavior mô phỏng trước 2 giây chuyển động để kiểm tra có đụng costmap không, giống cách DWB mô phỏng trước quỹ đạo (Module 10 bài 3) — cùng triết lý "nhìn trước khi làm", chỉ khác bối cảnh. <code>max/min_rotational_vel</code> — giới hạn tốc độ quay của riêng <code>Spin</code>, KHÔNG dùng chung với giới hạn <code>angular.z</code> của <code>diff_drive_controller</code> (Module 5) hay của controller Nav2 (Module 10) — 3 lớp giới hạn độc lập, tới lúc này đã là mẫu hình quen thuộc xuyên suốt khóa học.</p>
+
+<h2>So sánh nhanh: behavior_server có gì KHÁC 3 server kia</h2>
+<table>
+  <tr><th></th><th>global_frame</th><th>Vì sao</th></tr>
+  <tr><td>Global costmap / planner_server</td><td><code>map</code></td><td>tính đường dài hạn, cần toạ độ tuyệt đối</td></tr>
+  <tr><td>Local costmap / controller_server</td><td><code>odom</code></td><td>bám đường tức thời, cần mượt không giật</td></tr>
+  <tr><td>Behavior_server</td><td><code>odom</code></td><td>cùng lý do — quay/lùi cũng cần mượt, không giật</td></tr>
+</table>
+
+<h2>Thử ngay</h2>
+<pre><code>grep -A18 "^behavior_server:" src/atlas_slam/config/nav2_params_mppi.yaml</code></pre>
+<pre><code>diff <(grep -A18 "^behavior_server:" src/atlas_slam/config/nav2_params_dwb.yaml) \
+     <(grep -A18 "^behavior_server:" src/atlas_slam/config/nav2_params_mppi.yaml)</code></pre>
+<p>Xác nhận khối <code>behavior_server</code> giống hệt nhau ở cả 3 file controller — đúng mẫu hình đã thấy ở Module 10 bài 6: chỉ khối <code>FollowPath</code> đổi theo controller, mọi khối khác (bao gồm cả <code>behavior_server</code>) giữ nguyên.</p>

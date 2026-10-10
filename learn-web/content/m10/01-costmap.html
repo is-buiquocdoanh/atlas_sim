@@ -1,0 +1,48 @@
+<h1>Costmap: 3 layer, global vs local</h1>
+<p class="lead"><strong>Costmap</strong> là 1 lưới ô vuông phủ lên bản đồ — không chỉ đánh dấu "có vật cản hay không" như bản đồ thô từ <a href="lesson.html?m=8&amp;l=05-occupancy-grid">Module 8</a>, mà còn mã hóa <strong>mức độ nên tránh</strong> từng vùng (giá trị chi phí 0-255), để planner/controller tính toán trên đó thay vì trên dữ liệu thô.</p>
+
+<h2>3 layer cộng dồn</h2>
+<ul>
+  <li><strong>Static Layer</strong> — đọc thẳng bản đồ <code>.pgm</code> đã lưu (Module 8): tường cố định, không đổi.</li>
+  <li><strong>Obstacle Layer</strong> — cập nhật liên tục từ <code>/scan</code>: vật cản thấy ĐƯỢC NGAY LÚC NÀY (người đi ngang, thùng hàng di chuyển) mà bản đồ tĩnh không biết.</li>
+  <li><strong>Inflation Layer</strong> — không phải vật cản thật, mà là vùng chi phí <strong>tăng dần</strong> quanh mỗi vật cản (bán kính <code>inflation_radius</code>), để planner tự nhiên "né rộng ra" thay vì cứ sượt sát mép tường.</li>
+</ul>
+
+<h2>Tự tay bật/tắt từng layer</h2>
+<p>Bấm từng ô để thấy chính xác layer nào đóng góp gì — có 1 "người" (chấm tím) di chuyển ngang qua, chỉ obstacle layer thấy được nó, static layer thì không bao giờ biết tới sự tồn tại của nó:</p>
+<div class="scene" data-scene="costmap-layers"></div>
+
+<h2>Global costmap vs Local costmap — 2 instance riêng biệt</h2>
+<ul>
+  <li><strong>Global costmap</strong> — phủ TOÀN BỘ bản đồ, <code>update_frequency: 1.0</code> (thấp), dùng frame <code>map</code> (<a href="lesson.html?m=2&amp;l=03-rep103-rep105">REP-105, Module 2</a>) — cho global planner tìm đường dài hạn.</li>
+  <li><strong>Local costmap</strong> — cửa sổ nhỏ quanh robot (<code>width: 3</code>, <code>height: 3</code> mét), <code>update_frequency: 10.0</code> (CAO), dùng frame <code>odom</code> (mượt, không nhảy bậc) — cho controller né vật cản tức thời.</li>
+</ul>
+<p>Dùng <code>odom</code> cho local costmap không phải tình cờ — đúng lý do REP-105 tách <code>map</code>/<code>odom</code> ở Module 2: controller cần dữ liệu liên tục, không nhảy bậc mỗi khi AMCL/slam_toolbox (Module 9) sửa lại ước lượng vị trí.</p>
+
+<h2>Cấu hình thật trong dự án Atlas</h2>
+<pre><code>global_costmap:
+  global_costmap:          # tên node lặp lại 2 lần -- quy ước nav2_costmap_2d
+    ros__parameters:
+      global_frame: map
+      update_frequency: 1.0
+      plugins: ["static_layer", "obstacle_layer", "inflation_layer"]
+      inflation_layer:
+        cost_scaling_factor: 5.0
+        inflation_radius: 0.3
+
+local_costmap:
+  local_costmap:
+    ros__parameters:
+      global_frame: odom
+      update_frequency: 10.0
+      rolling_window: true
+      width: 3
+      height: 3
+      plugins: ["obstacle_layer", "inflation_layer"]   # KHÔNG có static_layer</code></pre>
+<p>Local costmap cố tình <strong>không có <code>static_layer</code></strong> — chỉ quan tâm "vật cản thấy được ngay bây giờ" trong phạm vi hẹp, không cần tải lại toàn bộ bản đồ tĩnh mỗi lần cập nhật (tần số cao gấp 10 lần global, càng nhẹ càng tốt). <code>footprint</code> dùng chung cho cả 2 costmap — đúng kích thước thật robot <code>0.30 × 0.24m</code> (Module 3), không phải hình tròn gần đúng.</p>
+
+<h2>Thử ngay</h2>
+<pre><code>ros2 launch atlas_bringup bringup.launch.py world:=maze.sdf</code></pre>
+<pre><code>ros2 launch atlas_slam navigation.launch.py \
+  map:=$(pwd)/src/atlas_slam/maps/maze_map.yaml</code></pre>
+<p>RViz: bật display <strong>Map</strong> 2 lần, chọn topic <code>/global_costmap/costmap</code> và <code>/local_costmap/costmap</code> — xác nhận global costmap phủ cả bản đồ (gần như tĩnh), local costmap chỉ 1 ô vuông nhỏ bám theo robot, đổi liên tục. Đứng cạnh 1 bức tường, quan sát viền màu (inflation) lan dần ra từ tường — đó chính là vùng "chi phí tăng dần" vừa học.</p>

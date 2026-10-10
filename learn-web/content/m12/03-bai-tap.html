@@ -1,0 +1,68 @@
+<h1>Bài tập: tự viết <code>patrol_node.py</code></h1>
+<p class="lead">Áp dụng <a href="lesson.html?m=12&amp;l=01-action-client-server">Action client/server</a>, <a href="lesson.html?m=12&amp;l=02-nav2-simple-commander">Nav2 Simple Commander</a>.</p>
+
+<h2>Đề bài</h2>
+<p>Viết <code>patrol_node.py</code> trong <code>atlas_apps</code> (package <strong>trống</strong>, xem <a href="lesson.html?m=12&amp;l=00-gioi-thieu">00-gioi-thieu</a>) — robot tuần tra <strong>vô hạn</strong> qua các waypoint, khác <code>waypoint_demo.py</code> (<a href="lesson.html?m=12&amp;l=02-nav2-simple-commander">bài 2</a>) ở chỗ đó chỉ chạy 1 vòng rồi dừng. Bấm nút đổi chế độ trong scene ở bài 2 để xem lại khác biệt: robot vừa tới waypoint cuối (<code>SUCCEEDED</code>) thì gửi lại NGAY <code>followWaypoints()</code> với đúng 4 điểm cũ, đếm số vòng đã hoàn thành, không dừng chương trình.</p>
+
+<h3>Yêu cầu</h3>
+<ol>
+  <li>Dùng lại 4 waypoint của <code>waypoint_demo.py</code> (hoặc tự chọn điểm khác, miễn nằm trong <code>maze.sdf</code>).</li>
+  <li>Sau khi <code>followWaypoints()</code> hoàn tất (<code>isTaskComplete()</code> → <code>True</code>, <code>result == SUCCEEDED</code>), <strong>gửi lại đúng danh sách đó</strong> — lặp vô hạn, không thoát chương trình.</li>
+  <li>In ra số vòng đã tuần tra hoàn chỉnh (vd <code>"Hoàn thành vòng tuần tra #3"</code>).</li>
+  <li><code>Ctrl+C</code> phải hủy sạch — không traceback, không lỗi <code>rcl_shutdown already called</code> (xem lại gotcha ở <a href="lesson.html?m=12&amp;l=02-nav2-simple-commander">bài 2</a>).</li>
+</ol>
+
+<h3>Gợi ý cấu trúc</h3>
+<pre><code># atlas_apps/atlas_apps/patrol_node.py
+import rclpy
+from geometry_msgs.msg import PoseStamped
+from nav2_simple_commander.robot_navigator import BasicNavigator
+
+def main():
+    rclpy.init()
+    nav = BasicNavigator()
+    nav.waitUntilNav2Active()
+
+    # TODO: tạo goal_poses, giống make_pose() trong waypoint_demo.py
+
+    vong = 0
+    try:
+        while True:
+            # TODO: followWaypoints, vòng lặp chờ isTaskComplete()
+            # TODO: nếu CANCELED (do Ctrl+C trong lúc đang đi) -- thoát vòng while
+            # TODO: nếu SUCCEEDED -- vong += 1, in ra, lặp lại
+            pass
+    except KeyboardInterrupt:
+        nav.cancelTask()
+
+    if rclpy.ok():
+        rclpy.shutdown()</code></pre>
+<p>Nhớ thêm <code>entry_points</code> trong <code>atlas_apps/setup.py</code> (xem comment sẵn trong file, và <a href="lesson.html?m=1&amp;l=07-cau-truc-package">cấu trúc package, Module 1</a> nếu quên cú pháp), rồi build lại:</p>
+<pre><code>colcon build --packages-select atlas_apps
+source install/setup.bash
+ros2 run atlas_apps patrol_node.py</code></pre>
+
+<h2>Gợi ý xử lý lỗi</h2>
+<ul>
+  <li><code>result</code> trả về là 1 trong 3 giá trị: <code>TaskResult.SUCCEEDED</code>, <code>TaskResult.CANCELED</code>, <code>TaskResult.FAILED</code> (import từ <code>nav2_simple_commander.robot_navigator</code>) — phân biệt rõ <code>CANCELED</code> (do người dùng) với <code>FAILED</code> (do kẹt/lỗi thật) trước khi quyết định có lặp lại vòng tiếp theo không.</li>
+  <li>Nếu <code>FAILED</code> liên tục không rõ lý do, quay lại đọc log <code>bt_navigator</code> (<a href="lesson.html?m=11&amp;l=00-gioi-thieu">Module 11</a>) trước khi nghi ngờ code <code>patrol_node.py</code>.</li>
+</ul>
+
+<h2>Tự kiểm tra</h2>
+<ul>
+  <li>Chạy được ít nhất 2 vòng tuần tra liên tiếp không cần can thiệp.</li>
+  <li>Log in đúng số vòng đã hoàn thành.</li>
+  <li><code>Ctrl+C</code> giữa lúc đang đi thoát sạch, không traceback.</li>
+  <li>Phân biệt được code của <code>patrol_node.py</code> (tự viết, <code>atlas_apps</code>) với <code>waypoint_demo.py</code> (mẫu tham khảo, <code>atlas_slam/scripts</code>) — giải thích được vì sao tách 2 package này.</li>
+</ul>
+
+<h2>Tự kiểm tra trước khi qua Module 13</h2>
+<div class="goals">
+  <ul>
+    <li>Vẽ được (nói bằng lời) vòng đời 1 action: goal → feedback × N → result (hoặc hủy)</li>
+    <li>Giải thích được vì sao <code>FollowWaypoints</code> do <code>waypoint_follower</code> mở, không phải <code>bt_navigator</code></li>
+    <li>Dùng đúng <code>isTaskComplete()</code>/<code>getFeedback()</code>/<code>cancelTask()</code> trong 1 vòng lặp <code>spin_once</code></li>
+    <li>Tự viết được 1 node lặp vô hạn, hủy sạch bằng Ctrl+C, không traceback</li>
+  </ul>
+</div>
+<p>Xong hết → sang <strong>Module 13 — Capstone</strong>, đồ án cuối khóa dùng đúng kỹ năng action/waypoint vừa học để tự động hóa 1 kịch bản hoàn chỉnh (vd robot giao hàng tuần tra nhiều điểm).</p>

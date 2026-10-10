@@ -1,0 +1,59 @@
+<h1>World file: SDF</h1>
+<p class="lead">URDF mô tả <strong>một robot</strong>. <strong>SDF</strong> (Simulation Description Format) mô tả <strong>cả một thế giới mô phỏng</strong>: mặt đất, ánh sáng, vật thể tĩnh, và — quan trọng nhất — bộ vật lý nào chạy phía sau. File <code>.sdf</code> trong <code>atlas_gazebo/worlds/</code> chính là nơi robot "đứng vào".</p>
+
+<h2>URDF và SDF không phải cùng một định dạng</h2>
+<p>Khi bạn chạy <code>xacro atlas.gazebo.xacro</code>, kết quả vẫn là XML dạng URDF (<code>&lt;robot&gt;&lt;link&gt;&lt;joint&gt;</code>). gz-sim không đọc URDF trực tiếp — nó dùng thư viện <code>sdformat</code> để <strong>tự động chuyển URDF sang SDF</strong> ngay lúc spawn. Tag <code>&lt;gazebo reference="..."&gt;</code> (bài sau) chính là chỗ sdformat biết "chèn thêm phần SDF này vào đúng link nào" trong lúc chuyển đổi. Bạn không bao giờ thấy file <code>.sdf</code> trung gian đó — nó chỉ tồn tại trong bộ nhớ lúc Gazebo nhận robot.</p>
+<p>Ngược lại, file world (<code>empty.sdf</code>, <code>maze.sdf</code>...) là SDF <strong>thuần</strong>, viết tay, không qua xacro, không qua URDF.</p>
+
+<h2>Những khối bắt buộc trong một world</h2>
+<p><code>atlas_gazebo/worlds/empty.sdf</code> là world đơn giản nhất của dự án — chỉ có mặt đất phẳng. Bỏ qua phần <code>&lt;gui&gt;</code> (chỉ là layout cửa sổ), 3 khối còn lại là xương sống của mọi world:</p>
+
+<h3>1. Plugin hệ thống</h3>
+<pre><code>&lt;plugin filename="gz-sim-physics-system" name="gz::sim::systems::Physics"/&gt;
+&lt;plugin filename="gz-sim-user-commands-system" name="gz::sim::systems::UserCommands"/&gt;
+&lt;plugin filename="gz-sim-scene-broadcaster-system" name="gz::sim::systems::SceneBroadcaster"/&gt;
+&lt;plugin filename="gz-sim-contact-system" name="gz::sim::systems::Contact"/&gt;
+&lt;plugin filename="gz-sim-imu-system" name="gz::sim::systems::Imu"/&gt;
+&lt;plugin filename="gz-sim-sensors-system" name="gz::sim::systems::Sensors"&gt;
+  &lt;render_engine&gt;ogre2&lt;/render_engine&gt;
+&lt;/plugin&gt;</code></pre>
+<p>gz-sim không tự bật sẵn các hệ thống này — world nào không khai báo <code>Physics</code> thì vật thể trong đó <strong>không rơi</strong> (không có trọng lực được tính). Dự án khai báo tường minh toàn bộ 6 plugin thay vì trông chờ default, để world chạy giống nhau trên mọi máy học viên bất kể cấu hình gz-sim cài sẵn.</p>
+
+<h3>2. Khối <code>&lt;physics&gt;</code></h3>
+<pre><code>&lt;physics name="1ms" type="ode"&gt;
+  &lt;max_step_size&gt;0.001&lt;/max_step_size&gt;
+  &lt;real_time_factor&gt;1.0&lt;/real_time_factor&gt;
+&lt;/physics&gt;</code></pre>
+<ul>
+  <li><code>type</code> — bộ giải vật lý. <code>empty.sdf</code> dùng <code>ode</code>; <code>maze.sdf</code> và <code>warehouse.sdf</code> dùng engine khác (bài sau).</li>
+  <li><code>max_step_size</code> — mỗi bước mô phỏng tiến bao nhiêu giây vật lý. <code>0.001</code> = bước 1ms, nghĩa là 1000 bước cho mỗi giây mô phỏng.</li>
+  <li><code>real_time_factor</code> — tỉ lệ tốc độ mô phỏng so với đồng hồ thật. <code>1.0</code> nghĩa là cố chạy đúng tốc độ thật (máy yếu có thể không theo kịp, lúc đó factor thực tế tụt xuống dưới 1.0).</li>
+</ul>
+
+<h3>3. Ánh sáng và mặt đất</h3>
+<p><code>&lt;light type="directional"&gt;</code> mô phỏng ánh mặt trời — không ảnh hưởng vật lý, chỉ để nhìn thấy gì trong GUI và để camera (Module 6) không chụp toàn màu đen. <code>ground_plane</code> là vật thể duy nhất học viên chạm vào sớm nhất:</p>
+<pre><code>&lt;model name="ground_plane"&gt;
+  &lt;static&gt;true&lt;/static&gt;
+  &lt;link name="link"&gt;
+    &lt;collision name="collision"&gt;
+      &lt;geometry&gt;&lt;plane&gt;&lt;normal&gt;0 0 1&lt;/normal&gt;&lt;size&gt;100 100&lt;/size&gt;&lt;/plane&gt;&lt;/geometry&gt;
+      &lt;surface&gt;&lt;friction&gt;&lt;ode&gt;&lt;mu&gt;1.0&lt;/mu&gt;&lt;mu2&gt;1.0&lt;/mu2&gt;&lt;/ode&gt;&lt;/friction&gt;&lt;/surface&gt;
+    &lt;/collision&gt;
+    &lt;visual name="visual"&gt;...&lt;/visual&gt;
+  &lt;/link&gt;
+&lt;/model&gt;</code></pre>
+<p><code>&lt;static&gt;true&lt;/static&gt;</code> — vật thể tĩnh, vật lý không tính trọng lực/va chạm làm nó di chuyển (đúng, mặt đất không nên rơi). Giống hệt cấu trúc link trong URDF: <strong>collision riêng, visual riêng</strong> (bài <a href="lesson.html?m=3&amp;l=02-link">Module 3</a> đã học) — mặt phẳng 100×100m vừa dùng để va chạm vừa dùng để vẽ, ở đây trùng nhau vì mặt đất không cần tối ưu hóa gì cả. <code>mu</code>/<code>mu2</code> là hệ số ma sát 2 trục tiếp tuyến của mặt — bài sau nói kỹ ý nghĩa 2 con số này khi áp cho bánh xe.</p>
+
+<h2>3 world có sẵn trong dự án</h2>
+<table>
+  <tr><th>File</th><th>Nội dung</th><th>Dùng khi nào</th></tr>
+  <tr><td><code>empty.sdf</code></td><td>Chỉ mặt đất phẳng</td><td>Mặc định mọi launch file — kiểm tra nhanh robot đứng vững</td></tr>
+  <tr><td><code>maze.sdf</code></td><td>Mê cung zigzag 3 vách, cố ý không đối xứng</td><td>Dùng kiểm tra lệnh cài đặt (<a href="lesson.html?m=0&amp;l=00-cai-dat">Module 0</a>), và cho SLAM/Nav2 về sau</td></tr>
+  <tr><td><code>warehouse.sdf</code></td><td>Layout nhà kho</td><td>Các module Nav2 nâng cao</td></tr>
+</table>
+
+<h2>Thử ngay</h2>
+<pre><code>ros2 launch atlas_gazebo spawn_robot.launch.py</code></pre>
+<p>Mặc định <code>world:=empty.sdf</code> — Gazebo mở ra chỉ với mặt phẳng xám và robot Atlas đứng giữa. Thử world khác:</p>
+<pre><code>ros2 launch atlas_gazebo spawn_robot.launch.py world:=maze.sdf</code></pre>
+<p>So 2 lần chạy: cùng một robot, cùng một launch file, chỉ đổi tham số <code>world</code> — world và robot là 2 thứ hoàn toàn tách biệt, ghép lại lúc chạy chứ không hardcode vào nhau.</p>

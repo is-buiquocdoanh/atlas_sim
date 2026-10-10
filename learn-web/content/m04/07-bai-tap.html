@@ -1,0 +1,48 @@
+<h1>Bài tập: world và ma sát của riêng bạn</h1>
+<p class="lead">Mục tiêu: tự tay chỉnh sửa world SDF và tag <code>&lt;gazebo&gt;</code> — không chỉ đọc hiểu, mà viết được. Và quan sát trực tiếp hậu quả của <code>&lt;inertial&gt;</code> sai, đúng như đã dự đoán ở bài 4.</p>
+
+<h2>Phần A — world của riêng bạn</h2>
+<p>Tạo bản sao world đơn giản nhất để chỉnh sửa an toàn, không đụng file gốc:</p>
+<pre><code>cp src/atlas_gazebo/worlds/empty.sdf src/atlas_gazebo/worlds/bai_tap.sdf</code></pre>
+<p>Mở <code>bai_tap.sdf</code>, thêm một <code>&lt;model&gt;</code> hộp tĩnh mới — copy nguyên cấu trúc <code>ground_plane</code> đã học ở <a href="lesson.html?m=4&amp;l=01-world-sdf">bài 1</a> làm mẫu, đổi <code>&lt;plane&gt;</code> thành <code>&lt;box&gt;&lt;size&gt;0.5 0.5 0.3&lt;/size&gt;&lt;/box&gt;</code>, thêm <code>&lt;pose&gt;1 0 0.15 0 0 0&lt;/pose&gt;</code> (đặt hộp cách gốc 1m theo x, nhấc lên nửa chiều cao để đáy chạm sàn — y hệt lý do <code>base_link</code> của Atlas có origin nâng lên <code>base_height/2</code> ở <a href="lesson.html?m=3&amp;l=02-link">Module 3</a>).</p>
+<pre><code>colcon build --packages-select atlas_gazebo
+ros2 launch atlas_gazebo spawn_robot.launch.py world:=bai_tap.sdf</code></pre>
+<p>Robot đứng cạnh một chiếc hộp bạn vừa tự đặt vào world. Kéo thả robot (chuột phải → Move to) để nó va vào hộp — hộp không di chuyển (<code>&lt;static&gt;true&lt;/static&gt;</code>), đúng như mặt đất.</p>
+
+<h2>Phần B — đổi engine, quan sát bằng số chứ không chỉ bằng mắt</h2>
+<p>Sửa <code>bai_tap.sdf</code>: đổi khối <code>&lt;physics&gt;</code> từ <code>type="ode"</code> sang <code>type="dartsim"</code> kèm <code>&lt;dart&gt;&lt;collision_detector&gt;bullet&lt;/collision_detector&gt;&lt;/dart&gt;</code> — đúng cấu hình của <code>maze.sdf</code> (<a href="lesson.html?m=4&amp;l=02-physics-engine">bài 2</a>). Build lại, chạy lại, xác nhận:</p>
+<pre><code>ros2 topic echo /clock --once   # vẫn chạy bình thường -- đổi engine không ảnh hưởng /clock</code></pre>
+<p>Thử trước bằng mô hình ở bài 2: đặt bề dày tường về đúng <code>0.1</code> (giống vách thật của <code>maze.sdf</code>), tốc độ và bước thời gian ở giá trị nào thì bắt đầu thấy "xuyên tường"? So với <code>max_step_size = 0.001</code> thật của dự án.</p>
+
+<h2>Phần C — gây lỗi có chủ đích</h2>
+<table>
+  <tr><th>Thay đổi</th><th>Đoán xem hỏng thế nào</th></tr>
+  <tr><td>Đổi <code>mu1</code>/<code>mu2</code> của <code>left_wheel_link</code> thành <code>0.0</code> (giữ nguyên bánh phải)</td><td>Kéo thả robot va vào vách — 2 bánh phản ứng khác nhau thế nào?</td></tr>
+  <tr><td>Đổi <code>reference="left_wheel_link"</code> thành <code>reference="left_wheel_lnik"</code> (gõ sai 1 chữ)</td><td><code>xacro</code> có báo lỗi không? <code>colcon build</code> có báo lỗi không? Phải chạy Gazebo mới phát hiện ra, hay không phát hiện được gì cả?</td></tr>
+  <tr><td>Đặt <code>mass="0.0001"</code> cho <code>base_link</code> (bài 4 đã làm mẫu)</td><td>RViz (<code>display.launch.py</code>) và Gazebo (<code>spawn_robot.launch.py</code>) phản ứng khác nhau thế nào với cùng một thay đổi?</td></tr>
+</table>
+<p>Với mỗi dòng, xác định chính xác <strong>công cụ nào</strong> phát hiện ra vấn đề sớm nhất: <code>xacro</code> (lỗi cú pháp), <code>colcon build</code> (lỗi build), hay phải tự quan sát bằng mắt trong Gazebo/RViz (lỗi logic, không công cụ nào tự báo).</p>
+<pre><code>git checkout src/atlas_description/urdf/ src/atlas_gazebo/urdf/
+rm src/atlas_gazebo/worlds/bai_tap.sdf
+colcon build --packages-select atlas_description atlas_gazebo</code></pre>
+<p>Chạy để trả lại nguyên trạng khi xong.</p>
+
+<h2>Nộp bài</h2>
+<ul>
+  <li>File <code>bai_tap.sdf</code> đã thêm hộp + đổi physics engine (phần A, B)</li>
+  <li>Ảnh chụp Gazebo: robot đứng cạnh hộp bạn tự đặt</li>
+  <li>Bảng phần C: mỗi lỗi → triệu chứng thực tế → công cụ phát hiện (hoặc "không công cụ nào, phải tự quan sát")</li>
+</ul>
+
+<h2>Tự kiểm tra trước khi qua Module 5</h2>
+<div class="goals">
+  <ul>
+    <li>Giải thích được URDF và SDF là 2 định dạng khác nhau, và sdformat chuyển đổi tự động lúc nào</li>
+    <li>Đọc được cấu trúc một world SDF: plugin hệ thống, <code>&lt;physics&gt;</code>, ánh sáng, vật thể tĩnh</li>
+    <li>Nói được vì sao vật mỏng + bước thời gian lớn có thể gây xuyên tường, và tham số nào trong world của Atlas liên quan</li>
+    <li>Giải thích đúng cú pháp <code>&lt;gazebo reference="..."&gt;</code>, và vì sao bánh chủ động với caster cần ma sát trái ngược nhau</li>
+    <li>Nói được chính xác vì sao RViz không bị ảnh hưởng bởi <code>&lt;inertial&gt;</code> sai nhưng Gazebo thì có</li>
+    <li>Đọc được từng node của <code>spawn_robot.launch.py</code> và giải thích thứ tự dữ liệu chảy giữa chúng</li>
+  </ul>
+</div>
+<p>Xong hết → sang <strong>Module 5 — ros2_control</strong> (sắp có trên trang này), nơi robot Atlas lần đầu tiên <strong>tự di chuyển</strong> được bằng <code>/cmd_vel</code>.</p>

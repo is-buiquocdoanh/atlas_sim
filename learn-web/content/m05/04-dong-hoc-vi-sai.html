@@ -1,0 +1,29 @@
+<h1>Động học vi sai: cmd_vel → bánh xe</h1>
+<p class="lead"><code>diff_drive_controller</code> nhận một lệnh trừu tượng (<code>linear.x</code>, <code>angular.z</code>) và phải tự quyết định: mỗi bánh cần quay nhanh chậm bao nhiêu để robot đi đúng như vậy? Công thức không có gì bí ẩn — tự tính tay được, và nên tự tính tay ít nhất một lần.</p>
+
+<h2>Công thức</h2>
+<pre><code>v_trái  = linear.x − angular.z × (wheel_separation / 2)
+v_phải  = linear.x + angular.z × (wheel_separation / 2)
+
+ω_trái  = v_trái  / wheel_radius      (rad/s — đúng đơn vị command interface đang chờ)
+ω_phải  = v_phải  / wheel_radius</code></pre>
+<p>Trực giác: muốn rẽ phải (<code>angular.z</code> âm theo quy ước bàn tay phải quanh trục Z), bánh phải phải quay <strong>chậm hơn</strong> bánh trái — robot "xoay quanh" phía bánh chậm. <code>angular.z &gt; 0</code> là quay trái (ngược chiều kim đồng hồ nhìn từ trên xuống), đúng REP-103 (<a href="lesson.html?m=2&amp;l=03-rep103-rep105">Module 2</a>).</p>
+
+<h2>Kéo thử — đúng 2 số thật của Atlas</h2>
+<p><code>wheel_separation = 0.30 m</code>, <code>wheel_radius = 0.05 m</code> (từ <code>diff_drive_controller.yaml</code>, bài trước). Giới hạn tốc độ của chính <code>diff_drive_controller</code> (<code>linear.x</code> ±0.5 m/s, <code>angular.z</code> ±1.5 rad/s) và giới hạn phần cứng ở command interface (±10 rad/s mỗi bánh, <a href="lesson.html?m=5&amp;l=02-doc-control-xacro">bài 2</a>) đều được đánh dấu trên mô hình:</p>
+<div class="scene" data-scene="diff-drive-kinematics"></div>
+
+<h2>Phát hiện bằng chính 2 file thật</h2>
+<p>Kéo <code>linear.x</code> lên <strong>đúng mức trần</strong> 0.5 và <code>angular.z</code> lên đúng trần 1.5 <strong>cùng lúc</strong> — bánh nhanh hơn vượt quá 10 rad/s, mô hình báo đỏ. Đây không phải lỗi giả lập: tự tính tay bằng công thức trên với đúng số trong 2 file thật của dự án cho ra cùng kết quả:</p>
+<pre><code>v_phải = 0.5 + 1.5 × (0.30/2) = 0.5 + 0.225 = 0.725 m/s
+ω_phải = 0.725 / 0.05 = 14.5 rad/s   # > 10 rad/s cho phép ở command interface</code></pre>
+<p><code>diff_drive_controller.yaml</code> cho phép lệnh này (nằm trong giới hạn <code>linear.x</code>/<code>angular.z</code> của chính nó) nhưng kết quả quy đổi lại vượt giới hạn phần cứng <strong>khai báo</strong> ở <code>atlas.control.xacro</code> — 2 lớp giới hạn trong 2 file khác nhau, không ai kiểm tra chéo nhau.</p>
+<div class="callout warn"><p><strong>Khai báo không có nghĩa là được áp dụng.</strong> Đọc thẳng mã nguồn <code>gz_ros2_control</code> (<code>gz_system.cpp</code>, hàm đăng ký command interface) cho thấy: hardware interface của Atlas chỉ đọc <em>tên</em> interface (<code>"velocity"</code>) để biết nối vào biến nào — không hề đọc <code>min</code>/<code>max</code> ở bất kỳ đâu. Nghĩa là con số <code>±10 rad/s</code> trong <code>atlas.control.xacro</code> hiện tại <strong>chỉ là tài liệu</strong>, không có gì tự động chặn một lệnh 14.5 rad/s thật sự được gửi xuống Gazebo. Đây chính xác là lý do phải tự tính tay thay vì tin rằng "đã khai báo giới hạn thì chắc đã an toàn".</p></div>
+<p>Bài tập cuối module quay lại đúng phát hiện này: tự kiểm chứng bằng <code>ros2 topic echo</code> xem bánh phải thật sự quay bao nhiêu khi gửi đúng lệnh ở trên.</p>
+
+<h2>Thử ngay</h2>
+<pre><code>ros2 launch atlas_control controller.launch.py</code></pre>
+<pre><code>ros2 topic pub /cmd_vel geometry_msgs/msg/Twist "{linear: {x: 0.5}, angular: {z: 1.5}}"</code></pre>
+<p>Terminal khác, so bánh phải thật trong Gazebo với số 14.5 rad/s vừa tính tay — khớp đúng (không bị cắt bớt) chính là bằng chứng xác nhận điều vừa đọc trong mã nguồn ở trên:</p>
+<pre><code>ros2 topic echo /joint_states --once</code></pre>
+<p>Tìm đúng vị trí <code>right_wheel_joint</code> trong mảng <code>name</code>, đọc số cùng vị trí trong mảng <code>velocity</code>.</p>

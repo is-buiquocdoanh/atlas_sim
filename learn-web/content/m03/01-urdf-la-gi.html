@@ -1,0 +1,44 @@
+<h1>URDF là gì</h1>
+<p class="lead"><strong>URDF</strong> là file XML mô tả robot cho ROS 2: robot gồm những khối cứng nào (<code>&lt;link&gt;</code>), các khối đó nối với nhau ra sao (<code>&lt;joint&gt;</code>). Chỉ có 2 thẻ chính đó — mọi thứ còn lại là chi tiết bên trong chúng.</p>
+<p><strong>XACRO</strong> (XML Macro) là lớp tiền xử lý đặt trên URDF: cho phép dùng biến, phép toán và macro (<a href="lesson.html?m=3&amp;l=04-xacro">bài 4</a>). Lệnh <code>xacro</code> "trải phẳng" file <code>.xacro</code> thành URDF thuần rồi mới đưa cho ROS — ROS không hề biết xacro tồn tại, nó chỉ thấy kết quả cuối.</p>
+
+<h2>Mỗi dòng XML ứng với gì trong TF</h2>
+<p>Quan hệ trực tiếp với những gì đã học ở <a href="lesson.html?m=2&amp;l=02-tf-tree">Module 2</a> — bấm từng dòng để xem nó dựng nên phần nào của cây:</p>
+<div class="scene" data-scene="urdf-tf-map"></div>
+<p>Vì thế URDF <strong>bắt buộc là cây</strong>: mỗi link chỉ được làm con của đúng một joint. Khai hai joint cùng trỏ tới một link → URDF không parse được — đó là lỗi cấu trúc, không phải lỗi chạy.</p>
+
+<h2>Điều URDF không mô tả</h2>
+<p>URDF chỉ trả lời "robot có hình dạng gì và các bộ phận gắn vào nhau ở đâu". Nó không nói động cơ điều khiển thế nào (→ <code>ros2_control</code>), cảm biến sinh dữ liệu ra sao (→ plugin Gazebo), hay robot đang ở đâu trên bản đồ (→ SLAM/AMCL). Tách biệt này không phải giới hạn — là chủ đích: cùng một URDF dùng được cho mô phỏng lẫn robot thật.</p>
+
+<h2>Ví dụ trong dự án Atlas</h2>
+<p><code>atlas_description</code> là package chỉ chứa URDF — cố ý <strong>không</strong> phụ thuộc Gazebo:</p>
+<div class="filetree">
+  <details open><summary>atlas_description/urdf/</summary>
+    <ul>
+      <li class="ft-file">atlas.urdf.xacro <span class="ft-note"># file chính: tham số + base_link + gọi các macro</span></li>
+      <li class="ft-file">wheel.xacro <span class="ft-note"># macro bánh chủ động + macro caster</span></li>
+      <li class="ft-file">sensors.xacro <span class="ft-note"># macro LiDAR + IMU (chỉ hình học, chưa có plugin)</span></li>
+      <li class="ft-file">inertial_macros.xacro <span class="ft-note"># công thức inertia cho hộp/trụ/cầu</span></li>
+      <li class="ft-file">materials.xacro <span class="ft-note"># bảng màu</span></li>
+    </ul>
+  </details>
+</div>
+<p>Lý do tách 5 file: phần mô tả <strong>robot</strong> dùng lại được cho robot thật sau này, còn phần mô tả <strong>mô phỏng</strong> nằm ở package khác (<code>atlas_gazebo</code> include lại file này rồi thêm <code>&lt;gazebo&gt;</code> — xem <a href="lesson.html?m=3&amp;l=06-doc-urdf-atlas">bài 6</a>).</p>
+
+<h2>Thử ngay</h2>
+<pre><code># "Trải phẳng" xacro thành URDF thuần rồi xem -- đây chính là thứ ROS thực sự nhận
+xacro src/atlas_description/urdf/atlas.urdf.xacro > /tmp/atlas.urdf
+head -40 /tmp/atlas.urdf</code></pre>
+<pre><code># Kiểm tra URDF hợp lệ + in ra cây link
+check_urdf /tmp/atlas.urdf</code></pre>
+<p>Kết quả <code>check_urdf</code> trên Atlas:</p>
+<pre><code>robot name is: atlas
+root Link: base_footprint has 1 child(ren)
+    child(1):  base_link
+        child(1):  front_caster_link
+        child(2):  imu_link
+        child(3):  left_wheel_link
+        child(4):  lidar_link
+        child(5):  rear_caster_link
+        child(6):  right_wheel_link</code></pre>
+<p>8 link, 7 joint — so với cây bạn tự chọn ở <a href="lesson.html?m=2&amp;l=05-bai-tap">bài tập Module 2</a>. Đây là lệnh đáng nhớ: URDF hỏng thì <code>check_urdf</code> báo ngay, không cần mở RViz đoán mò.</p>

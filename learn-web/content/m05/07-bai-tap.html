@@ -1,0 +1,49 @@
+<h1>Bài tập: lái robot bằng tay</h1>
+<p class="lead">Mục tiêu: tự tay chứng minh công thức động học vi sai đúng với số thật, tự quan sát hệ quả của một phát hiện thật (giới hạn không được enforce), và tự gây ra + nhận diện đúng loại lỗi của <code>ros2_control</code>.</p>
+
+<h2>Phần A — lái và đọc odom</h2>
+<pre><code>ros2 launch atlas_control controller.launch.py</code></pre>
+<p>Terminal khác, giữ lệnh này chạy liên tục trong lúc làm các bước dưới:</p>
+<pre><code>ros2 topic echo /odom --field pose.pose.position</code></pre>
+<p>Terminal thứ 3, phát lệnh chạy thẳng trong khoảng 2 giây rồi dừng:</p>
+<pre><code>ros2 topic pub --once /cmd_vel geometry_msgs/msg/Twist "{linear: {x: 0.3}}"</code></pre>
+<p>Đợi 2 giây (nhớ <code>cmd_vel_timeout: 0.5</code> ở <a href="lesson.html?m=5&amp;l=03-diff-drive-controller">bài 3</a> — robot tự dừng sau 0.5s nếu không có lệnh mới, nên lặp lại <code>pub --once</code> vài lần nếu muốn đi xa hơn). So quãng đường <code>position.x</code> vừa đọc được với ước lượng tay: <code>vận tốc × thời gian thật đã chạy</code> — 2 số gần nhau chứng minh <code>open_loop: false</code> đang hoạt động đúng.</p>
+
+<h2>Phần B — tự kiểm chứng phát hiện ở bài 4</h2>
+<p>Dự đoán trước bằng công thức, rồi kiểm tra bằng số thật:</p>
+<ol>
+  <li>Tính tay <code>ω_trái</code>, <code>ω_phải</code> (rad/s) cho lệnh <code>linear.x: 0.4, angular.z: 1.0</code>.</li>
+  <li>Gửi đúng lệnh đó, đọc <code>/joint_states</code>, so khớp 2 giá trị <code>velocity</code> của <code>left_wheel_joint</code>/<code>right_wheel_joint</code> với số vừa tính.</li>
+  <li>Tăng dần <code>angular.z</code> (giữ <code>linear.x: 0.4</code>) cho tới khi <code>ω_phải</code> tính tay vượt 10 rad/s. Gửi lệnh đó, đọc lại <code>/joint_states</code> — số thật có bị cắt về ≤10 không, hay đúng bằng số tính tay (vượt quá)?</li>
+</ol>
+<pre><code>ros2 topic pub --once /cmd_vel geometry_msgs/msg/Twist "{linear: {x: 0.4}, angular: {z: 1.0}}"</code></pre>
+<pre><code>ros2 topic echo /joint_states --once</code></pre>
+
+<h2>Phần C — gây lỗi có chủ đích</h2>
+<table>
+  <tr><th>Thay đổi</th><th>Đoán xem hỏng thế nào</th></tr>
+  <tr><td>Sửa <code>wheel_radius: 0.05</code> → <code>0.08</code> trong <code>diff_drive_controller.yaml</code> (không đụng URDF)</td><td>Robot di chuyển trong Gazebo có đổi tốc độ thật không? <code>/odom</code> có đổi không? 2 câu trả lời có giống nhau không — vì sao?</td></tr>
+  <tr><td>Đổi <code>use_stamped_vel: false</code> → <code>true</code></td><td><code>ros2 topic pub</code> kiểu <code>Twist</code> thường (như mọi lệnh ở trên) còn tác dụng không? Có log lỗi nào xuất hiện không, hay robot chỉ im lặng đứng yên?</td></tr>
+  <tr><td>Đổi <code>left_wheel_names</code> thành <code>["left_wheel_jiont"]</code> (gõ sai 1 chữ)</td><td><code>colcon build</code> có báo lỗi không? <code>controller.launch.py</code> có chạy được không? Phải chạy tới bước nào mới lộ ra lỗi?</td></tr>
+</table>
+<p>Với mỗi dòng, ghi lại chính xác <strong>công cụ nào</strong> cho biết có lỗi sớm nhất: build, log của <code>spawner</code>/<code>controller_manager</code>, hay phải tự echo topic mới thấy.</p>
+<pre><code>git checkout src/atlas_control/config/diff_drive_controller.yaml</code></pre>
+<p>Chạy để trả lại nguyên trạng khi xong.</p>
+
+<h2>Nộp bài</h2>
+<ul>
+  <li>Bảng phần B: lệnh gửi → ω tính tay → ω đọc thật (3 dòng, dòng cuối là trường hợp vượt 10 rad/s)</li>
+  <li>Bảng phần C: mỗi lỗi → triệu chứng thực tế → công cụ phát hiện</li>
+</ul>
+
+<h2>Tự kiểm tra trước khi qua Module 6</h2>
+<div class="goals">
+  <ul>
+    <li>Vẽ được sơ đồ hardware interface / controller_manager / controller và nói đúng command interface khác state interface ở chiều nào</li>
+    <li>Tính tay được vận tốc mỗi bánh (rad/s) từ một lệnh <code>/cmd_vel</code> bất kỳ bằng đúng công thức động học vi sai</li>
+    <li>Giải thích được vì sao giới hạn khai báo ở <code>&lt;command_interface&gt;</code> không tự động được enforce — và biết cách tự kiểm chứng thay vì tin vào khai báo</li>
+    <li>Gọi đúng tên 4 trạng thái vòng đời controller, và biết <code>spawner</code> đi qua trạng thái nào mà bạn thường không thấy</li>
+    <li>Đọc được <code>controller.launch.py</code> và chỉ ra đúng 1 dòng khác biệt so với <code>spawn_robot.launch.py</code> của Module 4</li>
+  </ul>
+</div>
+<p>Xong hết → sang <strong>Module 6 — Cảm biến: LiDAR &amp; IMU</strong> (sắp có trên trang này), nơi khối <code>&lt;sensor&gt;</code> đã thấy thấp thoáng trong <code>atlas.gazebo.xacro</code> từ Module 4 lần đầu được mở ra trọn vẹn.</p>

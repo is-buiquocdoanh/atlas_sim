@@ -1,0 +1,50 @@
+<h1>Bài tập: đặt sai pose ban đầu, đo AMCL tự sửa bao lâu</h1>
+<p class="lead">Áp dụng <a href="lesson.html?m=9&amp;l=01-particle-filter">Particle Filter</a>, <a href="lesson.html?m=9&amp;l=03-amcl-thuc-hanh">AMCL thực hành</a>. Mục tiêu: tự tay đo chứ không chỉ tin "nó tự sửa".</p>
+
+<h2>Phần A — 3 trường hợp lệch pose</h2>
+<pre><code># Terminal 1
+ros2 launch atlas_bringup bringup.launch.py world:=maze.sdf</code></pre>
+<pre><code># Terminal 2
+ros2 launch atlas_slam navigation.launch.py \
+  map:=$(pwd)/src/atlas_slam/maps/maze_map.yaml</code></pre>
+<p>Với mỗi trường hợp dưới đây: đặt "2D Pose Estimate" trong RViz lệch đúng như mô tả (vẫn trong world, không đặt xuyên tường), lái robot đi thẳng vài mét, đo <strong>quãng đường robot phải đi</strong> trước khi đám mây hạt hội tụ đủ chặt (không còn tỏa rộng) — ước lượng bằng mắt hoặc:</p>
+<pre><code>ros2 topic echo /amcl_pose</code></pre>
+<table>
+  <tr><th>Trường hợp</th><th>Quãng đường hội tụ</th><th>Ghi chú</th></tr>
+  <tr><td>Lệch nhẹ: 0.3m</td><td>?</td><td></td></tr>
+  <tr><td>Lệch nặng: 1.5m</td><td>?</td><td></td></tr>
+  <tr><td>Lệch góc: đúng vị trí, sai hướng 90°</td><td>?</td><td></td></tr>
+</table>
+<p>So sánh 3 trường hợp: trường hợp nào hội tụ nhanh nhất? Trường hợp nào có lúc KHÔNG hội tụ về đúng (particle filter "khóa" nhầm vào vị trí sai)?</p>
+
+<h2>Gợi ý</h2>
+<ul>
+  <li>"Hội tụ" quan sát được rõ nhất khi robot đi qua chỗ có đặc trưng phân biệt (góc cua, ngã rẽ) — đi thẳng dọc hành lang dài không có gì khác biệt, particle filter khó phân biệt được "đang ở mét 2 hay mét 5" dù hướng đã đúng. Dùng mô hình kéo-thả ở <a href="lesson.html?m=9&amp;l=01-particle-filter">bài 1</a> để tự kiểm chứng trực giác này trước khi đo bằng robot thật: bước nào robot đi qua góc cột trụ, độ lệch chuẩn giảm nhanh hơn hẳn bước đi thẳng.</li>
+  <li>Nếu hạt "khóa" nhầm (hội tụ nhưng SAI vị trí) — đây không phải lỗi, là giới hạn thật của particle filter khi world có 2 chỗ nhìn giống nhau qua LiDAR (liên hệ lại bug đối xứng ở <a href="lesson.html?m=8&amp;l=03-loop-closure">Module 8</a> — cùng 1 nguyên nhân gốc: thiếu đặc trưng phân biệt).</li>
+</ul>
+
+<h2>Phần B — chạm giới hạn: thử slam_toolbox với pose lệch 1.5m</h2>
+<pre><code>ros2 launch atlas_slam navigation.launch.py localization:=slam_toolbox \
+  map:=$(pwd)/src/atlas_slam/maps/maze_map.yaml \
+  initial_pose_x:=1.5 initial_pose_y:=0.0 initial_pose_yaw:=0.0</code></pre>
+<p>Dùng mô hình "tìm toàn cục vs tìm cục bộ" ở <a href="lesson.html?m=9&amp;l=04-amcl-vs-slam-toolbox">bài 4</a> để dự đoán TRƯỚC: với lệch 1.5m, slam_toolbox còn trong vùng dò ±0.25m không? Chạy lệnh trên để kiểm chứng — quan sát robot có "lạc" hẳn không (TF <code>map→odom</code> nhảy loạn, hoặc costmap không khớp vật cản thật), so với đúng dự đoán từ mô hình.</p>
+
+<h2>Tự kiểm tra</h2>
+<ul>
+  <li>Có số liệu quãng đường hội tụ cho cả 3 trường hợp Phần A.</li>
+  <li>Giải thích được bằng particle filter (không chỉ "nó tự sửa") vì sao đi qua góc cua giúp hội tụ nhanh hơn đi thẳng.</li>
+  <li>Nếu gặp trường hợp hội tụ sai, mô tả lại được đặc điểm vị trí gây nhầm lẫn.</li>
+  <li>Phần B: dự đoán từ mô hình có khớp với quan sát thật không — nếu không khớp, nghĩ lại xem world thật và mô hình khác nhau ở điểm nào.</li>
+</ul>
+
+<h2>Tự kiểm tra trước khi qua Module 10</h2>
+<div class="goals">
+  <ul>
+    <li>Giải thích được 3 bước predict/update/resample của particle filter bằng lời của riêng bạn</li>
+    <li>Đọc được công thức thật AMCL dùng chấm điểm 1 hạt, và biết chính xác 2 tham số nào trong config không hề có tác dụng</li>
+    <li>Phân biệt rạch ròi AMCL và <code>slam_toolbox</code> localization: cái nào cần pose đúng ngay lúc khởi động, cái nào không, và vì sao (bằng toán, không chỉ bằng trí nhớ)</li>
+    <li>Giải thích được (không cần đọc lại code) vì sao panel Nav2 báo "Inactive" với <code>slam_toolbox</code> dù hệ thống chạy đúng</li>
+    <li>Đọc hiểu <code>/amcl_pose</code> — phân biệt được pose ước lượng và độ không chắc chắn (hiệp phương sai) trong cùng 1 message</li>
+  </ul>
+</div>
+<p>Xong hết → sang <strong>Module 10 — Nav2 core: costmap, planner, controller</strong> — module trọng tâm của khóa học, nơi robot bắt đầu <strong>tự đi</strong> chứ không chỉ biết mình đang ở đâu.</p>

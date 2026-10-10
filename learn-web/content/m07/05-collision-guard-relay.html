@@ -1,0 +1,38 @@
+<h1>Vì sao cần một node relay</h1>
+<p class="lead">Bài trước dừng ở <code>cmd_vel_monitor_out</code> — bản lệnh đã được <code>collision_monitor</code> lọc an toàn. Lẽ ra chỉ cần nối thẳng topic đó vào input <code>collision_detect</code> của <code>twist_mux</code> là xong. Comment thật trong <code>collision_monitor.yaml</code> giải thích vì sao làm vậy sẽ <strong>chặn robot vĩnh viễn</strong>.</p>
+
+<h2>Vấn đề: collision_monitor publish liên tục, không chỉ khi nguy hiểm</h2>
+<div class="callout warn"><p><code>nav2_collision_monitor</code> publish ra <code>cmd_vel_out</code> ở <strong>mọi chu kỳ</strong>, kể cả khi không có gì nguy hiểm (<code>action_type = DO_NOTHING</code>) — nó là một bộ lọc liên tục, không phải một cảnh báo chỉ bật lúc cần. Nếu nối thẳng output này vào input ưu tiên cao nhất của <code>twist_mux</code> (<code>collision_detect</code>, priority 255 — bài 3), input đó sẽ <strong>luôn có message mới</strong>, không bao giờ hết <code>timeout</code>, nghĩa là <strong>luôn thắng</strong> — robot vĩnh viễn bị khóa theo lệnh của <code>collision_monitor</code>, dù không có vật cản nào, joystick không còn tác dụng gì nữa.</p></div>
+<p>Đây chính là lý do <code>collision_monitor.yaml</code> trỏ output vào <code>cmd_vel_monitor_out</code> — một topic <strong>không nằm trong danh sách input nào của <code>twist_mux</code></strong> — thay vì trỏ thẳng <code>cmd_vel_collision</code>.</p>
+
+<h2>Giải pháp: một node chỉ forward khi thật sự cần</h2>
+<p><code>collision_guard_relay.py</code> đứng giữa, theo dõi <strong>trạng thái</strong> chứ không chỉ dữ liệu:</p>
+<pre><code>def _on_state(self, msg: CollisionMonitorState):
+    self._active = msg.action_type != CollisionMonitorState.DO_NOTHING
+
+def _on_monitor_output(self, msg: Twist):
+    self._latest_safe_cmd = msg
+    if self._active:
+        self.pub.publish(msg)   # CHỈ forward khi đang can thiệp thật</code></pre>
+<p>Subscribe <code>/collision_monitor_state</code> (<code>nav2_msgs/msg/CollisionMonitorState</code>, chứa <code>action_type</code> + tên polygon đang kích hoạt) để biết <strong>khi nào</strong> cần quan tâm, subscribe <code>/cmd_vel_monitor_out</code> để biết <strong>forward cái gì</strong>. Chỉ khi cả 2 điều kiện đúng — đang nguy hiểm VÀ có lệnh đã lọc — mới ghi vào <code>/cmd_vel_collision</code>. Hết nguy hiểm, ngừng ghi hẳn, không phải ghi giá trị "bình thường" — để input đó tự <code>timeout</code> theo đúng cơ chế <code>twist_mux</code> đã học ở bài 3.</p>
+
+<h2>Timer 0.1s — chống hết hạn giữa chừng</h2>
+<pre><code>self.create_timer(0.1, self._republish_if_active)
+
+def _republish_if_active(self):
+    if self._active:
+        self.pub.publish(self._latest_safe_cmd)</code></pre>
+<p><code>cmd_vel_collision</code> có <code>timeout: 0.5</code>. Nếu <code>collision_monitor</code> publish chậm hơn dự kiến (tải máy cao, hoặc đơn giản tần số của nó không cố định), khoảng trống giữa 2 lần publish có thể vượt 0.5s — <code>twist_mux</code> coi nguồn đã hết hạn <strong>ngay giữa lúc đang nguy hiểm</strong>, nhường quyền lại cho joystick. Timer này tự phát lại <code>_latest_safe_cmd</code> mỗi 0.1s trong lúc <code>_active</code> còn true — đảm bảo khoảng cách giữa 2 lần publish không bao giờ vượt 0.1s, luôn an toàn dưới ngưỡng 0.5s dù <code>collision_monitor</code> publish thưa tới đâu.</p>
+
+<h2>Toàn bộ chuỗi, từ đầu tới cuối</h2>
+<div class="scene" data-scene="collision-guard-pipeline"></div>
+
+<h2>Thử ngay</h2>
+<pre><code>ros2 launch atlas_control controller.launch.py world:=maze.sdf</code></pre>
+<pre><code># terminal khác
+ros2 launch atlas_bringup joystick_teleop.launch.py</code></pre>
+<pre><code># terminal khác
+ros2 launch atlas_bringup collision_monitor.launch.py</code></pre>
+<pre><code># terminal khác -- log của relay chỉ xuất hiện khi THẬT SỰ can thiệp, không phải liên tục
+ros2 topic echo /cmd_vel_collision</code></pre>
+<p>Đẩy robot ra xa mọi vật cản — <code>echo</code> trên im lặng, không có message nào (đúng ý "ngừng forward hẳn", không phải "forward lệnh rỗng"). Kéo lại gần vách — message bắt đầu xuất hiện đều đặn mỗi ≤0.1s.</p>

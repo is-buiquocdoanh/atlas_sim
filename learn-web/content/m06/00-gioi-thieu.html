@@ -1,0 +1,36 @@
+<h1>Vì sao cần cảm biến</h1>
+<p class="lead">Từ Module 1 đến 5, Atlas biết <em>hình dạng</em> của chính nó (URDF), biết <em>di chuyển</em> (ros2_control) — nhưng hoàn toàn mù, không biết gì về thế giới xung quanh. Module này mở khối <code>&lt;sensor&gt;</code> đã thấy thấp thoáng trong <code>atlas.gazebo.xacro</code> từ <a href="lesson.html?m=4&amp;l=06-doc-gazebo-xacro">Module 4</a> — nơi robot lần đầu "nhìn" và "cảm" được chuyển động của chính nó.</p>
+
+<p>2 cảm biến, 2 việc khác hẳn nhau:</p>
+<ul>
+  <li><strong>LiDAR</strong> (<code>lidar_link</code>) — đo khoảng cách tới vật cản xung quanh bằng tia quét 360°. Đây là giác quan "nhìn ra ngoài" — nền tảng bắt buộc cho SLAM (Module 8) và né vật cản (Module 10, 11).</li>
+  <li><strong>IMU</strong> (<code>imu_link</code>) — đo gia tốc và tốc độ quay của chính robot. Đây là giác quan "cảm nhận bản thân" — không biết gì về thế giới bên ngoài, chỉ biết robot đang xoay/tăng tốc thế nào.</li>
+</ul>
+
+<div class="goals">
+  <h3>Sau module này bạn sẽ</h3>
+  <ul>
+    <li>Giải thích được vì sao gz-sim (Fortress) không cần plugin riêng cho từng cảm biến như Gazebo Classic từng yêu cầu</li>
+    <li>Đọc đúng từng tham số trong khối <code>&lt;lidar&gt;</code>/<code>&lt;imu&gt;</code> và chỉ ra nó map sang trường nào trong message ROS 2 thật (<code>LaserScan</code>, <code>Imu</code>)</li>
+    <li>Giải thích được vì sao cần <code>gz_bridge.yaml</code> — dữ liệu cảm biến không tự nhiên có mặt trên ROS 2</li>
+    <li>Tự tính tay được góc ứng với một phần tử bất kỳ trong mảng <code>ranges[]</code> của <code>/scan</code></li>
+    <li>Biết dùng đúng công cụ (<code>ros2 topic echo</code>/<code>hz</code>, <code>rqt_plot</code>, RViz) để kiểm tra dữ liệu cảm biến mà không cần đoán</li>
+  </ul>
+</div>
+
+<h2>Chuẩn bị</h2>
+<pre><code>cd ~/atlas_sim
+colcon build --packages-select atlas_gazebo
+source install/setup.bash
+ros2 launch atlas_bringup bringup.launch.py world:=maze.sdf</code></pre>
+<p>Dùng <code>maze.sdf</code> thay vì <code>empty.sdf</code> mặc định — LiDAR quét vào khoảng trống thì <code>ranges[]</code> toàn giá trị ở mức <code>range_max</code>, không có gì để nhìn. Có vách thật mới có dữ liệu đáng đọc.</p>
+<pre><code>ros2 topic list | grep -E "scan|imu"</code></pre>
+<p>Thấy <code>/scan</code> và <code>/imu</code> là môi trường đã sẵn sàng cho cả module.</p>
+
+<h2>Bản đồ module</h2>
+<div class="cards">
+  <div class="mini"><b>&lt;sensor&gt; trong SDF</b><span>gz-sim tự mô phỏng, không cần plugin riêng</span></div>
+  <div class="mini"><b>LiDAR → /scan</b><span>360 tia, mỗi tia một khoảng cách</span></div>
+  <div class="mini"><b>IMU → /imu</b><span>orientation, angular velocity, linear acceleration</span></div>
+  <div class="mini"><b>gz_bridge</b><span>Gazebo Transport không phải ROS 2 — phải bridge mới echo được</span></div>
+</div>

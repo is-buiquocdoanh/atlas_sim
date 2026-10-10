@@ -1,0 +1,45 @@
+<h1>Nav2 Simple Commander — <code>BasicNavigator</code></h1>
+<p class="lead"><code>nav2_simple_commander</code> là thư viện Python wrapper quanh các action của Nav2 — gọi <code>NavigateToPose</code>/<code>FollowWaypoints</code> mà không phải tự viết <code>ActionClient</code> (<a href="lesson.html?m=12&amp;l=01-action-client-server">bài trước</a>) thủ công. Trung tâm là class <code>BasicNavigator</code>.</p>
+
+<h2>4 việc cốt lõi</h2>
+<table>
+  <thead><tr><th>Việc</th><th>Hàm</th><th>Ghi chú</th></tr></thead>
+  <tbody>
+    <tr><td>Đợi Nav2 sẵn sàng</td><td><code>waitUntilNav2Active()</code></td><td>Chặn tới khi các lifecycle node đã <code>active</code></td></tr>
+    <tr><td>Gửi nhiều điểm</td><td><code>followWaypoints(poses)</code></td><td>Nhận <code>list[PoseStamped]</code>, trả về ngay (không chặn)</td></tr>
+    <tr><td>Đọc tiến độ</td><td><code>isTaskComplete()</code>, <code>getFeedback()</code></td><td>Gọi trong vòng lặp, <code>feedback.current_waypoint</code> = đang đi tới điểm thứ mấy</td></tr>
+    <tr><td>Hủy</td><td><code>cancelTask()</code></td><td>Dừng giữa chừng, action trả <code>result = CANCELED</code></td></tr>
+  </tbody>
+</table>
+<p>Điểm khác <code>goToPose()</code> (1 điểm, <a href="lesson.html?m=10&amp;l=05-gui-cli-goal">Module 10</a>): <code>followWaypoints()</code> nhận cả mảng, server tự đi lần lượt — client chỉ cần theo dõi <code>current_waypoint</code> để biết đang ở điểm nào, không phải tự gửi lại goal kế tiếp.</p>
+
+<h2>Tự theo dõi 1 vòng chạy sống: feedback, hủy giữa chừng</h2>
+<p>Toạ độ 4 waypoint + 3 bức tường trong là số liệu thật (<code>waypoint_demo.py</code>, <code>maze.sdf</code>) — đường cong nối giữa các điểm chỉ minh họa <strong>thứ tự</strong> ghé qua, đường thẳng nối trực tiếp sẽ xuyên qua tường (đường tránh vật cản thật do planner tính, <a href="lesson.html?m=10&amp;l=02-global-planner">Module 10</a>). Để chế độ "1 vòng" — chế độ "tuần tra vô hạn" dành cho bài tập sau:</p>
+<div class="scene" data-scene="waypoint-follow-live"></div>
+
+<h2>Ví dụ trong dự án Atlas</h2>
+<p><code>src/atlas_slam/scripts/waypoint_demo.py</code> — 4 điểm cố định quanh <code>maze.sdf</code>:</p>
+<pre><code>WAYPOINTS = [(-2.5, 0.0), (0.0, 2.0), (2.5, 0.0), (0.0, -2.0)]
+...
+nav.followWaypoints(goal_poses)
+while not nav.isTaskComplete():
+    feedback = nav.getFeedback()
+    if feedback:
+        print(f"Đang đi tới waypoint #{feedback.current_waypoint}/{len(WAYPOINTS)}")
+    rclpy.spin_once(nav, timeout_sec=0.5)
+result = nav.getResult()</code></pre>
+
+<div class="callout warn">
+<p><strong>Gotcha có thật, gặp khi viết file này:</strong> nhấn Ctrl+C giữa lúc đang chạy ném lỗi <code>RCLError: rcl_shutdown already called</code>. Lý do: <code>BasicNavigator</code> có handler SIGINT riêng của rclpy, có thể đã tự gọi <code>rclpy.shutdown()</code> trước khi code chạy tới dòng shutdown của chính script. Sửa bằng 2 thay đổi:</p>
+<ol>
+  <li><code>nav.getResult()</code> chỉ gọi khi vòng lặp kết thúc bình thường (trong <code>try</code>, không phải sau <code>except</code>).</li>
+  <li>Dòng <code>shutdown()</code> cuối cùng bọc <code>if rclpy.ok():</code>.</li>
+</ol>
+<p>Xem nguyên văn trong khối <code>try/except KeyboardInterrupt</code> của file trên — đây là lý do thực tế, không phải phòng hờ lý thuyết.</p>
+</div>
+
+<h2>Thử ngay</h2>
+<pre><code>ros2 launch atlas_bringup bringup.launch.py world:=maze.sdf
+ros2 launch atlas_slam navigation.launch.py map:=$(pwd)/src/atlas_slam/maps/maze_map.yaml</code></pre>
+<pre><code>ros2 run atlas_slam waypoint_demo.py</code></pre>
+<p>Quan sát log <code>Đang đi tới waypoint #...</code> tăng dần theo robot trong Gazebo. Nhấn <code>Ctrl+C</code> giữa chừng — robot dừng lại, log in <code>Ctrl+C -- hủy task giữa chừng...</code>, script thoát sạch (không traceback).</p>

@@ -1,0 +1,62 @@
+<h1>Đọc trọn URDF của Atlas</h1>
+<p class="lead">Bài này ghép mọi thứ đã học lại: đọc <code>atlas_description</code> từ đầu đến cuối như đọc code người khác viết — không chỉ <em>cái gì</em>, mà <strong>vì sao lại làm thế</strong>. Đây cũng là phần dùng được trực tiếp trong báo cáo đồ án.</p>
+
+<h2>Mô hình 3D thật của Atlas</h2>
+<p>Dựng trực tiếp từ đúng các con số trong <code>atlas.urdf.xacro</code>/<code>wheel.xacro</code>/<code>sensors.xacro</code> — không phải hình minh họa. Kéo để xoay, cuộn để phóng to/nhỏ, tắt từng bộ phận để xem riêng, hoặc bấm "Tách rời từng bộ phận" để kéo giãn tất cả ra xa tâm — đúng kiểu hình nổ (exploded view) hay dùng khi trình bày lắp ráp. Bật "Hiện trục tọa độ joint" để thấy trục X (đỏ)/Y (lục)/Z (lam) tại từng joint, đúng cách RViz vẽ TF.</p>
+<div class="scene" data-scene="atlas-3d"></div>
+
+<h2>Cây TF thật của Atlas</h2>
+<p>Cùng một cây, vẽ phẳng để dễ đọc quan hệ cha-con — đây là đáp án của <a href="lesson.html?m=2&amp;l=05-bai-tap">bài tập Module 2</a> — cố tình chưa tiết lộ lúc đó:</p>
+<div class="scene" data-scene="atlas-tf-tree"></div>
+
+<h2>Thứ tự trải file</h2>
+<pre><code>atlas.urdf.xacro
+├── include materials.xacro        → 4 material màu
+├── include inertial_macros.xacro  → 3 macro inertia
+├── include wheel.xacro            → macro atlas_wheel, atlas_caster
+├── include sensors.xacro          → macro atlas_sensors
+├── &lt;xacro:property&gt; × 15          → toàn bộ kích thước/khối lượng
+├── link base_footprint (rỗng) + base_joint (fixed)
+├── link base_link (hộp)
+├── gọi atlas_wheel  × 2  (left/right)
+├── gọi atlas_caster × 2  (front/rear)
+└── gọi atlas_sensors     (lidar_link + imu_link)</code></pre>
+<p>4 file include đứng <strong>trước</strong> khối property, và không file nào sinh link trực tiếp — tất cả đều bọc trong macro, đúng lý do đã nói ở <a href="lesson.html?m=3&amp;l=04-xacro">bài 4</a>.</p>
+
+<h2>5 quyết định thiết kế</h2>
+
+<p><strong>1. Vì sao có <code>base_footprint</code> mà không chỉ dùng <code>base_link</code>?</strong><br>
+<code>base_link</code> đặt ngang trục bánh xe (cao <code>wheel_radius</code> so với mặt đất) — thuận cho động học vi sai. Nhưng Nav2 và costmap (Module 10) suy luận theo <em>hình chiếu robot xuống sàn</em>. Tách thêm 1 link ảo chạm đất giúp cả 2 nhu cầu cùng đúng, mà không phải chọn một cái sai.</p>
+
+<p><strong>2. Vì sao bánh trái/phải chỉ khác nhau một tham số <code>reflect</code>?</strong><br>
+<code>&lt;origin xyz="0 ${reflect * wheel_separation / 2} 0"/&gt;</code> với <code>reflect=1</code> (trái) và <code>-1</code> (phải). Theo REP-103, <strong>+y là bên trái</strong> — nhớ quy ước này thì không bao giờ lắp ngược bánh. Lắp ngược thì robot vẫn chạy, chỉ là quay trái khi bạn bảo nó quay phải: lỗi rất khó tìm nếu không nhớ REP-103.</p>
+
+<p><strong>3. Vì sao LiDAR lệch về phía trước <code>lidar_x_offset = 0.05</code>?</strong><br>
+Đặt đúng tâm thì thân robot/dây nối che một phần góc quét. Đẩy ra trước một chút để vùng quét phía trước (hướng robot di chuyển) sạch. Chiều cao <code>${base_height + lidar_height / 2}</code> ngồi đúng trên nóc, tự khớp lại nếu sau này đổi <code>base_height</code>.</p>
+
+<p><strong>4. Vì sao IMU đặt sát tâm robot?</strong><br>
+<code>&lt;origin xyz="0 0 ${imu_size / 2}"/&gt;</code> — gần trục quay. IMU đặt xa tâm sẽ đo thêm gia tốc hướng tâm do cánh tay đòn mỗi khi robot xoay, thành nhiễu cho bộ lọc sau này.</p>
+
+<p><strong>5. Vì sao <code>atlas_description</code> không chứa gì liên quan Gazebo?</strong><br>
+Quyết định kiến trúc quan trọng nhất của module. Mô tả robot xếp <strong>3 lớp</strong>, mỗi lớp include lớp dưới:</p>
+<table>
+  <tr><th>Package</th><th>File</th><th>Thêm gì</th><th>Module</th></tr>
+  <tr><td><code>atlas_description</code></td><td><code>atlas.urdf.xacro</code></td><td>hình học + TF thuần (không phụ thuộc simulator)</td><td>3</td></tr>
+  <tr><td><code>atlas_gazebo</code></td><td><code>atlas.gazebo.xacro</code></td><td><code>&lt;gazebo&gt;</code>: ma sát, plugin LiDAR/IMU</td><td>4, 6</td></tr>
+  <tr><td><code>atlas_control</code></td><td><code>atlas.control.xacro</code></td><td><code>&lt;ros2_control&gt;</code> + plugin <code>gz_ros2_control</code></td><td>5</td></tr>
+</table>
+<pre><code>&lt;!-- atlas_gazebo/urdf/atlas.gazebo.xacro --&gt;
+&lt;xacro:include filename="$(find atlas_description)/urdf/atlas.urdf.xacro"/&gt;
+&lt;gazebo reference="left_wheel_link"&gt;&lt;mu1&gt;1.0&lt;/mu1&gt;&lt;mu2&gt;1.0&lt;/mu2&gt;&lt;/gazebo&gt;
+&lt;gazebo reference="front_caster_link"&gt;&lt;mu1&gt;0.0&lt;/mu1&gt;&lt;mu2&gt;0.0&lt;/mu2&gt;&lt;/gazebo&gt;</code></pre>
+<p>Đúng chỗ này thấy rõ caster <code>fixed</code> (<a href="lesson.html?m=3&amp;l=03-joint">bài 3</a>) hoạt động ra sao: bánh chủ động ma sát <code>1.0</code> để bám, caster ma sát <code>0.0</code> để trượt tự do mọi hướng — thay cho bậc tự do cơ khí.</p>
+<p>Giá trị thật của 3 lớp: chuyển sang robot thật chỉ cần thay lớp trên cùng (<code>&lt;hardware&gt;&lt;plugin&gt;</code> trỏ driver thật thay vì <code>GazeboSimSystem</code>), hai lớp dưới giữ nguyên. Ngược lại, sửa kích thước bánh xe ở lớp dưới thì Gazebo lẫn controller tự nhận.</p>
+
+<h2>Thử ngay</h2>
+<pre><code># 3 lớp cho ra 3 URDF khác nhau từ cùng một mô tả robot
+xacro src/atlas_description/urdf/atlas.urdf.xacro | wc -l
+xacro src/atlas_gazebo/urdf/atlas.gazebo.xacro   | wc -l   # nhiều hơn: có &lt;gazebo&gt;
+xacro src/atlas_control/urdf/atlas.control.xacro | wc -l   # nhiều nhất: thêm &lt;ros2_control&gt;</code></pre>
+<pre><code>ros2 launch atlas_description display.launch.py</code></pre>
+<pre><code>ros2 run tf2_tools view_frames</code></pre>
+<p>So cây PDF vừa xuất ra với mô hình ở đầu bài. Hai chỗ hầu hết mọi người đoán thiếu: <code>base_footprint</code> (không có trong đề bài Module 2) và <strong>2</strong> caster thay vì 1. Hiểu được vì sao thiếu chúng quan trọng hơn việc đoán đúng.</p>

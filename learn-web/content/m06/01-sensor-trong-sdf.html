@@ -1,0 +1,33 @@
+<h1>Khối &lt;sensor&gt; trong SDF</h1>
+<p class="lead">Cả 2 khối <code>&lt;sensor&gt;</code> của Atlas nằm trong <code>atlas.gazebo.xacro</code>, gắn vào link bằng đúng cú pháp <code>&lt;gazebo reference="..."&gt;</code> đã học ở <a href="lesson.html?m=4&amp;l=03-gazebo-tag-ma-sat">Module 4</a> — tham chiếu bằng tên, không định nghĩa lại link.</p>
+
+<h2>gz-sim tự mô phỏng sensor — không cần plugin riêng</h2>
+<p>Gazebo Classic (bản cũ) yêu cầu viết một <strong>plugin C++ riêng</strong> cho mỗi loại cảm biến muốn dùng. gz-sim (Fortress) khác hẳn: chỉ cần khai báo đúng cú pháp <code>&lt;sensor type="..."&gt;</code>, hệ thống <strong>chung</strong> (<code>Sensors</code>, <code>Imu</code>) đã bật sẵn trong world file tự nhận diện và mô phỏng. 2 plugin này chính là 2 dòng đã thấy ở <a href="lesson.html?m=4&amp;l=01-world-sdf">Module 4 bài 1</a> mà lúc đó chưa giải thích hết:</p>
+<pre><code>&lt;plugin filename="gz-sim-imu-system" name="gz::sim::systems::Imu"/&gt;
+&lt;plugin filename="gz-sim-sensors-system" name="gz::sim::systems::Sensors"&gt;
+  &lt;render_engine&gt;ogre2&lt;/render_engine&gt;
+&lt;/plugin&gt;</code></pre>
+<p><code>Imu</code> xử lý <code>type="imu"</code>. <code>Sensors</code> xử lý mọi loại còn lại cần <strong>dựng hình để đo</strong> — camera, LiDAR (<code>gpu_lidar</code> dùng GPU render để tính khoảng cách, nhanh hơn nhiều so với tính hình học thuần túy) — nên cần khai báo cả <code>render_engine</code>. Thiếu 1 trong 2 plugin này ở world file: đúng loại sensor tương ứng im lặng không phát dữ liệu gì, URDF/xacro vẫn đúng, Gazebo vẫn mở được — chỉ là không có gì để echo.</p>
+
+<h2>4 trường chung cho mọi loại sensor</h2>
+<pre><code>&lt;sensor name="..." type="..."&gt;
+  &lt;always_on&gt;true&lt;/always_on&gt;
+  &lt;update_rate&gt;...&lt;/update_rate&gt;
+  &lt;topic&gt;...&lt;/topic&gt;
+  &lt;gz_frame_id&gt;...&lt;/gz_frame_id&gt;
+  ...
+&lt;/sensor&gt;</code></pre>
+<table>
+  <tr><th>Trường</th><th>Ý nghĩa</th></tr>
+  <tr><td><code>always_on</code></td><td>Luôn phát dữ liệu, kể cả khi không client nào đang lắng nghe — tắt đi thì sensor "ngủ" cho tới khi có ai subscribe, tiết kiệm CPU nhưng dữ liệu đầu tiên tới trễ hơn.</td></tr>
+  <tr><td><code>update_rate</code></td><td>Tần số phát dữ liệu (Hz) — độc lập hoàn toàn với <code>update_rate: 100</code> của <code>controller_manager</code> (Module 5), dù IMU của Atlas tình cờ cũng đặt 100Hz.</td></tr>
+  <tr><td><code>topic</code></td><td>Tên topic <strong>phía Gazebo Transport</strong> — chưa phải tên topic ROS 2 bạn sẽ <code>echo</code> được (bài 4 giải thích vì sao có 2 tầng tên).</td></tr>
+  <tr><td><code>gz_frame_id</code></td><td>Frame TF dữ liệu này gắn vào — luôn trùng tên <code>&lt;link&gt;</code> đã khai báo ở <code>sensors.xacro</code> (<a href="lesson.html?m=3&amp;l=01-urdf-la-gi">Module 3</a>), để dữ liệu tự động đặt đúng chỗ khi vẽ trong RViz.</td></tr>
+</table>
+
+<h2>Thử ngay</h2>
+<pre><code>ros2 launch atlas_bringup bringup.launch.py world:=maze.sdf</code></pre>
+<pre><code>gz topic -l | grep -E "scan|imu"</code></pre>
+<p>2 dòng hiện ra — đây là tên topic <strong>phía Gazebo Transport</strong> (<code>/scan</code>, <code>/imu</code>, đúng giá trị <code>&lt;topic&gt;</code> vừa đọc), khác hẳn thế giới ROS 2:</p>
+<pre><code>ros2 topic list | grep -E "scan|imu"</code></pre>
+<p>Cùng tên, nhưng 2 lệnh trên hỏi <strong>2 hệ thống truyền thông điệp hoàn toàn khác nhau</strong> — trùng tên chỉ là quy ước đặt tên của dự án, không phải vì chúng là một. Bài 4 mở rộng chính xác chỗ này.</p>

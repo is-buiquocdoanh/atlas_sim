@@ -1,0 +1,29 @@
+<h1>Parameter</h1>
+<p class="lead">Parameter là cơ chế cấu hình gắn với từng node: một giá trị (số, chuỗi, bool, danh sách...) khai báo bằng <code>declare_parameter()</code> trong code, có tên và giá trị mặc định, nhưng đọc/ghi được từ bên ngoài khi node đang chạy — qua CLI (<code>ros2 param</code>), qua launch file, hoặc từ node khác gọi service.</p>
+<p>Khác hằng số viết cứng trong code, parameter cho phép đổi hành vi của node (ngưỡng cảnh báo, tần số publish, tên topic...) mà không cần build lại hay sửa mã nguồn.</p>
+
+<h2>Điều dễ nhầm nhất: đọc một lần hay đọc lại?</h2>
+<p>Khi <code>ros2 param set</code> đổi giá trị, parameter server cập nhật ngay. Nhưng <strong>node có nhận được hay không</strong> còn tùy cách code đọc giá trị đó.</p>
+
+<div class="scene" data-scene="param"></div>
+
+<h2>Hai cách viết trong code</h2>
+<pre><code># Cách A: đọc 1 lần lúc khởi tạo. Sau đó param set không có tác dụng.
+self.speed = self.get_parameter('speed').value
+
+# Cách B: đọc lại mỗi lần dùng. Param set có tác dụng ngay.
+def timer_callback(self):
+    speed = self.get_parameter('speed').value
+    ...</code></pre>
+
+<div class="callout key"><p>Cách A nhanh và đơn giản. Cách B theo kịp thay đổi nhưng gọi thêm một lần đọc. Chọn theo nhu cầu: tham số cấu hình ít đổi thì A; tham số cần chỉnh giữa chừng (ngưỡng cảnh báo, tốc độ) thì B.</p></div>
+
+<h2>Thử ngay</h2>
+<p>Cần 2 terminal (đã <code>source install/setup.bash</code>, xem <a href="lesson.html?m=0&amp;l=00-cai-dat">Module 0</a>):</p>
+<pre><code># Terminal 1 — để chạy, đừng tắt; xem log base_temperature in ra
+ros2 launch ros2_basics demo.launch.py</code></pre>
+<pre><code># Terminal 2
+ros2 param list /sensor_publisher
+ros2 param get /sensor_publisher base_temperature
+ros2 param set /sensor_publisher base_temperature 30.0</code></pre>
+<p>Chạy <code>ros2 param set</code> rồi nhìn sang Terminal 1: log <code>sensor_publisher</code> đổi theo giá trị mới ngay (đọc lại mỗi lần — Cách B ở trên).</p>

@@ -1,0 +1,34 @@
+<h1>Vì sao cần ros2_control</h1>
+<p class="lead">Module 4 kết thúc với một robot đứng vững trong Gazebo nhưng <strong>không nhúc nhích</strong>. <code>ros2_control</code> là lớp đứng giữa — nhận lệnh tốc độ trừu tượng (<code>/cmd_vel</code>) và biến nó thành chuyển động thật của 2 bánh xe, không quan tâm bánh xe đó đang quay trong Gazebo hay là động cơ thật gắn encoder.</p>
+
+<p>Đây là module đầu tiên robot <strong>tự di chuyển</strong> được. Mọi thứ học từ Module 1 đến 4 — node, TF, URDF, vật lý Gazebo — giờ mới có một bộ điều khiển đứng trên cùng để dùng hết.</p>
+
+<div class="goals">
+  <h3>Sau module này bạn sẽ</h3>
+  <ul>
+    <li>Vẽ được sơ đồ hardware interface / controller_manager / controller, và chỉ ra command interface với state interface khác nhau chỗ nào</li>
+    <li>Đọc được <code>&lt;ros2_control&gt;</code> trong <code>atlas.control.xacro</code> và plugin <code>gz_ros2_control</code> gắn vào đâu</li>
+    <li>Tự tính tay được vận tốc mỗi bánh (rad/s) từ một lệnh <code>/cmd_vel</code> bất kỳ — và biết khi nào lệnh đó vượt quá giới hạn phần cứng khai báo</li>
+    <li>Gọi đúng tên 4 trạng thái vòng đời của một controller và biết lệnh nào chuyển trạng thái nào</li>
+    <li>Lái được robot Atlas thật trong Gazebo chỉ bằng <code>ros2 topic pub</code>, không cần bàn phím hay package nào khác</li>
+  </ul>
+</div>
+
+<div class="callout tip"><p>Package mới: <strong>atlas_control</strong>. Giống hệt lý do có <code>atlas_gazebo</code> riêng với <code>atlas_description</code> ở Module 4: tầng điều khiển tách khỏi tầng vật lý, vì khi chuyển sang robot thật, <code>&lt;hardware&gt;&lt;plugin&gt;</code> đổi từ <code>GazeboSimSystem</code> sang driver thật — còn URDF và cấu hình controller giữ nguyên.</p></div>
+
+<h2>Chuẩn bị</h2>
+<pre><code>cd ~/atlas_sim
+colcon build --packages-select atlas_control
+source install/setup.bash
+ros2 launch atlas_control controller.launch.py</code></pre>
+<p>Gazebo mở ra, robot đứng yên như Module 4 — nhưng lần này thử ngay:</p>
+<pre><code>ros2 topic pub /cmd_vel geometry_msgs/msg/Twist "{linear: {x: 0.2}, angular: {z: 0.0}}"</code></pre>
+<p>Robot chạy thẳng. Ctrl+C để dừng lệnh pub (robot sẽ dừng theo sau <code>cmd_vel_timeout</code>, bài 3 giải thích vì sao). Thấy được điều này — môi trường đã sẵn sàng cho cả module.</p>
+
+<h2>Bản đồ module</h2>
+<div class="cards">
+  <div class="mini"><b>Kiến trúc</b><span>hardware interface, controller_manager, controller — 3 khái niệm nền</span></div>
+  <div class="mini"><b>atlas.control.xacro</b><span>khai báo interface nào, plugin nào chạy chúng</span></div>
+  <div class="mini"><b>diff_drive_controller.yaml</b><span>tham số: bán kính, khoảng cách bánh, giới hạn tốc độ</span></div>
+  <div class="mini"><b>Động học vi sai</b><span>công thức thật biến cmd_vel thành vận tốc từng bánh</span></div>
+</div>

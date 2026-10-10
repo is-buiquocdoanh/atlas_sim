@@ -1,0 +1,55 @@
+<h1>Bài tập: đọc và diễn giải dữ liệu thật</h1>
+<p class="lead">Mục tiêu: không còn đoán số nào map sang trường nào — tự tính, tự đọc, tự đối chiếu. Và tự định vị được một lỗi nằm ở bước nào trong 6 bước của pipeline (bài 5), chỉ bằng quan sát triệu chứng.</p>
+
+<h2>Phần A — angle_increment thật sự là bao nhiêu</h2>
+<pre><code>ros2 launch atlas_bringup bringup.launch.py world:=maze.sdf</code></pre>
+<pre><code>ros2 topic echo /scan --once</code></pre>
+<ol>
+  <li>Ghi lại đúng giá trị <code>angle_increment</code> thật.</li>
+  <li>Tính <code>2π / 360</code> và <code>2π / 359</code> — giá trị nào khớp (sai số dưới 0.0001)?</li>
+  <li>Từ đó suy ra: <code>samples: 360</code> trong <code>atlas.gazebo.xacro</code> có tạo ra đúng 360 tia cách đều 1° với 2 tia ở biên trùng hướng nhau, hay 360 tia phủ hết 360° không trùng tia nào?</li>
+</ol>
+
+<h2>Phần B — vật cản gần nhất ở hướng nào</h2>
+<pre><code>ros2 topic echo /scan --once</code></pre>
+<ol>
+  <li>Tìm giá trị nhỏ nhất trong mảng <code>ranges</code> và chỉ số (index) của nó.</li>
+  <li>Tính góc: <code>angle_min + index × angle_increment</code> (dùng đúng <code>angle_increment</code> thật đọc được ở phần A).</li>
+  <li>Đứng cạnh Gazebo, nhìn robot trong mê cung — hướng vừa tính có trỏ đúng về phía vách gần nhất không?</li>
+</ol>
+
+<h2>Phần C — IMU đứng yên vs đang di chuyển</h2>
+<pre><code>ros2 topic echo /imu --once                           # lúc đứng yên, ghi lại linear_acceleration</code></pre>
+<pre><code>ros2 topic pub --once /cmd_vel geometry_msgs/msg/Twist "{linear: {x: 0.3}}"
+ros2 topic echo /imu --once                           # ngay khi vừa ra lệnh, ghi lại linear_acceleration</code></pre>
+<p>So 2 lần đọc — trục nào đổi nhiều nhất? Có khớp với hướng tăng tốc vừa gửi (<code>linear.x</code>) không?</p>
+
+<h2>Phần D — gây lỗi có chủ đích, định vị đúng bước gãy</h2>
+<table>
+  <tr><th>Thay đổi</th><th>Đoán xem gãy ở bước nào (1–6, bài 5)</th></tr>
+  <tr><td>Xoá dòng <code>&lt;topic&gt;scan&lt;/topic&gt;</code> trong <code>atlas.gazebo.xacro</code></td><td><code>gz topic -l</code> còn thấy <code>/scan</code> không? Tên mặc định rơi về đâu?</td></tr>
+  <tr><td>Đổi <code>gz_topic_name: "/scan"</code> thành <code>"/scann"</code> (gõ sai) trong <code>gz_bridge.yaml</code>, giữ nguyên <code>ros_topic_name</code></td><td><code>gz topic -e -t /scan -n 1</code> còn ra dữ liệu không? <code>ros2 topic echo /scan --once</code> thì sao?</td></tr>
+  <tr><td>Xoá hẳn plugin <code>gz::sim::systems::Sensors</code> khỏi <code>maze.sdf</code></td><td>Cả LiDAR lẫn IMU có cùng bị ảnh hưởng không, hay chỉ 1 trong 2?</td></tr>
+</table>
+<p>Với mỗi dòng, dùng đúng cặp lệnh ở bài 5 (<code>gz topic -e ...</code> rồi <code>ros2 topic echo ...</code>) để xác định chính xác dữ liệu biến mất ở <em>phía Gazebo Transport</em> hay chỉ biến mất <em>sau khi qua bridge</em> — 2 triệu chứng nhìn giống nhau trên <code>ros2 topic list</code> nhưng nguyên nhân khác hẳn.</p>
+<pre><code>git checkout src/atlas_gazebo/urdf/atlas.gazebo.xacro src/atlas_gazebo/config/gz_bridge.yaml src/atlas_gazebo/worlds/maze.sdf</code></pre>
+<p>Chạy để trả lại nguyên trạng khi xong.</p>
+
+<h2>Nộp bài</h2>
+<ul>
+  <li>Phần A: giá trị <code>angle_increment</code> thật + kết luận <code>/360</code> hay <code>/359</code></li>
+  <li>Phần B: index + góc tính tay + xác nhận bằng mắt</li>
+  <li>Phần D: bảng 3 dòng, mỗi dòng ghi rõ bước nào gãy và bằng chứng (lệnh nào còn ra dữ liệu, lệnh nào không)</li>
+</ul>
+
+<h2>Tự kiểm tra trước khi qua Module 7</h2>
+<div class="goals">
+  <ul>
+    <li>Giải thích được vì sao gz-sim không cần plugin riêng cho từng loại cảm biến</li>
+    <li>Đọc đúng mọi tham số trong khối <code>&lt;lidar&gt;</code>/<code>&lt;imu&gt;</code> và map chính xác sang trường trong <code>LaserScan</code>/<code>Imu</code></li>
+    <li>Tự tính được góc ứng với một phần tử bất kỳ trong <code>ranges[]</code>, dùng đúng <code>angle_increment</code> đọc từ topic thật, không đoán</li>
+    <li>Giải thích được vì sao một IMU đứng yên không đọc ra gia tốc bằng 0</li>
+    <li>Vẽ được 6 bước của pipeline cảm biến và chỉ đúng công cụ để kiểm tra từng bước còn sống hay đã gãy</li>
+  </ul>
+</div>
+<p>Xong hết → sang <strong>Module 7 — Teleoperation &amp; RViz</strong> (sắp có trên trang này), nơi bạn lái Atlas bằng bàn phím và dựng RViz đầy đủ hơn hẳn <code>atlas_view.rviz</code> hiện tại.</p>

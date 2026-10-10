@@ -1,0 +1,51 @@
+<h1>Đọc controller.launch.py</h1>
+<p class="lead">File ngắn nhất trong cả module — đúng 4 action — vì nó <strong>tái dùng</strong> gần như toàn bộ những gì Module 4 đã dựng, không viết lại logic mở world hay spawn robot.</p>
+
+<h2>Toàn bộ file</h2>
+<pre><code>def generate_launch_description():
+    control_pkg_share = get_package_share_directory("atlas_control")
+    gazebo_pkg_share = get_package_share_directory("atlas_gazebo")
+
+    world_arg = DeclareLaunchArgument("world", default_value="empty.sdf")
+
+    spawn_with_control = IncludeLaunchDescription(
+        PythonLaunchDescriptionSource(
+            os.path.join(gazebo_pkg_share, "launch", "spawn_robot.launch.py")
+        ),
+        launch_arguments={
+            "model": os.path.join(control_pkg_share, "urdf", "atlas.control.xacro"),
+            "world": LaunchConfiguration("world"),
+        }.items(),
+    )
+
+    joint_state_broadcaster_spawner = Node(
+        package="controller_manager", executable="spawner",
+        arguments=["joint_state_broadcaster"],
+    )
+    diff_drive_controller_spawner = Node(
+        package="controller_manager", executable="spawner",
+        arguments=["diff_drive_controller"],
+    )
+
+    return LaunchDescription([
+        world_arg, spawn_with_control,
+        joint_state_broadcaster_spawner, diff_drive_controller_spawner,
+    ])</code></pre>
+
+<h2>Chỉ 1 tham số đổi — cả pipeline Module 4 chạy lại nguyên vẹn</h2>
+<p><code>spawn_with_control</code> include thẳng <code>atlas_gazebo/launch/spawn_robot.launch.py</code> (<a href="lesson.html?m=4&amp;l=05-spawn-robot-launch">Module 4 bài 5</a>) — world mở ra, <code>robot_state_publisher</code> chạy, robot spawn, <code>/clock</code> bridge — y hệt không đổi gì, chỉ override đúng 1 tham số <code>model</code>: trỏ sang <code>atlas.control.xacro</code> thay vì <code>atlas.gazebo.xacro</code>. Đây là hệ quả trực tiếp của 3 lớp xacro luôn include lẫn nhau (<a href="lesson.html?m=5&amp;l=02-doc-control-xacro">bài 2</a>): đổi lớp cao nhất, lớp dưới tự động theo.</p>
+
+<h2>2 spawner — vì sao cần tới 2 node riêng</h2>
+<p><code>controller_manager spawner</code> không phải script của dự án — là executable có sẵn trong gói <code>controller_manager</code>, nhận đúng 1 tham số: tên controller cần nạp. Atlas gọi nó <strong>2 lần</strong> vì có <strong>2 controller</strong> (<a href="lesson.html?m=5&amp;l=01-kien-truc">bài 1</a>): mỗi spawner tự <code>load</code> → <code>configure</code> → <code>activate</code> đúng một controller, đọc tham số tương ứng từ <code>diff_drive_controller.yaml</code> (đã nạp sẵn cho <code>controller_manager</code> qua <code>&lt;parameters&gt;</code> trong <code>atlas.control.xacro</code>).</p>
+<div class="callout tip"><p><code>spawner</code> tự chờ/thử lại cho tới khi service của <code>controller_manager</code> sẵn sàng (được plugin <code>gz_ros2_control</code> tạo ra ngay sau khi Gazebo spawn xong entity) — comment thật trong file nói rõ điều này. Không cần tự thêm <code>TimerAction</code> hay <code>event_handler</code> để chờ đúng thứ tự, dù về mặt launch, <code>spawn_with_control</code> và 2 spawner được khai báo chạy gần như cùng lúc.</p></div>
+
+<h2>Lớp ngoài cùng: atlas_bringup</h2>
+<p>Có thêm một file nữa, <strong>không thuộc package này</strong>: <code>atlas_bringup/launch/bringup.launch.py</code>. Toàn bộ nội dung chỉ là include <code>controller.launch.py</code> — không thêm action nào. Lý do tồn tại: gom về đúng 1 package làm <strong>điểm vào chính</strong> cho cả stack, để các package ứng dụng phía trên (<code>atlas_slam</code>, Module 8 trở đi) trỏ vào <code>atlas_bringup</code> thay vì phải nhớ "muốn chạy mô phỏng thì vào <code>atlas_control</code>". Cả 3 lệnh dưới đây tính đến giờ cho ra <strong>kết quả giống hệt nhau</strong>:</p>
+<pre><code>ros2 launch atlas_gazebo spawn_robot.launch.py        # Module 4 -- đứng yên
+ros2 launch atlas_control controller.launch.py        # bài này -- lái được bằng /cmd_vel
+ros2 launch atlas_bringup bringup.launch.py            # tên gọi chính thức cho stack mô phỏng</code></pre>
+<p>Khác biệt duy nhất là lớp xacro nào được truyền làm <code>model</code> — không phải 3 cách làm khác nhau, mà 3 cách nhìn cùng một pipeline với 3 độ sâu khác nhau.</p>
+
+<h2>Thử ngay</h2>
+<pre><code>ros2 launch atlas_bringup bringup.launch.py world:=maze.sdf</code></pre>
+<p>So với <code>ros2 launch atlas_control controller.launch.py world:=maze.sdf</code> đã chạy ở các bài trước — xác nhận bằng mắt: không có gì khác.</p>

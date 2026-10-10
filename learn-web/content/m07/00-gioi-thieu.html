@@ -1,0 +1,34 @@
+<h1>Vì sao cần một tầng giữa người lái và robot</h1>
+<p class="lead">Module 5 đã lái được Atlas bằng đúng 1 lệnh: <code>ros2 topic pub /cmd_vel ...</code>. Nhưng một robot thật có thể nhận lệnh từ <strong>nhiều nguồn cùng lúc</strong> — bàn phím, joystick, bộ điều hướng tự động, và một lớp an toàn có quyền ngắt ngang bất kỳ lúc nào. Module này xây đúng tầng đứng giữa: ai thắng khi 2 nguồn cùng ra lệnh, và làm sao robot tự dừng trước khi đâm vào vật cản dù người lái không kịp phản ứng.</p>
+
+<div class="goals">
+  <h3>Sau module này bạn sẽ</h3>
+  <ul>
+    <li>Lái được Atlas bằng cả bàn phím lẫn joystick, và biết chính xác vì sao 2 cách này <strong>không nên chạy cùng lúc</strong></li>
+    <li>Đọc đúng cơ chế ưu tiên (priority) + hết hạn (timeout) của <code>twist_mux</code>, tự tính được nguồn nào đang thắng trong một tình huống bất kỳ</li>
+    <li>Giải thích được vì sao <code>collision_monitor</code> cần một node relay riêng thay vì nối thẳng vào <code>twist_mux</code></li>
+    <li>Đọc được 2 vùng đa giác an toàn (dừng hẳn / giảm tốc) từ đúng kích thước thật của Atlas</li>
+    <li>Tự thêm display LiDAR/IMU/Polygon vào RViz thay vì chỉ dùng 3 display mặc định</li>
+  </ul>
+</div>
+
+<h2>Package mới: atlas_bringup, lần đầu dùng hết công năng</h2>
+<p><code>atlas_bringup</code> đã xuất hiện từ Module 5 (chỉ để include <code>controller.launch.py</code>) — mô tả thật trong <code>package.xml</code> nói rõ: <em>"Launch tổng hợp cho Atlas: joystick teleop qua twist_mux, collision_monitor an toàn"</em>. Module này mới dùng hết phần còn lại của package đó.</p>
+
+<h2>Bức tranh tổng thể</h2>
+<div class="scene" data-scene="teleop-overview"></div>
+<p><code>twist_mux</code> là cái phễu duy nhất mọi nguồn (trừ bàn phím) phải đi qua trước khi tới <code>diff_drive_controller</code> (Module 5). Bàn phím <strong>cố tình</strong> đi tắt thẳng vào <code>/cmd_vel</code> — đơn giản cho việc học nhanh, nhưng chính vì đi tắt nên nó là nguồn gây xung đột nếu chạy cùng lúc với các nguồn kia (bài 1 nói kỹ).</p>
+
+<h2>Chuẩn bị</h2>
+<pre><code>cd ~/atlas_sim
+colcon build --packages-select atlas_bringup
+source install/setup.bash</code></pre>
+<p>Mọi gói cần thiết (<code>teleop-twist-keyboard</code>, <code>joy</code>, <code>teleop-twist-joy</code>, <code>twist-mux</code>) đã cài từ <a href="lesson.html?m=0&amp;l=00-cai-dat">Module 0</a> — không cần cài thêm gì.</p>
+
+<h2>Bản đồ module</h2>
+<div class="cards">
+  <div class="mini"><b>Bàn phím</b><span>đi tắt thẳng /cmd_vel, nhanh nhưng không an toàn khi có nguồn khác</span></div>
+  <div class="mini"><b>Joystick</b><span>joy_node → teleop_twist_joy → twist_mux</span></div>
+  <div class="mini"><b>twist_mux</b><span>4 nguồn, mỗi nguồn 1 priority + 1 timeout</span></div>
+  <div class="mini"><b>collision_monitor</b><span>lớp an toàn độc lập, quét /scan trực tiếp</span></div>
+</div>

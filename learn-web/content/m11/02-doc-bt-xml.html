@@ -1,0 +1,56 @@
+<h1>Đọc file BT XML mặc định của Atlas</h1>
+<p class="lead">File BT là XML thuần — không cần học ngôn ngữ lập trình mới, chỉ cần biết tên + ý nghĩa từng thẻ. Toàn bộ cây Atlas đang dùng nằm gọn trong 1 file 37 dòng.</p>
+
+<h2>Tự xem cây sống: tick lan truyền qua từng node</h2>
+<p>Đúng cây 37 dòng XML thật — không phải sơ đồ giản lược. Tự chạy liên tục mô phỏng 1 vòng đời goal: tính đường → bám đường → gặp vật cản mới → recovery → thử lại, đếm đúng tới 6 lần như <code>number_of_retries="6"</code> thật rồi mới báo thất bại:</p>
+<div class="scene" data-scene="bt-tree-live"></div>
+
+<h2>Đọc từ ngoài vào trong</h2>
+<pre><code>&lt;RecoveryNode number_of_retries="6" name="NavigateRecovery"&gt;
+  &lt;PipelineSequence name="NavigateWithReplanning"&gt;
+    &lt;RateController hz="1.0"&gt;
+      &lt;RecoveryNode number_of_retries="1" name="ComputePathToPose"&gt;
+        &lt;ComputePathToPose goal="{goal}" path="{path}" planner_id="GridBased"/&gt;
+        &lt;ClearEntireCostmap name="ClearGlobalCostmap-Context" .../&gt;
+      &lt;/RecoveryNode&gt;
+    &lt;/RateController&gt;
+    &lt;RecoveryNode number_of_retries="1" name="FollowPath"&gt;
+      &lt;FollowPath path="{path}" controller_id="FollowPath"/&gt;
+      &lt;ClearEntireCostmap name="ClearLocalCostmap-Context" .../&gt;
+    &lt;/RecoveryNode&gt;
+  &lt;/PipelineSequence&gt;
+  &lt;ReactiveFallback name="RecoveryFallback"&gt;
+    &lt;GoalUpdated/&gt;
+    &lt;RoundRobin name="RecoveryActions"&gt;...&lt;/RoundRobin&gt;
+  &lt;/ReactiveFallback&gt;
+&lt;/RecoveryNode&gt;</code></pre>
+<ul>
+  <li>Toàn bộ nằm trong <strong>1</strong> <code>RecoveryNode</code> gốc, tối đa <strong>6 lần thử lại</strong> — nếu cả 6 lần đều thất bại, goal báo <code>FAILED</code> thật sự.</li>
+  <li><code>PipelineSequence</code> = việc chính: <code>RateController hz="1.0"</code> giới hạn gọi <code>ComputePathToPose</code> tối đa 1 lần/giây (tính lại đường đi định kỳ — đúng khái niệm "replanning" trong tên file), rồi <code>FollowPath</code> bám theo.</li>
+  <li>2 <code>RecoveryNode</code> LỒNG BÊN TRONG (1 lần thử lại) quanh <code>ComputePathToPose</code> và <code>FollowPath</code> — nếu 1 trong 2 việc đó thất bại, tự <code>ClearEntireCostmap</code> (xóa sạch costmap, tính lại từ <code>/scan</code> mới nhất — hữu ích khi costmap "nhớ nhầm" vật cản đã hết tồn tại) rồi thử lại NGAY LẬP TỨC trước khi báo <code>FAILURE</code> lên node cha.</li>
+  <li><code>{goal}</code>, <code>{path}</code> là <strong>blackboard</strong> — biến dùng chung giữa các node trong cây (giống biến toàn cục có giới hạn phạm vi), không phải cú pháp lạ.</li>
+</ul>
+<p>Chỉ khi CẢ chuỗi <code>PipelineSequence</code> thất bại (<code>ComputePathToPose</code> và/hoặc <code>FollowPath</code> thất bại sau khi đã tự dọn costmap mà vẫn không xong), <code>ReactiveFallback</code> mới kích hoạt — đúng nội dung bài sau.</p>
+
+<h2>Phần hay bị bỏ qua: <code>GoalUpdated</code> đứng TRƯỚC RoundRobin</h2>
+<pre><code>&lt;ReactiveFallback name="RecoveryFallback"&gt;
+  &lt;GoalUpdated/&gt;
+  &lt;RoundRobin name="RecoveryActions"&gt;
+    &lt;Sequence name="ClearingActions"&gt;
+      &lt;ClearEntireCostmap name="ClearLocalCostmap-Subtree" .../&gt;
+      &lt;ClearEntireCostmap name="ClearGlobalCostmap-Subtree" .../&gt;
+    &lt;/Sequence&gt;
+    &lt;Spin spin_dist="1.57"/&gt;
+    &lt;Wait wait_duration="5"/&gt;
+    &lt;BackUp backup_dist="0.30" backup_speed="0.05"/&gt;
+  &lt;/RoundRobin&gt;
+&lt;/ReactiveFallback&gt;</code></pre>
+<p><code>ReactiveFallback</code> thử con theo thứ tự, dừng ở con đầu tiên <code>SUCCESS</code>. <code>GoalUpdated</code> đứng ĐẦU TIÊN — đây là 1 <em>condition</em>, trả về <code>SUCCESS</code> nếu goal vừa bị người dùng đổi (gửi goal mới) trong lúc đang xử lý recovery. Nếu đúng vậy, <code>ReactiveFallback</code> dừng NGAY ở đây — không chạy <code>RoundRobin</code> nữa — vì tiếp tục "khắc phục" cho 1 goal đã lỗi thời là vô nghĩa, quay lại <code>PipelineSequence</code> để bắt đầu lại với goal mới luôn hợp lý hơn. Chỉ khi goal KHÔNG đổi, <code>GoalUpdated</code> mới <code>FAILURE</code> (không có gì "cập nhật"), nhường cho <code>RoundRobin</code> chạy.</p>
+
+<h2>Ví dụ trong dự án Atlas</h2>
+<p>Chính file này quyết định HÀNH VI THẬT bạn đã thấy ở Module 10 khi gửi goal — không phải code C++ ẩn trong <code>bt_navigator</code>. Muốn đổi "tính lại đường mỗi 1 giây" thành "mỗi 2 giây", chỉ cần sửa <code>hz="1.0"</code> thành <code>hz="0.5"</code> trong file XML, không đụng gì tới code Python/C++.</p>
+
+<h2>Thử ngay</h2>
+<pre><code>cat /opt/ros/humble/share/nav2_bt_navigator/behavior_trees/\
+navigate_to_pose_w_replanning_and_recovery.xml</code></pre>
+<p>Đối chiếu từng dòng với sơ đồ ở trên — tìm đúng vị trí của <code>RateController</code>, 2 <code>RecoveryNode</code> lồng bên trong, <code>GoalUpdated</code>, và <code>RoundRobin</code>.</p>

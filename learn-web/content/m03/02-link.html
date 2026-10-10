@@ -1,0 +1,42 @@
+<h1>Link: visual, collision, inertial</h1>
+<p class="lead"><code>&lt;link&gt;</code> là một khối cứng (rigid body) của robot: khung, bánh xe, vỏ cảm biến. Mỗi link mang tối đa 3 phần mô tả <strong>độc lập</strong> cho cùng một khối đó — độc lập nghĩa là chúng có thể khác nhau, không bắt buộc trùng khớp.</p>
+
+<h2>Ba lớp, ba việc khác nhau</h2>
+<ul>
+  <li><strong><code>&lt;visual&gt;</code></strong> — hình để <em>nhìn</em>. RViz và Gazebo render cái này. Có thể là <code>&lt;box&gt;</code>, <code>&lt;cylinder&gt;</code>, <code>&lt;sphere&gt;</code> hoặc <code>&lt;mesh&gt;</code> (file CAD).</li>
+  <li><strong><code>&lt;collision&gt;</code></strong> — hình để <em>va chạm</em>. Bộ giải vật lý (Module 4) chỉ dùng cái này. Thường cố tình làm <strong>đơn giản hơn</strong> visual: mesh nhiều chi tiết render mượt nhưng tính va chạm chậm và hay kẹt, nên thay bằng một hộp bao đơn giản.</li>
+  <li><strong><code>&lt;inertial&gt;</code></strong> — <em>khối lượng</em> + ma trận quán tính (inertia tensor): vật nặng bao nhiêu và "khó xoay" quanh mỗi trục cỡ nào. Không ảnh hưởng gì ở module này, nhưng sai ở đây là robot nảy tung hoặc rơi xuyên sàn ở Module 4.</li>
+</ul>
+<p>Mỗi phần có <code>&lt;origin xyz rpy&gt;</code> riêng — độ lệch của hình khối đó so với <strong>gốc của link</strong>. Chỗ người mới hay nhầm: gốc link không nhất thiết nằm giữa khối hình học (xem <code>base_link</code> của Atlas bên dưới — gốc nằm ở đáy, không phải tâm hộp).</p>
+
+<h2>Kéo thử: visual, collision lệch nhau — inertia tính theo công thức thật</h2>
+<p>Không cần tự đạo hàm công thức quán tính. Với hình cơ bản có sẵn công thức — hộp dùng đúng công thức đang chạy trong mô hình dưới, lấy nguyên văn từ <code>inertial_macros.xacro</code>:</p>
+<p>Mô hình dưới có 2 phần chuyển động thật để thấy hậu quả, không chỉ đọc số: viên bi bay bên trong hộp — nó nảy theo đúng biên <strong>collision</strong>, kéo "tỉ lệ collision" lệch khỏi 1.0 để thấy bi nảy trong vùng trống hoặc lọt ra ngoài hộp nhìn thấy được. Bên phải là một bánh đà — bấm "Đẩy quay bánh đà" rồi đổi mass/x/y/z để thấy cùng một cú đẩy làm nó quay nhanh hẳn hay ì ra tùy izz.</p>
+<pre><code>ixx = (1/12)·m·(y²+z²)
+iyy = (1/12)·m·(x²+z²)
+izz = (1/12)·m·(x²+y²)</code></pre>
+<div class="scene" data-scene="link-layers"></div>
+
+<h2>Ví dụ trong dự án Atlas</h2>
+<p><code>base_link</code> — cả 3 phần dùng chung một <code>&lt;origin&gt;</code> nâng hộp lên nửa chiều cao, để gốc link nằm ở <strong>đáy</strong> khung chứ không phải giữa khung:</p>
+<pre><code>&lt;link name="base_link"&gt;
+  &lt;visual&gt;
+    &lt;origin xyz="0 0 ${base_height / 2}" rpy="0 0 0"/&gt;
+    &lt;geometry&gt;&lt;box size="${base_length} ${base_width} ${base_height}"/&gt;&lt;/geometry&gt;
+  &lt;/visual&gt;
+  &lt;collision&gt;&lt;!-- cùng origin, cùng kích thước với visual --&gt;&lt;/collision&gt;
+  &lt;xacro:inertial_box mass="${base_mass}" x="${base_length}" y="${base_width}" z="${base_height}"&gt;
+    &lt;origin xyz="0 0 ${base_height / 2}" rpy="0 0 0"/&gt;
+  &lt;/xacro:inertial_box&gt;
+&lt;/link&gt;</code></pre>
+
+<p>Hai link đặc biệt cần chú ý:</p>
+<ul>
+  <li><strong><code>base_footprint</code></strong> — <code>&lt;link name="base_footprint"/&gt;</code>, rỗng hoàn toàn: không visual, không collision, không khối lượng. Đây là <strong>link ảo</strong> đánh dấu hình chiếu của robot xuống mặt đất. Nav2/AMCL (Module 9-10) trông đợi có một frame chạm đất như vậy.</li>
+  <li><strong><code>lidar_link</code></strong> — visual là trụ tròn đen, nhưng đó chỉ là <em>vỏ hộp</em> LiDAR. Việc nó phát ra tia quét là chuyện của plugin trong <code>atlas_gazebo</code> (Module 6), không phải của link này.</li>
+</ul>
+<p>Atlas dùng hình khối cơ bản (<code>box</code>, <code>cylinder</code>, <code>sphere</code>) cho cả visual lẫn collision, không dùng mesh — mục tiêu khóa học là dạy ROS 2/Nav2, không phải mỹ thuật 3D.</p>
+
+<h2>Thử ngay</h2>
+<pre><code>ros2 launch atlas_description display.launch.py</code></pre>
+<p>Trong RViz, panel <strong>Displays</strong> → <code>RobotModel</code>: bật/tắt <strong>Visual Enabled</strong> và <strong>Collision Enabled</strong> để so 2 lớp — với Atlas chúng trùng nhau. Thử xóa hẳn khối <code>&lt;visual&gt;</code> của <code>imu_link</code> (sửa file, build lại) → robot vẫn chạy, chỉ khối cảm biến biến mất. Xóa <code>&lt;inertial&gt;</code> → RViz vẫn bình thường, nhưng nhớ lại điều này ở Module 4.</p>

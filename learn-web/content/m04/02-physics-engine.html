@@ -1,0 +1,51 @@
+<h1>Physics engine & va chạm</h1>
+<p class="lead"><code>&lt;physics type="..."&gt;</code> không chỉ là một cái tên. Nó chọn <strong>thuật toán</strong> tính va chạm và động lực học — và với vật thể mỏng, thuật toán sai có thể khiến robot <strong>xuyên qua tường</strong> mà không hề báo lỗi gì.</p>
+
+<h2>Một fact thật từ chính dự án</h2>
+<p>3 world trong <code>atlas_gazebo/worlds/</code> không dùng chung một engine:</p>
+<table>
+  <tr><th>File</th><th><code>&lt;physics type&gt;</code></th><th>Collision detector</th></tr>
+  <tr><td><code>empty.sdf</code></td><td><code>ode</code></td><td>mặc định của ODE</td></tr>
+  <tr><td><code>maze.sdf</code></td><td><code>dartsim</code></td><td><code>bullet</code> (khai báo tường minh)</td></tr>
+  <tr><td><code>warehouse.sdf</code></td><td><code>dartsim</code></td><td><code>bullet</code></td></tr>
+</table>
+<pre><code>&lt;physics name="1ms" type="dartsim"&gt;
+  &lt;max_step_size&gt;0.001&lt;/max_step_size&gt;
+  &lt;real_time_factor&gt;1.0&lt;/real_time_factor&gt;
+  &lt;dart&gt;
+    &lt;collision_detector&gt;bullet&lt;/collision_detector&gt;
+  &lt;/dart&gt;
+&lt;/physics&gt;</code></pre>
+<p><code>max_step_size</code> giống hệt nhau ở cả 3 file (0.001s) — khác biệt duy nhất là <strong>engine</strong> (<code>ode</code> so với <code>dartsim</code>) và <strong>bộ phát hiện va chạm</strong> (<code>bullet</code>). <code>empty.sdf</code> chỉ có một mặt phẳng nên engine nào cũng ổn; <code>maze.sdf</code>/<code>warehouse.sdf</code> có vách mỏng (dày 0.1m, xem bài sau) — hình học khó hơn cho một bộ phát hiện va chạm, nên 2 world đó cố tình chọn tổ hợp khác.</p>
+<div class="callout warn"><p>Trang này <strong>không</strong> khẳng định chính xác lỗi gì từng xảy ra khi dùng <code>ode</code> cho world có vách mỏng — lịch sử commit của dự án không còn giữ chi tiết đó để trích dẫn trung thực. Phần dưới dạy <strong>khái niệm chung</strong>, có thật và được ghi nhận rộng rãi trong mọi physics engine, giải thích vì sao chọn bộ phát hiện va chạm phù hợp với hình học lại quan trọng.</p></div>
+
+<h2>Vì sao vật mỏng + bước rời rạc là công thức gây lỗi</h2>
+<p>Physics engine không mô phỏng chuyển động liên tục — nó tính vị trí mới sau mỗi <code>max_step_size</code> giây, rồi mới <strong>kiểm tra</strong> xem có vật nào chồng lên nhau không. Nếu một vật di chuyển đủ nhanh (hoặc bước đủ lớn) để "nhảy" từ bên này sang hẳn bên kia của một vách mỏng chỉ trong một bước, không có mẫu thời gian nào rơi đúng vào lúc hai vật chồng lên nhau — engine không bao giờ thấy va chạm xảy ra.</p>
+<p>Thử trực tiếp bên dưới: kéo tốc độ và bước thời gian, bấm bắn, xem viên bi có "lọt" qua vách hay bị chặn lại:</p>
+<div class="scene" data-scene="physics-tunneling"></div>
+
+<h2>Tham số chống xuyên tường trong chính world của Atlas</h2>
+<p>Mỗi vách trong <code>maze.sdf</code> còn có thêm khối <code>&lt;contact&gt;</code> bên cạnh <code>&lt;friction&gt;</code>:</p>
+<pre><code>&lt;collision name="collision"&gt;
+  &lt;geometry&gt;&lt;box&gt;&lt;size&gt;7.1 0.1 0.5&lt;/size&gt;&lt;/box&gt;&lt;/geometry&gt;
+  &lt;surface&gt;
+    &lt;friction&gt;&lt;ode&gt;&lt;mu&gt;1.0&lt;/mu&gt;&lt;mu2&gt;1.0&lt;/mu2&gt;&lt;/ode&gt;&lt;/friction&gt;
+    &lt;contact&gt;
+      &lt;ode&gt;
+        &lt;min_depth&gt;0.001&lt;/min_depth&gt;
+        &lt;max_vel&gt;2.0&lt;/max_vel&gt;
+      &lt;/ode&gt;
+    &lt;/contact&gt;
+  &lt;/surface&gt;
+&lt;/collision&gt;</code></pre>
+<ul>
+  <li><code>min_depth</code> — cho phép 2 vật lún vào nhau tối đa bao nhiêu mét trước khi engine coi là va chạm cần xử lý. Số càng nhỏ, engine càng "nhạy", bắt va chạm sớm hơn — nhưng cũng tốn tính toán hơn.</li>
+  <li><code>max_vel</code> — khi phát hiện lún vào nhau, engine đẩy 2 vật ra xa nhau để sửa lỗi; số này giới hạn tốc độ đẩy đó, tránh robot bị "bắn văng" ra xa với vận tốc phi thực tế chỉ vì lỡ chạm nhẹ vào tường (hiện tượng quen gọi là "nổ" vật lý — physics explosion).</li>
+</ul>
+<p>Dù vách tường (0.1m) mỏng hơn hẳn mặt đất (coi như vô hạn dày), 2 tham số này không chống được tunneling — chúng chỉ xử lý <em>sau khi</em> va chạm đã được phát hiện. Bộ phát hiện va chạm (<code>bullet</code>, bài trên) mới là lớp quyết định việc đó <strong>có được phát hiện hay không</strong>.</p>
+
+<h2>Thử ngay</h2>
+<pre><code>gz sim --verbose atlas_gazebo/worlds/maze.sdf</code></pre>
+<p>Hoặc qua launch file đã biết, mở xem robot đứng cạnh vách:</p>
+<pre><code>ros2 launch atlas_gazebo spawn_robot.launch.py world:=maze.sdf</code></pre>
+<p>Robot đứng yên, chưa chạy được (chưa có Module 5) — nhưng bạn có thể tự kéo thả robot trong GUI Gazebo (chuột phải → Move to) để đẩy nó va vào vách, quan sát nó dừng lại đúng ở biên chứ không lọt qua.</p>

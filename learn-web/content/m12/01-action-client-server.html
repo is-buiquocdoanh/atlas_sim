@@ -1,0 +1,34 @@
+<h1>Action client/server — vì sao navigation phải dùng action</h1>
+<p class="lead"><strong>Action</strong> là mô hình giao tiếp thứ 3 (sau topic và service, <a href="lesson.html?m=1&amp;l=00-gioi-thieu">Module 1</a>) — dùng cho tác vụ <strong>mất thời gian dài</strong>, cần <strong>feedback liên tục</strong> trong lúc chạy, và có thể <strong>hủy giữa chừng</strong> — 3 đặc điểm service không có.</p>
+
+<h2>Tự xem vòng đời 1 action: goal → feedback × N → result (hoặc hủy)</h2>
+<p>Bấm "Hủy giữa chừng" bất cứ lúc nào trong lúc feedback đang chạy, để xem <code>cancelTask()</code> đổi kết quả cuối từ <code>SUCCEEDED</code> sang <code>CANCELED</code>:</p>
+<div class="scene" data-scene="action-lifecycle"></div>
+
+<h2>So với 2 mô hình đã học</h2>
+<table>
+  <thead><tr><th></th><th>Topic</th><th>Service</th><th>Action</th></tr></thead>
+  <tbody>
+    <tr><td>Phản hồi</td><td>Không</td><td>1 lần, nhanh</td><td>Nhiều lần (feedback) + 1 lần cuối (result)</td></tr>
+    <tr><td>Thời lượng</td><td>Liên tục</td><td>Ngắn</td><td>Dài, không biết trước</td></tr>
+    <tr><td>Hủy được?</td><td>Không áp dụng</td><td>Không</td><td>Có</td></tr>
+  </tbody>
+</table>
+<p><code>NavigateToPose</code>, <code>FollowWaypoints</code> (<a href="lesson.html?m=12&amp;l=02-nav2-simple-commander">bài sau</a>) đều là action, không phải service — vì đi tới 1 điểm có thể mất hàng chục giây, client cần biết "đang đi tới đâu rồi" (feedback), và có quyền đổi ý giữa chừng (hủy) mà không phải đợi xong mới dừng được.</p>
+<p>Bên trong, action = 1 cặp topic + vài service ẩn (gửi goal, nhận feedback, nhận result) — client code thường không thấy phần "lắp ráp" này vì thư viện wrapper (<a href="lesson.html?m=12&amp;l=02-nav2-simple-commander">bài sau</a>) đã làm sẵn.</p>
+
+<div class="callout">
+<p><strong>Sửa 1 nhãn sai hay gặp:</strong> sơ đồ action tổng quát hay vẽ "server" chung là <code>bt_navigator</code> — đúng cho <code>NavigateToPose</code>/<code>NavigateThroughPoses</code>, nhưng SAI cho action module này dùng: <code>/follow_waypoints</code> do <strong><code>waypoint_follower</code></strong> mở, một node Nav2 riêng, tách khỏi <code>bt_navigator</code> (xác nhận ngay dưới). Sơ đồ ở trên đã sửa đúng tên node thật.</p>
+</div>
+
+<h2>Ví dụ trong dự án Atlas</h2>
+<p>Đã gặp <code>/navigate_to_pose</code> ở <a href="lesson.html?m=10&amp;l=04-behavior-tree-navigator">Module 10</a> — <code>bt_navigator</code> còn mở 1 action khác:</p>
+<pre><code>ros2 node info /bt_navigator | grep -A3 "Action Servers"</code></pre>
+<p><code>/navigate_through_poses</code> và <code>/navigate_to_pose</code> cả hai đều tồn tại — module này thêm 1 action nữa, do <code>waypoint_follower</code> (đã chạy sẵn từ Module 10, chưa dùng tới) mở ra: <code>/follow_waypoints</code>.</p>
+
+<h2>Thử ngay</h2>
+<pre><code>ros2 launch atlas_bringup bringup.launch.py world:=maze.sdf
+ros2 launch atlas_slam navigation.launch.py map:=$(pwd)/src/atlas_slam/maps/maze_map.yaml</code></pre>
+<pre><code>ros2 node info /waypoint_follower | grep -A3 "Action Servers"
+ros2 action info /follow_waypoints</code></pre>
+<p>Xác nhận kiểu action là <code>nav2_msgs/action/FollowWaypoints</code> — khác <code>NavigateToPose</code> ở chỗ nhận MỘT MẢNG pose, không phải 1 pose đơn.</p>

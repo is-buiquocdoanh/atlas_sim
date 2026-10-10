@@ -1,0 +1,28 @@
+<h1>Công cụ kiểm tra dữ liệu cảm biến</h1>
+<p class="lead">4 công cụ, 4 việc khác nhau — dùng sai công cụ không phải lỗi nghiêm trọng, chỉ là tốn thời gian hơn mức cần thiết. Bài này chỉ đúng chỗ dùng từng cái.</p>
+
+<h2>ros2 topic echo — xem giá trị thô, số lần nhất định</h2>
+<pre><code>ros2 topic echo /scan --once</code></pre>
+<p>Công cụ mặc định cho "tôi muốn thấy cấu trúc dữ liệu trông ra sao" — đúng cách đã dùng suốt 4 bài trước. <code>--once</code> gần như bắt buộc với <code>/scan</code> (360 số mỗi lần, không <code>--once</code> thì màn hình trôi liên tục không kịp đọc).</p>
+
+<h2>ros2 topic hz — tần số có đúng update_rate không</h2>
+<pre><code>ros2 topic hz /scan
+ros2 topic hz /imu</code></pre>
+<p>So trực tiếp với <code>update_rate</code> đã khai báo (10 cho LiDAR, 100 cho IMU, bài 2–3). Lệch nhiều — máy không theo kịp <code>real_time_factor: 1.0</code> (<a href="lesson.html?m=4&amp;l=01-world-sdf">Module 4</a>), không phải lỗi cấu hình cảm biến.</p>
+
+<h2>rqt_plot — theo dõi một số thay đổi theo thời gian</h2>
+<pre><code>ros2 run rqt_plot rqt_plot</code></pre>
+<p>Gõ đúng đường dẫn field vào ô địa chỉ, ví dụ <code>/imu/angular_velocity/z</code> — một biểu đồ đường vẽ số đó theo thời gian thực. Hợp với dữ liệu <strong>1 con số đơn</strong> (1 trường trong <code>Imu</code>); hoàn toàn không hợp với <code>/scan</code> (360 số một lúc, không phải thứ vẽ đường được).</p>
+
+<h2>RViz — chỉ thấy khi tự thêm Display</h2>
+<div class="callout warn"><p><code>atlas_description/rviz/atlas_view.rviz</code> — file cấu hình RViz duy nhất có sẵn trong dự án — chỉ có 3 display: <code>Grid</code>, <code>RobotModel</code>, <code>TF</code>. Không có <code>LaserScan</code> hay <code>Imu</code>. Dự án cố tình để vậy vì file đó dùng chung với <code>display.launch.py</code> (<a href="lesson.html?m=3&amp;l=00-gioi-thieu">Module 3</a>) — chạy <strong>không có Gazebo</strong>, thêm sẵn 2 display đó sẽ chỉ hiện cảnh báo "không có dữ liệu", gây hiểu nhầm cho người mới học Module 3.</p></div>
+<p>Muốn thấy LiDAR/IMU trong RViz: tự mở, tự thêm — không có phím tắt nào thay được:</p>
+<pre><code>ros2 launch atlas_bringup bringup.launch.py world:=maze.sdf</code></pre>
+<pre><code># terminal khác
+rviz2</code></pre>
+<p>Trong RViz: <em>Add</em> → theo <em>Topic</em> → chọn <code>/scan</code> (<code>LaserScan</code>) và <code>/imu</code> (<code>Imu</code>). Đặt <em>Fixed Frame</em> (góc trên-trái panel Displays) thành <code>base_footprint</code> hoặc <code>odom</code> trước — để trống/sai frame, cả 2 display hiện lỗi đỏ dù dữ liệu vẫn chảy bình thường trên topic.</p>
+
+<h2>Thử ngay</h2>
+<p>Lặp lại đúng trình tự trên một lần, với world <code>maze.sdf</code> — LiDAR cần vách thật mới có gì để vẽ:</p>
+<pre><code>ros2 launch atlas_bringup bringup.launch.py world:=maze.sdf</code></pre>
+<p>Quan sát trong RViz: các điểm <code>LaserScan</code> có vẽ đúng hình dạng vách mê cung không — đối chiếu bằng mắt với cách bố trí <code>maze.sdf</code> đã học ở Module 4.</p>

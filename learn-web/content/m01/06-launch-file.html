@@ -1,0 +1,37 @@
+<h1>Launch file</h1>
+<p class="lead">Một hệ thống robot thật thường chạy đồng thời hàng chục node, mỗi node với tham số và cấu hình riêng — chạy từng cái bằng tay qua <code>ros2 run</code> nhanh chóng trở nên bất khả thi.</p>
+<p>Launch file (viết bằng Python, dùng <code>launch</code> và <code>launch_ros</code>) mô tả cả hệ thống trong một chỗ: node nào cần chạy, tham số gì, remap topic ra sao, khởi động theo thứ tự nào — rồi chạy tất cả bằng một lệnh <code>ros2 launch</code> duy nhất. Đây cũng là cách đóng gói một cấu hình phức tạp (ví dụ "mô phỏng Atlas đầy đủ") thành một đơn vị tái sử dụng được, gọi lại từ launch file khác.</p>
+
+<h2>Khởi động không đồng thời</h2>
+<p>Launch gọi tất cả node gần như cùng lúc. Nhưng mỗi node cần thời gian để sẵn sàng. Nếu node B cần node A đã chạy xong, bạn phải đặt độ trễ. Mô hình dưới cho thấy điều gì xảy ra khi không đặt độ trễ.</p>
+
+<div class="scene" data-scene="launch"></div>
+
+<h2>Cấu trúc tối thiểu</h2>
+<pre><code>from launch import LaunchDescription
+from launch.actions import TimerAction
+from launch_ros.actions import Node
+
+def generate_launch_description():
+    return LaunchDescription([
+        Node(package='ros2_basics', executable='sensor_publisher'),
+        TimerAction(period=2.0, actions=[
+            Node(package='ros2_basics', executable='data_logger'),
+        ]),
+    ])</code></pre>
+
+<div class="cards">
+  <div class="mini"><b>Node</b><span>Một tiến trình cần chạy</span></div>
+  <div class="mini"><b>TimerAction</b><span>Chờ <code>period</code> giây rồi mới chạy nội dung bên trong</span></div>
+  <div class="mini"><b>DeclareLaunchArgument</b><span>Tham số truyền từ dòng lệnh</span></div>
+  <div class="mini"><b>IncludeLaunchDescription</b><span>Gọi một launch file khác vào trong</span></div>
+</div>
+
+<div class="callout key"><p>Trong Atlas, <code>atlas_bringup/launch/bringup.launch.py</code> gọi nhiều launch file con qua <code>IncludeLaunchDescription</code>. Đọc nó từ trên xuống để thấy cả hệ thống được ghép như thế nào.</p></div>
+
+<h2>Thử ngay</h2>
+<p>Hai lệnh dưới đây là hai ví dụ ĐỘC LẬP (mỗi lệnh chạy mãi, giữ terminal) — thử lệnh này, Ctrl+C, rồi mới thử lệnh kia, không chạy cùng lúc trong một terminal:</p>
+<pre><code># Ví dụ nhẹ: 2 node Python đơn giản, không cần Gazebo
+ros2 launch ros2_basics demo.launch.py</code></pre>
+<pre><code># Ví dụ đầy đủ: mô phỏng Atlas trong Gazebo (nặng hơn, mở cửa sổ 3D)
+ros2 launch atlas_bringup bringup.launch.py</code></pre>

@@ -1,0 +1,33 @@
+<h1>SLAM là gì</h1>
+<p class="lead"><strong>SLAM</strong> (Simultaneous Localization And Mapping) giải một nghịch lý con-gà-quả-trứng: muốn biết robot đang ở đâu, cần có bản đồ để so khớp; muốn vẽ bản đồ, cần biết robot đang ở đâu để biết đặt vật cản vào đúng chỗ. SLAM làm <strong>cả hai cùng lúc</strong>, mỗi thứ giúp thứ kia chính xác hơn dần theo thời gian.</p>
+
+<p>Atlas dùng <strong><code>slam_toolbox</code></strong> — package SLAM 2D phổ biến nhất trong hệ sinh thái ROS 2 hiện nay, thay cho <code>gmapping</code>/<code>hector_slam</code> cũ hơn. Dự án đã chạy qua package này ít nhất 1 lần — thư mục <code>atlas_slam/maps/</code> đã có sẵn 4 file bản đồ thật từ một lần vẽ mê cung trước đó, dùng để đối chiếu khi bạn tự làm bài tập cuối module.</p>
+
+<div class="goals">
+  <h3>Sau module này bạn sẽ</h3>
+  <ul>
+    <li>Giải thích được <strong>scan matching</strong> ước lượng chuyển động của robot bằng cách nào, không cần tin GPS hay encoder tuyệt đối</li>
+    <li>Vẽ được sơ đồ <strong>pose graph</strong> và chỉ ra node/cạnh là gì, <strong>loop closure</strong> sửa sai lệch tích lũy ra sao</li>
+    <li>Kể lại chính xác câu chuyện thật: vì sao world mê cung đối xứng từng đánh lừa <code>slam_toolbox</code>, và 2 lớp phòng vệ dự án đã thêm vào</li>
+    <li>Đọc đúng mọi tham số quan trọng trong <code>mapper_params.yaml</code> — không tham số nào là "cứ để mặc định"</li>
+    <li>Phân biệt 2 định dạng bản đồ hoàn toàn khác nhau: <code>.pgm</code>/<code>.yaml</code> (Nav2/AMCL) và <code>.posegraph</code>/<code>.data</code> (slam_toolbox)</li>
+  </ul>
+</div>
+
+<h2>Bức tranh tổng thể</h2>
+<div class="scene" data-scene="slam-overview"></div>
+<p><code>slam_toolbox</code> không cần biết gì về Atlas cụ thể — nó chỉ cần đúng 3 nguồn dữ liệu chuẩn ROS 2 đã xây từ các module trước. Đây là lý do package mới (<code>atlas_slam</code>) chỉ cần 1 file cấu hình + 1 launch file, không cần đụng gì tới URDF hay <code>ros2_control</code>.</p>
+
+<h2>Chuẩn bị</h2>
+<pre><code>cd ~/atlas_sim
+colcon build --packages-select atlas_slam
+source install/setup.bash</code></pre>
+<p>Gói <code>slam_toolbox</code> đã cài từ Module 0. Cần Gazebo đang chạy (bất kỳ cách nào từ Module 5-7) trước khi mở SLAM — <code>atlas_slam/launch/slam.launch.py</code> <strong>không</strong> tự mở world hay spawn robot, nó chỉ "tiêu thụ" dữ liệu đã có sẵn.</p>
+
+<h2>Bản đồ module</h2>
+<div class="cards">
+  <div class="mini"><b>Scan matching</b><span>so 2 lần quét liên tiếp, ước lượng đã di chuyển bao nhiêu</span></div>
+  <div class="mini"><b>Pose graph</b><span>mỗi lần quét là 1 node, cạnh nối là ràng buộc chuyển động</span></div>
+  <div class="mini"><b>Loop closure</b><span>quay lại chỗ cũ → sửa sai lệch tích lũy của cả chuỗi</span></div>
+  <div class="mini"><b>Occupancy grid</b><span>bản đồ cuối cùng — lưới ô vuông, mỗi ô 1 xác suất có vật cản</span></div>
+</div>

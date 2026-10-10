@@ -1,0 +1,39 @@
+<h1>Service</h1>
+<p class="lead">Service là mô hình giao tiếp dạng request/response: client gửi một yêu cầu có cấu trúc (request) tới đúng một server đang cung cấp service đó, server xử lý xong và trả về đúng một kết quả (response) tương ứng.</p>
+<p>Khác topic ở chỗ có điểm bắt đầu và điểm kết thúc rõ ràng cho một lần gọi — giống gọi hàm từ một tiến trình khác hơn là phát một luồng dữ liệu. Một service chỉ có đúng một server xử lý tại một thời điểm (không "phát rộng" như topic), và client sẽ chờ tới khi nhận được response mới chạy tiếp.</p>
+
+<h2>Khi nào dùng service, khi nào dùng topic?</h2>
+<table>
+  <tr><th></th><th>Topic</th><th>Service</th></tr>
+  <tr><td>Kiểu</td><td>Luồng liên tục, một chiều</td><td>Một lần hỏi, một lần đáp</td></tr>
+  <tr><td>Ví dụ</td><td>Dữ liệu cảm biến 10 Hz</td><td>"Đặt lại bộ đếm", "tính tổng hai số"</td></tr>
+  <tr><td>Người gửi biết kết quả?</td><td>Không</td><td>Có, khi server trả lời</td></tr>
+</table>
+
+<h2>Xem từng bước</h2>
+<p>Client gửi <code>a</code> và <code>b</code>. Server cộng và trả về <code>sum</code>. Hãy theo dõi từng bước đang diễn ra.</p>
+
+<div class="scene" data-scene="service-flow"></div>
+
+<div class="callout warn"><p>Client <strong>chờ</strong> trong lúc server xử lý. Nếu server làm việc lâu (vài giây) thì dùng <strong>action</strong> thay vì service, sẽ học ở Module 12.</p></div>
+
+<h2>Ví dụ trong dự án: add_two_ints</h2>
+<p>Trong package <code>ros2_basics</code> có một server cộng hai số và một client gọi nó:</p>
+<pre><code># Đăng ký service "add_two_ints" với hàm xử lý
+self.service = self.create_service(AddTwoInts, "add_two_ints", self.on_add_two_ints)
+
+# Hàm xử lý: nhận request, điền response, trả về
+def on_add_two_ints(self, request, response):
+    response.sum = request.a + request.b
+    return response</code></pre>
+<p>Cần 2 terminal (đã <code>source install/setup.bash</code>, xem <a href="lesson.html?m=0&amp;l=00-cai-dat">Module 0</a>) — server giữ terminal chạy mãi, không tự thoát:</p>
+<pre><code># Terminal 1 — để chạy, đừng tắt
+ros2 run ros2_basics add_two_ints_server</code></pre>
+<pre><code># Terminal 2
+ros2 run ros2_basics add_two_ints_client 3 5    # kết quả: 8</code></pre>
+
+<h2>Thử ngay</h2>
+<pre><code># Terminal 2 — server ở Terminal 1 vẫn đang chạy
+ros2 service list
+ros2 service type /add_two_ints
+ros2 service call /add_two_ints example_interfaces/srv/AddTwoInts "{a: 3, b: 5}"</code></pre>

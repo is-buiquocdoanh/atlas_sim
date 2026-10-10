@@ -1,0 +1,38 @@
+<h1>gz_bridge: Gazebo Transport → ROS 2</h1>
+<p class="lead">gz-sim không chạy trên DDS (nền tảng truyền thông điệp của ROS 2, <a href="lesson.html?m=1&amp;l=01-ros2-va-dds">Module 1</a>) — nó có hệ thống truyền thông điệp riêng, <strong>Gazebo Transport</strong>. <code>/scan</code> và <code>/imu</code> sinh ra ở đó trước, một tiến trình trung gian phải dịch chúng sang ROS 2 thì <code>ros2 topic echo</code> mới đọc được.</p>
+
+<h2>File cấu hình — đã thấy một phần ở Module 4</h2>
+<pre><code>- ros_topic_name: "/scan"
+  gz_topic_name: "/scan"
+  ros_type_name: "sensor_msgs/msg/LaserScan"
+  gz_type_name: "gz.msgs.LaserScan"
+  direction: GZ_TO_ROS
+
+- ros_topic_name: "/imu"
+  gz_topic_name: "/imu"
+  ros_type_name: "sensor_msgs/msg/Imu"
+  gz_type_name: "gz.msgs.IMU"
+  direction: GZ_TO_ROS</code></pre>
+<p><a href="lesson.html?m=4&amp;l=05-spawn-robot-launch">Module 4</a> mới dùng được đúng 1 dòng trong file này (<code>/clock</code>) — <code>/scan</code>/<code>/imu</code> lúc đó chưa có gì phát ra. Giờ 2 sensor đã sống, 2 dòng còn lại mới thật sự có tác dụng.</p>
+
+<h2>5 trường — không chỉ đổi tên</h2>
+<table>
+  <tr><th>Trường</th><th>Ý nghĩa</th></tr>
+  <tr><td><code>gz_topic_name</code></td><td>Tên topic <strong>phía Gazebo Transport</strong> — đúng giá trị <code>&lt;topic&gt;</code> đã khai báo trong <code>&lt;sensor&gt;</code> (bài 1–3).</td></tr>
+  <tr><td><code>ros_topic_name</code></td><td>Tên topic <strong>phía ROS 2</strong> — có thể khác hẳn <code>gz_topic_name</code>; Atlas chọn trùng tên cho dễ nhớ, không phải quy tắc bắt buộc.</td></tr>
+  <tr><td><code>gz_type_name</code> / <code>ros_type_name</code></td><td>2 định dạng message <strong>khác nhau</strong> — <code>gz.msgs.LaserScan</code> (Protobuf, định nghĩa riêng của Gazebo) không phải cùng một struct với <code>sensor_msgs/msg/LaserScan</code> (định nghĩa ROS 2). Bridge phải biết map field nào sang field nào — bản thân <code>ros_gz_bridge</code> đã viết sẵn phần map này cho các loại message phổ biến; dự án chỉ cần khai đúng tên 2 loại.</td></tr>
+  <tr><td><code>direction</code></td><td><code>GZ_TO_ROS</code> — một chiều, từ Gazebo sang ROS 2. Dữ liệu cảm biến luôn sinh ra ở Gazebo trước, không bao giờ cần chiều ngược lại.</td></tr>
+</table>
+
+<h2>Vì sao /cmd_vel và /odom không nằm trong file này</h2>
+<p>Comment thật trong chính file đã trả lời từ Module 4: <code>gz_ros2_control</code> (<a href="lesson.html?m=5&amp;l=02-doc-control-xacro">Module 5</a>) publish/subscribe thẳng bằng <code>rclcpp</code> ngay bên trong tiến trình Gazebo — không đi qua Gazebo Transport nên không cần dòng bridge nào. Quy tắc chung rút ra được: <strong>chỉ dữ liệu thật sự sinh ra bên phía Gazebo Transport mới cần bridge</strong>, không phải mọi thứ liên quan tới Gazebo.</p>
+
+<h2>Một tiến trình, nhiều dòng cấu hình</h2>
+<p><code>ros_gz_bridge parameter_bridge</code> đọc <strong>toàn bộ</strong> <code>gz_bridge.yaml</code> một lần lúc khởi động (xem lại <code>spawn_robot.launch.py</code>, <a href="lesson.html?m=4&amp;l=05-spawn-robot-launch">Module 4 bài 5</a>) — không phải 3 tiến trình bridge riêng cho <code>/clock</code>, <code>/scan</code>, <code>/imu</code>. Thêm cảm biến mới sau này chỉ cần thêm đúng 1 khối YAML, không cần sửa launch file.</p>
+
+<h2>Thử ngay</h2>
+<pre><code>ros2 launch atlas_bringup bringup.launch.py world:=maze.sdf</code></pre>
+<pre><code>ros2 node list | grep bridge</code></pre>
+<p>Đúng 1 node — xác nhận cả 3 dòng bridge chạy chung 1 tiến trình.</p>
+<pre><code>gz topic -t /scan -i</code></pre>
+<p>Xem thông tin topic <strong>phía Gazebo Transport</strong> — kiểu dữ liệu hiện ra phải là <code>gz.msgs.LaserScan</code>, khác hẳn kiểu bạn thấy khi gõ <code>ros2 topic info /scan</code> ngay sau đó.</p>

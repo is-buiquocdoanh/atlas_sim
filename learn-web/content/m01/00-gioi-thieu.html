@@ -1,0 +1,32 @@
+<h1>Bức tranh tổng thể</h1>
+<p class="lead">ROS 2 (Robot Operating System 2) không phải hệ điều hành theo nghĩa thông thường — nó là một tập thư viện và quy ước chạy <strong>trên</strong> Linux/Windows/Mac, đóng vai trò middleware: cung cấp cách chuẩn để nhiều chương trình nhỏ (gọi là <strong>node</strong>) tìm thấy nhau và trao đổi dữ liệu, thay vì mỗi người tự viết giao thức mạng riêng.</p>
+<p>Robot Atlas gồm hàng chục node như vậy chạy song song: đọc cảm biến, tính toán quỹ đạo, điều khiển bánh xe. Mỗi node làm đúng một việc, độc lập — tắt, bật, hay thay thế một node không đụng tới các node khác.</p>
+
+<div class="goals">
+  <h3>Sau module này bạn sẽ</h3>
+  <ul>
+    <li>Đọc được sơ đồ ROS 2: ai gửi, ai nhận, qua đâu</li>
+    <li>Hiểu vì sao ROS 2 không cần <code>roscore</code></li>
+    <li>Tự viết được một node publisher/subscriber và một service</li>
+    <li>Đọc được package và launch file trong dự án Atlas</li>
+  </ul>
+</div>
+
+<h2>Nhìn trước một hệ thống đang chạy</h2>
+<p>Đây là ba node đang trao đổi dữ liệu. Không node nào biết node nào ở đâu; chúng chỉ nói chuyện qua <strong>topic</strong> có tên. Hãy quan sát các chấm (message) bay và node nào sáng lên khi nhận.</p>
+
+<div class="scene" data-scene="ros-graph"></div>
+
+<h2>Các khái niệm sẽ gặp</h2>
+<div class="cards">
+  <div class="mini"><b>Node</b><span>Một chương trình có tên, làm một việc.</span></div>
+  <div class="mini"><b>Topic</b><span>Luồng dữ liệu liên tục, một chiều.</span></div>
+  <div class="mini"><b>Service</b><span>Hỏi – đáp: gửi yêu cầu, đợi kết quả.</span></div>
+  <div class="mini"><b>Parameter</b><span>Cấu hình có thể đổi khi đang chạy.</span></div>
+  <div class="mini"><b>Launch</b><span>Khởi động nhiều node cùng lúc từ một file.</span></div>
+</div>
+
+<div class="callout tip"><p><strong>Cách xem mô hình:</strong> bấm ❚❚ để tạm dừng, ↺ để chạy lại từ đầu, và chọn 0.5× để xem chậm.</p></div>
+
+<h2>Chuẩn bị</h2>
+<p>Module này giả định bạn đã xong <a href="lesson.html?m=0&amp;l=00-cai-dat">Module 0 — Cài đặt &amp; build</a>: workspace đã build, terminal đã <code>source install/setup.bash</code>. Vài bài (Node, Topic, Parameter) cần hai node mẫu đang chạy để thử lệnh — mỗi bài sẽ ghi rõ "Terminal 1 / Terminal 2" khi cần.</p>

@@ -1,0 +1,29 @@
+<h1>Mở nắp bt_navigator</h1>
+<p class="lead">Module 10 đã gặp <code>bt_navigator</code> như 1 hộp đen "điều phối" — gọi đúng thứ tự planner/controller/behavior nhưng không giải thích RA SAO. Module này mở hộp đó ra: đọc nguyên văn file XML 37 dòng thật đang quyết định hành vi robot mỗi lần bạn gửi goal, và hiểu rõ 4 "mánh" khắc phục sự cố thật robot tự làm khi kẹt.</p>
+
+<div class="goals">
+  <h3>Sau module này bạn sẽ</h3>
+  <ul>
+    <li>Giải thích được Behavior Tree khác state machine ở điểm cốt lõi nào — không chỉ "cây thì khác đồ thị"</li>
+    <li>Đọc hiểu đúng 100% cây BT XML thật Atlas đang chạy — không bỏ sót dòng nào, biết chính xác <code>RecoveryNode</code>/<code>PipelineSequence</code>/<code>ReactiveFallback</code>/<code>RoundRobin</code> làm gì</li>
+    <li>Kể tên đúng 4 recovery behavior thật, biết chính xác cái nào được BT mặc định gọi, cái nào nạp sẵn nhưng chưa ai dùng tới</li>
+    <li>Sửa được 1 file BT XML và trỏ <code>bt_navigator</code> dùng file mới — không cần build lại code</li>
+  </ul>
+</div>
+
+<h2>Vì sao module này không cần code mới</h2>
+<p>Mọi thứ trong module này đã chạy sẵn mỗi khi bạn dùng Nav2 từ Module 10 — chỉ chưa "mở nắp" xem bên trong. <code>navigation.launch.py</code> không hề tự viết BT riêng cho Atlas; nó dùng nguyên văn file BT <strong>mặc định của chính Nav2</strong>, cài sẵn trong gói <code>nav2_bt_navigator</code> khi bạn <code>apt install</code> ROS 2 — không phải do dự án viết ra.</p>
+
+<h2>Chuẩn bị</h2>
+<pre><code>cd ~/atlas_sim
+colcon build --packages-select atlas_slam
+source install/setup.bash</code></pre>
+<p>Không cần robot/world mới — dùng lại đúng cách chạy Nav2 từ Module 10 (<code>bringup.launch.py</code> + <code>navigation.launch.py</code>).</p>
+
+<h2>Bản đồ module</h2>
+<div class="cards">
+  <div class="mini"><b>Behavior Tree</b><span>cây hành vi: SUCCESS/FAILURE/RUNNING, không phải sơ đồ trạng thái</span></div>
+  <div class="mini"><b>Đọc BT XML thật</b><span>37 dòng quyết định toàn bộ hành vi robot khi gửi goal</span></div>
+  <div class="mini"><b>4 recovery behavior</b><span>spin, wait, backup, clear costmap — xoay vòng qua RoundRobin</span></div>
+  <div class="mini"><b>Bài tập</b><span>tạo tình huống kẹt thật, tự thêm 1 behavior vào cây</span></div>
+</div>

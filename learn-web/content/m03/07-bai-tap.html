@@ -1,0 +1,56 @@
+<h1>Bài tập: tham số hóa kích thước robot</h1>
+<p class="lead">Mục tiêu: chứng minh bằng tay rằng <strong>đổi hình dạng robot chỉ cần đổi property</strong>, và nhận ra chỗ nào trong hệ thống sẽ "đau" khi kích thước thay đổi — điều sẽ quay lại rất cụ thể ở Module 5 (odometry) và Module 10 (costmap).</p>
+
+<h2>Phần A — đổi tham số, quan sát hệ quả</h2>
+<p>Dự đoán trước bằng mô hình dưới đây (kéo đúng tham số đang xét), sau đó làm thật trên máy để xác nhận.</p>
+<div class="scene" data-scene="robot-geometry"></div>
+<p>Mở <code>src/atlas_description/urdf/atlas.urdf.xacro</code>, lần lượt thử từng thay đổi, mỗi lần chạy lại:</p>
+<pre><code>colcon build --packages-select atlas_description && source install/setup.bash</code></pre>
+<pre><code>ros2 launch atlas_description display.launch.py</code></pre>
+<ol>
+  <li><code>wheel_radius</code>: <code>0.05</code> → <code>0.10</code>. Robot cao lên, <strong>và vẫn chạm đất đúng</strong>. Giải thích: <code>wheel_radius</code> chảy sang những chỗ nào? (gợi ý: <a href="lesson.html?m=3&amp;l=04-xacro">bài 4</a>, 3 chỗ).</li>
+  <li><code>wheel_separation</code>: <code>0.30</code> → <code>0.45</code>. Bánh xe dang rộng ra — quan sát số "bánh nhô khỏi mép khung" trong mô hình trên tăng lên rõ rệt. Không có gì trong URDF ngăn chuyện đó: URDF mô tả, không kiểm tra hợp lý.</li>
+  <li><code>base_length</code>: <code>0.30</code> → <code>0.50</code>. Quan sát 2 caster <strong>tự dịch ra xa nhau</strong> mà bạn không sửa gì thêm — vì <code>x_offset</code> của chúng tính từ <code>base_length</code>.</li>
+  <li>Đổi <code>base_height</code> và xem LiDAR có còn nằm đúng trên nóc không trong RViz. Vì sao? (mô hình trên không mô phỏng trục Z nên không thấy được hiệu ứng này — phải xem bằng RViz thật).</li>
+</ol>
+<p>Sau mỗi thay đổi, kiểm tra bằng số chứ không chỉ bằng mắt:</p>
+<pre><code>ros2 run tf2_ros tf2_echo base_footprint base_link     # phải bằng wheel_radius mới</code></pre>
+<pre><code>ros2 run tf2_ros tf2_echo base_link left_wheel_link    # y phải bằng wheel_separation/2</code></pre>
+
+<h2>Phần B — thêm một tham số mới</h2>
+<p>Hiện <code>lidar_x_offset</code> là hằng số <code>0.05</code>. Hãy sửa để LiDAR <strong>luôn nằm ở 1/4 chiều dài khung tính từ mũi robot</strong>, tự khớp lại khi <code>base_length</code> đổi — tức thay giá trị cố định bằng một biểu thức tính từ <code>base_length</code>.</p>
+<p>Bật ô "Khóa lidar_x_offset = base_length / 4" ở mô hình trên và kéo <code>base_length</code> để xem trước hành vi mong muốn, trước khi sửa file thật.</p>
+<p>Tự kiểm tra: đổi <code>base_length</code> qua 2-3 giá trị khác nhau trong file thật, mỗi lần chạy <code>tf2_echo base_link lidar_link</code> và xác nhận x thay đổi theo đúng tỉ lệ.</p>
+
+<h2>Phần C — gây lỗi có chủ đích (bài debug ngược)</h2>
+<p>Mỗi trường hợp, đoán <strong>trước</strong> triệu chứng rồi mới chạy, ghi lại thông báo lỗi:</p>
+<table>
+  <tr><th>Thay đổi</th><th>Đoán xem hỏng thế nào</th></tr>
+  <tr><td>Đổi <code>&lt;parent link="base_link"/&gt;</code> của <code>lidar_joint</code> thành <code>&lt;parent link="lidar_link"/&gt;</code></td><td>URDF còn là cây không?</td></tr>
+  <tr><td>Thêm joint thứ hai cũng có <code>&lt;child link="imu_link"/&gt;</code></td><td>1 link mấy cha? (<a href="lesson.html?m=2&amp;l=02-tf-tree">Module 2</a>)</td></tr>
+  <tr><td>Xóa <code>&lt;axis&gt;</code> của <code>left_wheel_joint</code></td><td>bánh quay quanh trục nào?</td></tr>
+  <tr><td>Viết <code>${wheel_radius * }</code> (biểu thức thiếu vế)</td><td>lỗi xuất hiện ở bước nào, trước hay sau khi ROS khởi động?</td></tr>
+</table>
+<p>Với mỗi lỗi, xác định công cụ nào phát hiện nhanh nhất: <code>xacro</code>, <code>check_urdf</code>, hay phải mở RViz mới thấy. Đây là phản xạ sẽ dùng suốt các module sau.</p>
+<pre><code>git checkout src/atlas_description/urdf/</code></pre>
+<p>Chạy lệnh trên để trả lại nguyên trạng khi xong.</p>
+
+<h2>Nộp bài</h2>
+<ul>
+  <li>Ảnh chụp RViz với robot ở kích thước gốc và ở kích thước đã đổi (phần A).</li>
+  <li>Đoạn xacro của phần B + output <code>tf2_echo</code> chứng minh nó tự khớp.</li>
+  <li>Bảng phần C: mỗi lỗi → triệu chứng thực tế → công cụ phát hiện.</li>
+</ul>
+
+<h2>Tự kiểm tra trước khi qua Module 4</h2>
+<div class="goals">
+  <ul>
+    <li>Giải thích được khác nhau giữa <code>&lt;visual&gt;</code>, <code>&lt;collision&gt;</code>, <code>&lt;inertial&gt;</code> và cái nào ảnh hưởng tới cái gì</li>
+    <li>Chọn đúng loại joint cho 1 bộ phận robot bất kỳ khi nghe mô tả bằng lời (bánh xe, khớp tay máy, cảm biến, cột nâng)</li>
+    <li>Nói được <code>&lt;origin&gt;</code> của joint đặt ở đâu và nó dời cái gì (link cha hay link con)</li>
+    <li>Viết được 1 macro xacro có tham số và giải thích vì sao <code>sensors.xacro</code> phải bọc trong macro</li>
+    <li>Vẽ lại được sơ đồ xacro → robot_description → robot_state_publisher → /tf, và chỉ ra /joint_states đến từ đâu trong từng ngữ cảnh</li>
+    <li>Biết dùng <code>xacro</code>, <code>check_urdf</code>, <code>view_frames</code>, <code>tf2_echo</code> để tìm lỗi URDF mà không cần đoán</li>
+  </ul>
+</div>
+<p>Xong hết → sang <strong>Module 4 — Đưa robot vào Gazebo</strong> (sắp có trên trang này), nơi <code>&lt;collision&gt;</code> và <code>&lt;inertial&gt;</code> viết ở module này lần đầu tiên có hậu quả thật.</p>

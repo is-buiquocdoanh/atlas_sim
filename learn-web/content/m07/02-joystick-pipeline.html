@@ -1,0 +1,51 @@
+<h1>Lái bằng joystick</h1>
+<p class="lead">3 node, mỗi node một việc rõ ràng — không node nào biết robot là Atlas, tất cả chỉ nói chuyện qua topic chuẩn.</p>
+
+<h2>Sơ đồ — bấm để so 2 đường đi</h2>
+<div class="scene" data-scene="teleop-pipeline"></div>
+
+<h2>Đọc joystick_teleop.launch.py</h2>
+<pre><code>joy_node = Node(
+    package="joy", executable="joy_node",
+    parameters=[config],
+)
+teleop_node = Node(
+    package="teleop_twist_joy", executable="teleop_node",
+    parameters=[config],
+    remappings=[("cmd_vel", "cmd_vel_joy")],
+)
+twist_mux_node = Node(
+    package="twist_mux", executable="twist_mux",
+    parameters=[config, {"use_sim_time": True}],
+    remappings=[("/cmd_vel_out", "/cmd_vel")],
+)</code></pre>
+<p><code>joy_node</code> — đọc trực tiếp thiết bị gamepad (qua kernel Linux), publish ra <code>/joy</code> (<code>sensor_msgs/msg/Joy</code>: mảng <code>axes[]</code> + mảng <code>buttons[]</code>, không biết gì về "trái/phải/tiến/lùi"). <code>teleop_node</code> (gói <code>teleop_twist_joy</code>) đọc <code>/joy</code>, map đúng trục/nút thành <code>Twist</code> — đây là node duy nhất "hiểu" ý nghĩa từng trục.</p>
+<p><code>remappings=[("cmd_vel", "cmd_vel_joy")]</code> — <code>teleop_twist_joy</code> mặc định publish ra topic tên <code>cmd_vel</code>; remap thành <code>cmd_vel_joy</code> để khớp đúng tên input <code>twist_mux</code> đang chờ (bài 3). Thiếu dòng remap này: <code>teleop_node</code> sẽ ghi thẳng vào <code>/cmd_vel</code> — y hệt lỗi xung đột đã thấy với bàn phím ở bài 1, chỉ là lần này do quên remap chứ không phải cố ý đi tắt.</p>
+
+<h2>Đọc joystick_teleop.yaml — map trục/nút</h2>
+<pre><code>teleop_node:
+  ros__parameters:
+    axis_linear: {x: 1}
+    scale_linear: {x: 0.2}
+    scale_linear_turbo: {x: 0.8}
+    axis_angular: {yaw: 0}
+    scale_angular: {yaw: 0.5}
+    scale_angular_turbo: {yaw: 1.0}
+    enable_button: 7
+    enable_turbo_button: 6
+    require_enable_button: true</code></pre>
+<ul>
+  <li><code>axis_linear.x: 1</code> — trục số 1 của gamepad (thường là cần analog trái, trục dọc) điều khiển <code>linear.x</code>. Số trục khác nhau tùy loại gamepad — xác nhận bằng <code>ros2 topic echo /joy</code> trước khi tin số này đúng với thiết bị bạn đang cắm.</li>
+  <li><code>scale_linear.x: 0.2</code> vs <code>scale_linear_turbo.x: 0.8</code> — tốc độ thường chỉ 0.2 m/s (rất chậm, an toàn để tập), giữ <code>enable_turbo_button</code> (nút số 6) mới lên 0.8 m/s.</li>
+  <li><code>require_enable_button: true</code> + <code>enable_button: 7</code> — <strong>bắt buộc</strong> giữ nút số 7 (thường là nút bấm vai/trigger) thì lệnh mới có tác dụng; thả ra là dừng ngay, bất kể cần analog đang ở vị trí nào. Đây là công tắc "deadman" — bỏ tay khỏi joystick, robot dừng, không phải chờ đưa cần về giữa.</li>
+</ul>
+
+<h2>Thử ngay</h2>
+<pre><code>ros2 run joy joy_enumerate_devices</code></pre>
+<p>Xác nhận máy đã nhận gamepad trước khi chạy — launch file không tự báo lỗi rõ ràng nếu thiết bị không tồn tại, chỉ đơn giản <code>/joy</code> không có dữ liệu.</p>
+<pre><code>ros2 launch atlas_control controller.launch.py world:=maze.sdf</code></pre>
+<pre><code># terminal khác
+ros2 launch atlas_bringup joystick_teleop.launch.py</code></pre>
+<pre><code># terminal khác, trong lúc giữ nút enable và đẩy cần
+ros2 topic echo /cmd_vel_joy</code></pre>
+<p>So với <code>ros2 topic echo /cmd_vel</code> cùng lúc — 2 giá trị phải khớp nhau khi <code>joystick</code> là nguồn duy nhất đang active (bài 3 giải thích khi nào chúng không khớp).</p>

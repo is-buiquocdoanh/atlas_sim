@@ -1,0 +1,42 @@
+<h1>Module 13 — Đồ án cuối khóa (Capstone)</h1>
+<p class="lead">Module 1-12 mỗi bài = 1 khái niệm mới. Module này <strong>không có khái niệm mới</strong> — toàn bộ lý thuyết cần thiết đã học hết. Việc duy nhất còn lại là <strong>tự ghép</strong> các khối đã chạy riêng lẻ (SLAM, AMCL, Nav2, waypoint app) thành 1 kịch bản hoàn chỉnh, có ý nghĩa thực tế: <strong>"Atlas Delivery"</strong> — robot giao hàng tự động trong kho mô phỏng.</p>
+
+<div class="goals">
+  <h3>Sau module này bạn sẽ</h3>
+  <ul>
+    <li>Tự ghép 5 khối đã học (Module 8-12) thành 1 pipeline chạy end-to-end, không cần can thiệp tay giữa chừng</li>
+    <li>Viết được code đo số liệu thật: tổng thời gian, quãng đường, số lần recovery kích hoạt — không ước lượng</li>
+    <li>Giải thích được (bằng lời, không cần mở lại file) vì sao chọn planner/controller này cho kịch bản của mình</li>
+    <li>Nộp bài đúng khung thống nhất — cũng chính là khung sẵn cho chương báo cáo đồ án tốt nghiệp nếu bạn cần dùng lại</li>
+  </ul>
+</div>
+
+<h2>Toàn cảnh: 5 khối đã chạy riêng lẻ, ghép lại + 1 việc mới</h2>
+<p>Bấm từng ô để xem nó ứng với lệnh/file thật nào — 5 ô đầu bạn đã tự chạy được ở các module trước, ô cam bên dưới là phần duy nhất thật sự mới:</p>
+<div class="scene" data-scene="capstone-pipeline"></div>
+
+<h2>Tóm tắt yêu cầu tối thiểu</h2>
+<ol>
+  <li>SLAM tự vẽ map world mới (không phải <code>maze.sdf</code> đã quen — tự thiết kế world "warehouse" đơn giản hoặc tùy biến <code>maze.sdf</code>), dùng <a href="lesson.html?m=8&amp;l=00-gioi-thieu">Module 8</a>.</li>
+  <li>AMCL định vị đúng trên map vừa lưu, dùng <a href="lesson.html?m=9&amp;l=00-gioi-thieu">Module 9</a>.</li>
+  <li>≥ 3 điểm giao hàng, đi lần lượt bằng Nav2 + waypoint app tự viết, dùng <a href="lesson.html?m=10&amp;l=00-gioi-thieu">Module 10</a> + <a href="lesson.html?m=12&amp;l=00-gioi-thieu">Module 12</a> (mở rộng từ <code>patrol_node.py</code>, không lặp vô hạn nữa mà dừng sau khi giao hết).</li>
+  <li>Né được vật cản tĩnh KHÔNG có trong map gốc (đặt thêm hộp sau khi đã lưu map) — kiểm chứng costmap + inflation, dùng <a href="lesson.html?m=10&amp;l=01-costmap">Module 10</a>.</li>
+  <li>Log thật: tổng thời gian, quãng đường, số lần recovery kích hoạt — dùng <a href="lesson.html?m=11&amp;l=00-gioi-thieu">Module 11</a>.</li>
+</ol>
+<p>Đề bài chi tiết, yêu cầu tối thiểu đầy đủ, phần mở rộng tùy chọn và rubric chấm điểm — xem <a href="lesson.html?m=13&amp;l=01-de-bai-va-rubric">bài sau</a>.</p>
+
+<h2>Chuẩn bị</h2>
+<pre><code>cd ~/atlas_sim
+colcon build --packages-select atlas_slam atlas_apps atlas_gazebo
+source install/setup.bash</code></pre>
+<p>Viết trong <code>atlas_apps</code> — đúng package trống dành cho học viên (xem <a href="lesson.html?m=12&amp;l=00-gioi-thieu">00-gioi-thieu Module 12</a>), không sửa code mẫu trong <code>atlas_slam</code>.</p>
+
+<h2>Cách đọc module này</h2>
+<table>
+  <thead><tr><th>#</th><th>Bài</th><th>Nội dung</th></tr></thead>
+  <tbody>
+    <tr><td>1</td><td><a href="lesson.html?m=13&amp;l=01-de-bai-va-rubric">Đề bài chi tiết & rubric</a></td><td>Yêu cầu tối thiểu đầy đủ, mở rộng tùy chọn, tiêu chí chấm điểm</td></tr>
+    <tr><td>2</td><td><a href="lesson.html?m=13&amp;l=02-cach-bat-dau">Cách bắt đầu & nộp bài</a></td><td>5 bước thực hiện, ví dụ minh họa 1 lượt chạy, khung nộp bài</td></tr>
+  </tbody>
+</table>
+<p>Hoàn thành Module 13 = hoàn thành khóa học.</p>

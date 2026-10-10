@@ -1,0 +1,43 @@
+<h1>Đọc slam.launch.py</h1>
+<p class="lead">File ngắn nhưng dễ hiểu nhầm nhất của module: nó <strong>không</strong> mở Gazebo, không spawn robot — nó chỉ "cắm vào" dữ liệu đã có sẵn. Đọc đúng docstring thật sẽ tránh được lỗi phổ biến nhất khi mới học SLAM: mở launch file này trước, rồi thắc mắc vì sao chẳng có gì xảy ra.</p>
+
+<h2>Những gì file KHÔNG làm</h2>
+<p>Khác hẳn các launch file đã gặp từ Module 4 (luôn có <code>IncludeLaunchDescription</code> gọi <code>gz_sim.launch.py</code> + node <code>spawn_robot</code>), <code>atlas_slam/launch/slam.launch.py</code> không đụng gì tới Gazebo. Nó giả định 3 thứ đã tồn tại từ trước, do launch file khác (Module 4-7) tạo ra:</p>
+<ul>
+  <li><code>/scan</code> — từ LiDAR, Module 6</li>
+  <li><code>/odom</code> — từ <code>diff_drive_controller</code>, Module 5</li>
+  <li>TF <code>odom → base_footprint</code> — cũng từ <code>diff_drive_controller</code></li>
+</ul>
+<p>Thiếu bất kỳ thứ nào trong 3 thứ này, node <code>slam_toolbox</code> vẫn chạy được (không crash) nhưng không vẽ được gì — một kiểu lỗi "im lặng" dễ khiến người mới tưởng launch file hỏng.</p>
+
+<h2>Những gì file làm</h2>
+<ul>
+  <li>Include launch file gốc của <code>slam_toolbox</code> (<code>online_async_launch.py</code>) — đây mới là launch file thật sự khởi động node <code>slam_toolbox</code>, Atlas chỉ truyền tham số vào</li>
+  <li>Tham số <code>slam_params_file</code> → trỏ đúng <code>mapper_params.yaml</code> (bài 4)</li>
+  <li>Tham số <code>use_sim_time: true</code> — bắt buộc, vì toàn bộ thời gian trong hệ thống (TF, scan) đều chạy theo đồng hồ Gazebo mô phỏng, không phải đồng hồ tường</li>
+  <li>Mở RViz với cấu hình riêng <code>rviz/slam_toolbox_default.rviz</code>, điều khiển bằng arg <code>rviz:=true</code> (mặc định) / <code>rviz:=false</code></li>
+</ul>
+
+<h2>RViz của module này khác gì Module 3/6/7</h2>
+<p><code>atlas_view.rviz</code> (dùng từ Module 3) chỉ có 3 display: Grid, RobotModel, TF — đủ để xem khung xương robot. <code>slam_toolbox_default.rviz</code> thêm 2 thứ mới:</p>
+<ul>
+  <li>Display <strong>Map</strong> — subscribe <code>/map</code>, vẽ occupancy grid (bài 5) đang được dựng dần</li>
+  <li>Display <strong>LaserScan</strong> — vẽ trực tiếp từng điểm quét hiện tại, giúp so bằng mắt điểm quét mới có khớp với bản đồ đã có không</li>
+  <li>Panel <strong>SlamToolboxPlugin</strong> (không phải Display — một panel riêng, góc trái) — nút Serialize/Deserialize Map đã nói ở bài 2/5</li>
+</ul>
+
+<h2>Thứ tự chạy đúng — 3 terminal</h2>
+<pre><code># Terminal 1 — mở world + robot (Module 4-7, bất kỳ cách nào cho ra /scan + /odom)
+ros2 launch atlas_bringup bringup.launch.py world:=maze.sdf</code></pre>
+<pre><code># Terminal 2 — bật SLAM, chờ RViz mở
+ros2 launch atlas_slam slam.launch.py</code></pre>
+<pre><code># Terminal 3 — lái robot để có chuyển động cho SLAM "ăn"
+ros2 run teleop_twist_keyboard teleop_twist_keyboard</code></pre>
+<p>Thứ tự terminal 1 trước terminal 2 không bắt buộc tuyệt đối (ROS 2 topic/TF sẽ tự kết nối khi cả 2 bên đã lên), nhưng mở terminal 2 trước sẽ chỉ thấy RViz trống một lúc, dễ gây hoang mang không cần thiết.</p>
+
+<h2>Lưu bản đồ khi đã lái xong</h2>
+<pre><code># Terminal mới, SAU khi đã lái xong — đừng tắt terminal 1, 2
+ros2 run nav2_map_server map_saver_cli -f maze_map</code></pre>
+<pre><code>ros2 service call /slam_toolbox/serialize_map slam_toolbox/srv/SerializePoseGraph \
+  "{filename: '/home/you/atlas_sim/src/atlas_slam/maps/maze_map'}"</code></pre>
+<p>Cả 2 lệnh phải chạy <strong>trong khi</strong> <code>slam.launch.py</code> (terminal 2) vẫn đang sống — chúng đọc dữ liệu từ node <code>slam_toolbox</code> đang chạy, không phải từ file nào đã lưu sẵn. Nhớ lại gotcha đường dẫn tuyệt đối ở bài 5 cho lệnh thứ 2.</p>

@@ -1,0 +1,37 @@
+<h1>Công cụ debug TF</h1>
+<p class="lead">Ba công cụ dùng xuyên suốt mọi module sau khi làm việc với TF: <strong><code>static_transform_publisher</code></strong> (publish một transform tĩnh không cần viết code), <strong><code>view_frames</code></strong> (vẽ toàn bộ cây TF hiện tại ra file), <strong><code>tf2_echo</code></strong> (xem giá trị một transform theo thời gian thực).</p>
+
+<h2>static_transform_publisher — publish tĩnh không cần viết code</h2>
+<p>Publish một lần lên <code>/tf_static</code>, hợp cho quan hệ cố định vĩnh viễn (ví dụ cảm biến gắn cứng trên khung robot, không có khớp chuyển động). Đây chính xác là cách <code>demo_tf.launch.py</code> tạo ra <code>static_frame</code>:</p>
+<pre><code>ros2 run tf2_ros static_transform_publisher \
+  --x 1.0 --y 0.0 --z 0.5 --frame-id world --child-frame-id static_frame</code></pre>
+<p>Không cần viết <code>TransformBroadcaster</code> tay cho những trường hợp tĩnh đơn giản như thế này.</p>
+
+<h2>Phân biệt động và tĩnh, ngay trên dữ liệu thật</h2>
+<p>Hai lệnh <code>tf2_echo</code> dưới đây chạy trên 2 transform của chính <code>demo_tf.launch.py</code>: một động, một tĩnh.</p>
+<div class="scene" data-scene="tf2-echo-live"></div>
+
+<h2>view_frames — vẽ cả cây ra file</h2>
+<p>Nghe <code>/tf</code> + <code>/tf_static</code> trong 5 giây, xuất ra file PDF vẽ cây TF hiện có, kèm tần số publish từng frame — hữu ích để phát hiện frame nào "chết" (tần số 0 hoặc không xuất hiện trong cây):</p>
+<pre><code>ros2 run tf2_tools view_frames</code></pre>
+
+<h2>RViz — cách trực quan nhất</h2>
+<p>Display <code>TF</code> trong RViz (bật/tắt từng frame, xem trực quan trục XYZ) là cách trực quan nhất để "nhìn thấy" cây TF đang chuyển động, thay vì đọc số trong terminal.</p>
+
+<h2>Thử ngay</h2>
+<p>Cần 2 terminal (đã <code>source install/setup.bash</code>, xem <a href="lesson.html?m=0&amp;l=00-cai-dat">Module 0</a>):</p>
+<pre><code># Terminal 1 — để chạy, đừng tắt
+ros2 launch ros2_basics demo_tf.launch.py</code></pre>
+<pre><code># Terminal 2 — tự thoát sau 5 giây, mở PDF vừa xuất ra để đối chiếu
+ros2 run tf2_tools view_frames</code></pre>
+<pre><code># Terminal 2 — số liệu đổi liên tục: frame ĐỘNG. Ctrl+C để dừng
+ros2 run tf2_ros tf2_echo world moving_frame</code></pre>
+<pre><code># Terminal 2 — số liệu KHÔNG đổi: frame TĨNH. Ctrl+C để dừng
+ros2 run tf2_ros tf2_echo world static_frame</code></pre>
+
+<h2>Ví dụ trong dự án Atlas</h2>
+<p>Từ Module 4 trở đi, đây là bộ lệnh đầu tiên chạy mỗi khi robot "không đứng đúng chỗ" trong RViz hay Nav2 báo lỗi TF:</p>
+<pre><code>ros2 run tf2_tools view_frames                     # cây TF thật của Atlas có đủ frame chưa?
+ros2 run tf2_ros tf2_echo map base_link             # robot đang ở đâu trên bản đồ?
+ros2 run tf2_ros tf2_echo odom base_link            # có đang trôi bất thường không?</code></pre>
+<p>Đây không phải lệnh học cho biết — đã tự dùng <code>tf2_echo</code>/<code>view_frames</code> để debug thật trong quá trình xây <code>atlas_control</code>/<code>atlas_slam</code>, ví dụ xác nhận <code>diff_drive_controller</code> có publish đúng <code>odom</code>→<code>base_footprint</code> hay không trước khi nghi ngờ tới AMCL.</p>

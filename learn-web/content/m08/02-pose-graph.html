@@ -1,0 +1,25 @@
+<h1>Pose graph</h1>
+<p class="lead">Scan matching (bài trước) chỉ trả lời "giữa 2 lần quét <em>liên tiếp</em>, robot đã di chuyển bao nhiêu". Để nhớ toàn bộ hành trình, <code>slam_toolbox</code> xếp từng kết quả đó vào một cấu trúc gọi là <strong>pose graph</strong> — không vẽ bản đồ trực tiếp, mà vẽ <em>lịch sử các vị trí</em> trước, bản đồ chỉ là thứ "render" ra sau cùng từ graph đó.</p>
+
+<h2>Node và cạnh</h2>
+<ul>
+  <li><strong>Node</strong> — một lần quét đã lưu, kèm ước lượng vị trí robot (x, y, θ) lúc chụp. Không phải mọi lần quét đều thành node — chỉ khi đủ <code>minimum_travel_distance</code>/<code>heading</code> (bài trước).</li>
+  <li><strong>Cạnh (constraint)</strong> — mối quan hệ "từ node này tới node kia robot đã di chuyển đúng bao nhiêu", kèm độ tin cậy (biến phương sai). Cạnh giữa 2 node liên tiếp tới từ scan matching; cạnh giữa 2 node <strong>không liên tiếp</strong> (quay lại chỗ cũ) là <strong>loop closure</strong> — chủ đề bài sau.</li>
+</ul>
+<p>Mỗi cạnh chỉ là một <strong>ước lượng</strong>, luôn có sai số nhỏ. Ghép hàng trăm cạnh nối tiếp nhau, sai số nhỏ cộng dồn thành lớn — pose graph của một hành trình dài trông "cong vênh" dần so với thực tế, dù mỗi đoạn đều gần đúng.</p>
+
+<h2>Xây thử một pose graph — xem sai lệch tích lũy bằng mắt</h2>
+<p>Bấm "Bước tiếp" để robot đi một đoạn (tự thêm 1 node + 1 cạnh, kèm sai số nhỏ mô phỏng bánh trượt). Đi hết 1 vòng quanh mê cung rồi bấm "Đóng vòng lặp" khi quay gần điểm xuất phát — xem pose graph "duỗi thẳng" lại ra sao:</p>
+<div class="scene" data-scene="pose-graph-builder"></div>
+
+<h2>Optimizer thật đứng sau: Ceres Solver</h2>
+<pre><code>solver_plugin: solver_plugins::CeresSolver
+ceres_linear_solver: SPARSE_NORMAL_CHOLESKY
+ceres_trust_strategy: LEVENBERG_MARQUARDT</code></pre>
+<p>Khi một cạnh mới được thêm (đặc biệt là loop closure), toàn bộ pose graph không đơn giản "dịch" node cuối về đúng chỗ — <strong>mọi node</strong> dịch chuyển một chút để tổng sai số trên <strong>mọi cạnh</strong> là nhỏ nhất có thể (bài toán tối ưu phi tuyến, <code>Levenberg-Marquardt</code> là thuật toán giải kinh điển cho dạng này). Đây là lý do thêm 1 cạnh loop closure có thể làm cong lại cả những node ở rất xa, không chỉ 2 đầu cạnh đó.</p>
+
+<h2>Thử ngay</h2>
+<pre><code>ros2 launch atlas_bringup bringup.launch.py world:=maze.sdf</code></pre>
+<pre><code># terminal khác
+ros2 launch atlas_slam slam.launch.py</code></pre>
+<p>Trong RViz, panel <strong>SlamToolboxPlugin</strong> (góc trái, tự thêm sẵn trong <code>slam_toolbox_default.rviz</code>) hiện nút <em>Serialize Map</em>/<em>Deserialize Map</em> — chính là lưu/nạp lại pose graph thô, không qua occupancy grid. Khác hẳn <code>map_saver_cli</code> (bài 5) vốn chỉ lưu kết quả cuối, không lưu lại cấu trúc node/cạnh.</p>

@@ -1,0 +1,39 @@
+<h1>Recovery behaviors thật đang chạy</h1>
+<p class="lead"><strong>Recovery behavior</strong> là hành động robot tự thực hiện khi việc chính (tính đường/bám đường) thất bại — không phải "sửa lỗi", chỉ là thử tạo lại điều kiện để việc chính có cơ hội thành công ở lần thử tiếp theo.</p>
+
+<h2>4 plugin nạp sẵn, 3 cái được gọi</h2>
+<p><code>behavior_server</code> (node riêng, đã thấy tên trong <code>navigation.launch.py</code> từ Module 10) nạp sẵn <strong>4 plugin</strong> — nhưng <a href="lesson.html?m=11&amp;l=02-doc-bt-xml">BT mặc định</a> chỉ thật sự GỌI 3 trong số đó qua <code>RoundRobin</code>:</p>
+<table>
+  <tr><th>Behavior</th><th>Có trong BT mặc định?</th><th>Làm gì</th></tr>
+  <tr><td><code>ClearEntireCostmap</code></td><td>Có (2 lần, local + global)</td><td>Xóa sạch, tính lại costmap từ <code>/scan</code> mới nhất — "quên" vật cản có thể đã hết tồn tại</td></tr>
+  <tr><td><code>Spin</code></td><td>Có</td><td>Quay tại chỗ 1 góc (<code>spin_dist</code>) — giúp LiDAR quét thêm góc nhìn mới, thường đủ để costmap "thấy" đường thoát</td></tr>
+  <tr><td><code>Wait</code></td><td>Có</td><td>Đứng yên 1 khoảng thời gian — hữu ích khi vật cản là người/vật DI ĐỘNG, chờ nó tự đi khỏi</td></tr>
+  <tr><td><code>BackUp</code></td><td>Có</td><td>Lùi lại 1 đoạn ngắn, tốc độ chậm</td></tr>
+  <tr><td><code>DriveOnHeading</code></td><td><strong>Không</strong> (nạp sẵn nhưng chưa node nào gọi)</td><td>Đi thẳng theo 1 hướng cho sẵn — khác <code>BackUp</code> (luôn lùi), có thể tiến</td></tr>
+</table>
+<p><code>RoundRobin</code> xoay vòng — mỗi lần <code>ReactiveFallback</code> kích hoạt lại, thử hành vi KHÁC với lần trước (không lặp mãi đúng 1 cách nếu nó không hiệu quả) — đúng hành vi đã thấy ở scene cây BT bài trước: mỗi lần thử lại, "RoundRobin đang ở lượt" đổi sang hành vi tiếp theo.</p>
+
+<h2>Ví dụ trong dự án Atlas</h2>
+<pre><code># atlas_slam/config/nav2_params_mppi.yaml (chung cho cả 3 file controller)
+behavior_server:
+  ros__parameters:
+    behavior_plugins: ["spin", "backup", "drive_on_heading", "wait"]
+    spin: {plugin: "nav2_behaviors/Spin"}
+    backup: {plugin: "nav2_behaviors/BackUp"}
+    drive_on_heading: {plugin: "nav2_behaviors/DriveOnHeading"}
+    wait: {plugin: "nav2_behaviors/Wait"}</code></pre>
+<p><code>drive_on_heading</code> đã NẠP SẴN, sẵn sàng dùng — chỉ cần thêm 1 node <code>&lt;DriveOnHeading .../&gt;</code> vào file BT XML là gọi được ngay, không cần sửa code Python/C++ nào, không cần thêm dòng cấu hình nào trong YAML. Đây chính xác là nội dung bài tập.</p>
+
+<h2>Thông số thật của 3 behavior đang hoạt động</h2>
+<pre><code># trích từ chính cây BT mặc định (bài trước)
+&lt;Spin spin_dist="1.57"/&gt;              &lt;!-- ≈ 90°, π/2 radian --&gt;
+&lt;Wait wait_duration="5"/&gt;              &lt;!-- 5 giây --&gt;
+&lt;BackUp backup_dist="0.30" backup_speed="0.05"/&gt;  &lt;!-- lùi 0.30m, tốc độ 0.05 m/s --&gt;</code></pre>
+<p>Các con số này nằm trong chính file BT XML (thuộc tính của từng thẻ), KHÔNG nằm trong <code>behavior_server</code> YAML — <code>behavior_plugins</code> trong YAML chỉ khai "plugin nào tồn tại", còn "gọi nó với tham số gì" là việc của BT XML lúc gọi node. Cùng 1 plugin <code>Spin</code> có thể được gọi với <code>spin_dist</code> khác nhau ở 2 chỗ khác nhau trong cùng 1 cây, nếu cần.</p>
+
+<h2>Thử ngay</h2>
+<pre><code>ros2 launch atlas_bringup bringup.launch.py world:=maze.sdf</code></pre>
+<pre><code>ros2 launch atlas_slam navigation.launch.py \
+  map:=$(pwd)/src/atlas_slam/maps/maze_map.yaml</code></pre>
+<pre><code>ros2 node info /behavior_server | grep -A6 "Action Servers"</code></pre>
+<p>Xác nhận cả 4 action server (<code>spin</code>, <code>backup</code>, <code>drive_on_heading</code>, <code>wait</code>) đều tồn tại — kể cả <code>drive_on_heading</code> chưa được BT nào gọi, action server của nó vẫn chạy, sẵn sàng nhận lệnh bất cứ lúc nào.</p>

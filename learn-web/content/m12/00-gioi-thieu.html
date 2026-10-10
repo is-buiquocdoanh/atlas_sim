@@ -1,0 +1,40 @@
+<h1>Từ "cấu hình" sang "tự viết code điều khiển"</h1>
+<p class="lead">Module 10 — gửi 1 goal, đợi Nav2 tự lo hết. Module 11 — Nav2 tự khắc phục sự cố khi kẹt. Cả hai module đó bạn chỉ <strong>cấu hình</strong> (YAML, XML), chưa viết dòng Python nào điều khiển Nav2. Module này đổi hướng: tự viết code gửi nhiều điểm liên tiếp, đọc tiến độ khi đang chạy, và hủy giữa chừng theo logic riêng.</p>
+
+<div class="goals">
+  <h3>Sau module này bạn sẽ</h3>
+  <ul>
+    <li>Giải thích được vì sao <code>NavigateToPose</code>/<code>FollowWaypoints</code> PHẢI là action, không thể là service — bằng đúng 3 đặc điểm: lâu, có feedback, hủy được</li>
+    <li>Dùng được 4 hàm cốt lõi của <code>BasicNavigator</code>: <code>waitUntilNav2Active()</code>, <code>followWaypoints()</code>, <code>isTaskComplete()</code>/<code>getFeedback()</code>, <code>cancelTask()</code></li>
+    <li>Đọc hiểu <code>waypoint_demo.py</code> thật, kể cả gotcha <code>rcl_shutdown already called</code> khi Ctrl+C — không phải lý thuyết, là lỗi thật gặp lúc soạn bài</li>
+    <li>Tự viết <code>patrol_node.py</code> trong <code>atlas_apps</code> — package SV tự viết, tách khỏi code mẫu — tuần tra vô hạn, phân biệt đúng <code>CANCELED</code> (người dùng hủy) với <code>FAILED</code> (lỗi thật)</li>
+  </ul>
+</div>
+
+<h2>Vì sao module này đứng SAU Recovery/BT (Module 11), không phải ngay sau Module 10</h2>
+<p>Gửi 1 goal rồi đợi (Module 10) chỉ cần Nav2 chạy đúng. Gửi NHIỀU goal liên tiếp, đọc feedback khi đang chạy, và tự quyết định hủy khi nào — cần hiểu trước <code>bt_navigator</code> đã tự xử lý thất bại/retry ra sao (Module 11), để không nhầm lẫn 2 tầng khác nhau: Nav2 tự recovery bên trong 1 goal, và code của BẠN tự quyết định làm gì SAU KHI 1 goal xong (tiếp tục, lặp lại, hay dừng).</p>
+
+<h2>Chuẩn bị</h2>
+<pre><code>cd ~/atlas_sim
+colcon build --packages-select atlas_slam atlas_apps
+source install/setup.bash</code></pre>
+<p><code>atlas_apps</code> là package <strong>TRỐNG, cố tình</strong> — nơi bạn tự viết bài tập của module này (<a href="lesson.html?m=1&amp;l=07-cau-truc-package">cấu trúc package, Module 1</a>), khác <code>atlas_slam/scripts/</code> chứa code mẫu đã viết sẵn để tham khảo.</p>
+
+<h2>Bản đồ module</h2>
+<div class="cards">
+  <div class="mini"><b>Action</b><span>Mô hình giao tiếp thứ 3 — lâu, có feedback, hủy được (khác topic/service)</span></div>
+  <div class="mini"><b>BasicNavigator</b><span>Wrapper Python quanh action Nav2 — không phải tự viết ActionClient thủ công</span></div>
+  <div class="mini"><b>waypoint_demo.py</b><span>Mẫu tham khảo: 4 điểm, 1 vòng, có xử lý Ctrl+C sạch</span></div>
+  <div class="mini"><b>patrol_node.py</b><span>Bài tập: tuần tra vô hạn, tự viết trong atlas_apps</span></div>
+</div>
+
+<h2>Cách đọc module này</h2>
+<table>
+  <thead><tr><th>#</th><th>Bài</th><th>Khái niệm</th></tr></thead>
+  <tbody>
+    <tr><td>1</td><td><a href="lesson.html?m=12&amp;l=01-action-client-server">Action client/server</a></td><td>Vì sao navigation PHẢI dùng action</td></tr>
+    <tr><td>2</td><td><a href="lesson.html?m=12&amp;l=02-nav2-simple-commander">Nav2 Simple Commander</a></td><td><code>BasicNavigator</code>: waypoint, feedback, hủy giữa chừng</td></tr>
+    <tr><td>3</td><td><a href="lesson.html?m=12&amp;l=03-bai-tap">Bài tập</a></td><td>Tự viết <code>patrol_node.py</code></td></tr>
+  </tbody>
+</table>
+<p>Đây là bước chuẩn bị trực tiếp cho <strong>Module 13 — Capstone</strong>: đồ án cuối khóa cần đúng kỹ năng action/waypoint này để tự động hóa 1 kịch bản hoàn chỉnh.</p>

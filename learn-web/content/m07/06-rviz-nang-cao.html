@@ -1,0 +1,34 @@
+<h1>RViz: vượt khỏi 3 display mặc định</h1>
+<p class="lead"><a href="lesson.html?m=6&amp;l=06-cong-cu-kiem-tra">Module 6</a> đã nói <code>atlas_view.rviz</code> chỉ có <code>Grid</code>, <code>RobotModel</code>, <code>TF</code> — đủ cho việc dựng URDF (Module 3), không đủ cho module này. Giờ thêm đúng những gì module này cần: LiDAR, IMU, và 2 vùng đa giác an toàn.</p>
+
+<h2>4 display cần thêm</h2>
+<table>
+  <tr><th>Display</th><th>Topic</th><th>Kiểu message</th></tr>
+  <tr><td>LaserScan</td><td><code>/scan</code></td><td><code>sensor_msgs/msg/LaserScan</code> (<a href="lesson.html?m=6&amp;l=02-lidar">Module 6</a>)</td></tr>
+  <tr><td>Imu</td><td><code>/imu</code></td><td><code>sensor_msgs/msg/Imu</code> (<a href="lesson.html?m=6&amp;l=03-imu">Module 6</a>)</td></tr>
+  <tr><td>Polygon</td><td><code>/polygon_stop</code></td><td><code>geometry_msgs/msg/PolygonStamped</code></td></tr>
+  <tr><td>Polygon</td><td><code>/polygon_slowdown</code></td><td><code>geometry_msgs/msg/PolygonStamped</code></td></tr>
+</table>
+<p>2 topic polygon lấy đúng tên từ <code>polygon_pub_topic</code> đã khai trong <code>collision_monitor.yaml</code> (bài 4) — xác nhận kiểu message bằng cách đọc thẳng mã nguồn <code>nav2_collision_monitor</code> (<code>polygon.hpp</code>, cài sẵn trên máy): publisher kiểu <code>geometry_msgs::msg::PolygonStamped</code>, không phải <code>visualization_msgs</code> hay gì khác dễ đoán nhầm.</p>
+<p>Thêm từng display: <em>Add</em> (góc dưới-trái panel Displays) → tab <em>By topic</em> → gõ/duyệt tới đúng topic, RViz tự chọn đúng display class khớp kiểu message.</p>
+
+<h2>Fixed Frame và Target Frame — 2 khái niệm hay bị nhầm</h2>
+<p><code>atlas_view.rviz</code> đặt sẵn:</p>
+<pre><code>Global Options:
+  Fixed Frame: base_footprint
+Views:
+  Current:
+    Target Frame: base_footprint</code></pre>
+<ul>
+  <li><strong>Fixed Frame</strong> — frame TF mà <em>mọi</em> dữ liệu được vẽ vào đó. Đặt <code>base_footprint</code>: mọi thứ (LiDAR, vùng đa giác) vẽ tương đối so với robot, robot luôn đứng yên giữa màn hình dù nó có di chuyển trong Gazebo. Đổi thành <code>odom</code> — robot sẽ "chạy" trên màn hình RViz đúng theo quỹ đạo thật.</li>
+  <li><strong>Target Frame</strong> (trong <em>Views</em>) — chỉ ảnh hưởng vị trí <em>camera</em> theo dõi, không ảnh hưởng dữ liệu vẽ ra sao. Đặt <code>base_footprint</code>: camera tự bám theo robot. Nếu <code>Fixed Frame</code> đã là <code>base_footprint</code> thì 2 giá trị này trùng nhau nên không thấy khác biệt — đổi <code>Fixed Frame</code> sang <code>odom</code> trong khi giữ <code>Target Frame = base_footprint</code> mới thấy rõ: dữ liệu "chạy" nhưng camera vẫn bám theo robot, không bị văng ra khỏi khung hình.</li>
+</ul>
+
+<h2>Vì sao 2 vùng đa giác luôn đứng yên so với robot</h2>
+<p><code>collision_monitor</code> publish polygon với <code>header.frame_id</code> đúng bằng <code>base_frame_id</code> (<code>base_footprint</code>, đã đặt trong <code>collision_monitor.yaml</code>) — 2 vùng này <strong>gắn chết vào thân robot</strong>, không phải vẽ cố định trên bản đồ. Để <code>Fixed Frame = base_footprint</code>, bạn sẽ thấy 2 hình chữ nhật đứng yên quanh robot dù robot xoay hướng nào — đúng ý nghĩa "vùng an toàn quanh thân", không phải "vùng cố định trong thế giới".</p>
+
+<h2>Thử ngay</h2>
+<pre><code>ros2 launch atlas_bringup collision_monitor.launch.py</code></pre>
+<pre><code># terminal khác
+rviz2 -d install/atlas_description/share/atlas_description/rviz/atlas_view.rviz</code></pre>
+<p>Thêm đủ 4 display ở trên, lưu lại qua <em>File → Save Config As</em> để lần sau khỏi thêm tay — dự án hiện chưa có sẵn file RViz nào bao gồm 4 display này, bạn vừa tự tạo ra nó.</p>

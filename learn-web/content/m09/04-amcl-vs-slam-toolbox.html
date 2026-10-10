@@ -1,0 +1,35 @@
+<h1>AMCL vs slam_toolbox: 2 cách định vị trong cùng dự án</h1>
+<p class="lead">Dự án Atlas hỗ trợ <strong>2 cách định vị</strong> chọn qua 1 tham số (<code>localization:=amcl</code> hoặc <code>localization:=slam_toolbox</code>) — cùng làm 1 việc (publish TF <code>map → odom</code>), khác thuật toán: AMCL dùng particle filter (bài 1), <code>slam_toolbox</code> dùng lại chính cơ chế scan matching + pose graph đã học ở <a href="lesson.html?m=8&amp;l=01-scan-matching">Module 8</a>, chỉ đổi <code>mode: mapping</code> → <code>mode: localization</code> (không tạo thêm node mới, không tạo thêm bản đồ).</p>
+
+<h2>Khác biệt cốt lõi: phạm vi tìm kiếm</h2>
+<p>Kéo thử độ lệch giữa pose bạn khai báo (hoặc "2D Pose Estimate") và vị trí thật của robot — xem khi nào mỗi cách vẫn tìm lại được, khi nào thì không:</p>
+<div class="scene" data-scene="global-vs-local-search"></div>
+<p>AMCL (particle filter) rải hạt rộng, có khả năng tìm lại vị trí đúng dù pose ban đầu sai khá nhiều (global search). <code>slam_toolbox</code> (<code>mode: localization</code>) dùng correlative scan matching (Module 8) — chỉ dò trong 1 cửa sổ hẹp quanh pose cho sẵn, đúng tham số <code>correlation_search_space_dimension: 0.5</code>m thật trong <code>mapper_params_localization.yaml</code>. Sai pose ban đầu nhiều là <strong>lạc hẳn</strong>, không tự tìm lại được — không phải "chậm hơn", mà là về mặt toán học không bao giờ nhìn thấy vị trí đúng.</p>
+
+<h2>Hệ quả: 2 cách khởi động hoàn toàn khác nhau</h2>
+<p>Khác biệt lúc khởi động đã nhắc ở bài 3: AMCL không cần <code>initial_pose</code> đúng ngay (chờ "2D Pose Estimate" sau khi chạy); <code>slam_toolbox</code> <strong>bắt buộc</strong> <code>map_start_pose</code> đúng NGAY lúc khởi động — thiếu, nó báo lỗi <em>"Map starting pose not specified"</em> rồi coi như vẽ map mới toanh thay vì định vị, dễ nhầm tưởng "map không nạp được".</p>
+
+<h2>Vì sao panel Nav2 trong RViz luôn báo "Localization: Inactive" khi dùng slam_toolbox</h2>
+<p>Không phải bug, dù robot chạy đúng — đọc trực tiếp từ mã nguồn thật trên máy:</p>
+<pre><code>// nav2_rviz_plugins/src/nav2_panel.cpp
+client_loc_ = std::make_shared&lt;nav2_lifecycle_manager::LifecycleManagerClient&gt;(
+  "lifecycle_manager_localization", client_node_);</code></pre>
+<p>Panel hard-code tìm đúng tên node <code>lifecycle_manager_localization</code> để hỏi trạng thái Active/Inactive qua dịch vụ lifecycle chuẩn. Nhìn lại kiến trúc AMCL (bài 3): đúng có 1 node tên <code>lifecycle_manager_localization</code> quản lý <code>map_server</code>+<code>amcl</code>. Còn <code>slam_toolbox</code> ở <code>mode: localization</code> — nhìn lại sơ đồ bài giới thiệu — không hề tạo ra node <code>lifecycle_manager_localization</code> nào cả, nó tự chạy 1 mình.</p>
+<pre><code>// slam_toolbox_common.hpp
+class SlamToolbox : public rclcpp::Node</code></pre>
+<p>Lý do sâu hơn: <code>SlamToolbox</code> kế thừa <code>rclcpp::Node</code> THƯỜNG, không phải <code>LifecycleNode</code> — không có khái niệm "Active/Inactive" để bất kỳ ai hỏi, kể cả khi có 1 lifecycle_manager trỏ vào nó.</p>
+<div class="callout"><p>Panel chỉ "biết" hỏi đúng 1 kiểu node (qua tên cố định <code>lifecycle_manager_localization</code>), <code>slam_toolbox</code> không thuộc kiểu đó — giới hạn thật của plugin <code>nav2_rviz_plugins</code>, không sửa được nếu không đụng vào code gốc của Nav2. Biết trước để không mất thời gian "debug" cái không hỏng.</p></div>
+
+<h2>Ví dụ trong dự án Atlas</h2>
+<pre><code>ros2 launch atlas_slam navigation.launch.py localization:=slam_toolbox \
+  map:=$(pwd)/src/atlas_slam/maps/maze_map.yaml \
+  initial_pose_x:=0.0 initial_pose_y:=0.0 initial_pose_yaw:=0.0</code></pre>
+<p>3 tham số <code>initial_pose_*</code> <strong>chỉ có tác dụng</strong> với <code>localization:=slam_toolbox</code> — với AMCL, chúng bị bỏ qua hoàn toàn (AMCL tự chờ "2D Pose Estimate"). Đọc lại <code>mapper_params_localization.yaml</code> — 2 tham số đáng chú ý khác với file mapping ở Module 8:</p>
+<pre><code>map_update_interval: 99999999.0   # gần như vô hạn -- /map KHÔNG được vẽ lại
+do_loop_closing: false            # bản đồ đã có sẵn, tắt hẳn để tránh tự "sửa"</code></pre>
+
+<h2>Thử ngay</h2>
+<pre><code>ros2 launch atlas_slam navigation.launch.py localization:=slam_toolbox \
+  map:=$(pwd)/src/atlas_slam/maps/maze_map.yaml \
+  initial_pose_x:=0.0 initial_pose_y:=0.0 initial_pose_yaw:=0.0</code></pre>
+<p>Mở panel Nav2 trong RViz — xác nhận "Localization" báo Inactive, trong khi robot vẫn gửi goal/di chuyển bình thường (Module 10). Thử bỏ 3 tham số <code>initial_pose_*</code> — quan sát lỗi <em>"Map starting pose not specified"</em> trong log, map bị vẽ mới thay vì nạp lại.</p>

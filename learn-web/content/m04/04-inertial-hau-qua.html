@@ -1,0 +1,29 @@
+<h1>Inertial: hậu quả thật</h1>
+<p class="lead"><a href="lesson.html?m=3&amp;l=02-link">Module 3 bài 2</a> đã hứa: xóa <code>&lt;inertial&gt;</code> thì RViz vẫn bình thường, "nhưng nhớ lại điều này ở Module 4". Đây là bài trả lời — và lý do rất đơn giản: <strong>RViz không bao giờ đọc <code>&lt;inertial&gt;</code> cả</strong>.</p>
+
+<h2>RViz vẽ hình, Gazebo giải phương trình chuyển động</h2>
+<p>RViz là một bộ <strong>render</strong>: nó chỉ cần biết hình trông ra sao (<code>&lt;visual&gt;</code>) và khung xương ở đâu (TF, từ joint). Nó không mô phỏng lực, không có khái niệm "vật này nặng bao nhiêu". Vì vậy xóa <code>&lt;inertial&gt;</code> hay đặt số vô lý, RViz tuyệt đối không thấy khác biệt gì.</p>
+<p>Gazebo thì ngược lại — nó là một bộ giải vật lý. Với mỗi vật thể, để tính robot quay nhanh/chậm thế nào dưới một lực/mô-men xoắn, engine cần đúng 2 con số: <strong>khối lượng</strong> (<code>&lt;mass&gt;</code>) và <strong>ma trận quán tính</strong> (<code>ixx/iyy/izz/...</code>, công thức đã học ở Module 3). Thiếu hoặc sai 2 số này, phương trình <code>τ = I·α</code> (mô-men = quán tính × gia tốc góc) cho ra gia tốc góc sai — robot xoay/lật theo kiểu không giống vật thật nào cả, dù hình dạng (<code>&lt;visual&gt;</code>/<code>&lt;collision&gt;</code>) vẫn đúng y nguyên.</p>
+
+<div class="callout warn"><p>Link không khai báo <code>&lt;inertial&gt;</code> — hoặc có <code>&lt;inertial&gt;</code> nhưng mọi giá trị bằng 0 — bị hầu hết physics engine (bao gồm <code>dartsim</code> dùng trong gz-sim) coi gần như <strong>không có khối lượng</strong>. Với một vật không cố định (không phải link <code>fixed</code> gắn thẳng vào thứ khác), điều này dễ sinh chuyển động mất kiểm soát hoặc giá trị <code>NaN</code> trong lời giải — đây là hiểu biết chung được xác nhận rộng rãi trong cộng đồng Gazebo/ROS, không phải kết quả đã tự chạy thử trên chính Atlas ở trang này.</p></div>
+
+<h2>Kéo thử: cùng một cú hích, quán tính khác nhau → kết quả khác hẳn</h2>
+<p>Một chiếc hộp đứng trên sàn nhận đúng một cú hích giống hệt nhau ở góc trên. Công thức quán tính dùng lại nguyên văn từ <code>inertial_macros.xacro</code> (<a href="lesson.html?m=3&amp;l=02-link">Module 3</a>):</p>
+<pre><code>τ = F × cánh_tay_đòn        (mô-men do lực hích gây ra)
+α = τ / iyy                 (gia tốc góc — chính là phương trình Gazebo giải mỗi bước)
+iyy = (1/12)·m·(x² + z²)    (khớp đúng hộp đang đứng, trục nghiêng là Y)</code></pre>
+<p>Kéo mass/x/z để đổi <code>iyy</code> thật, hoặc bấm "quán tính giả (gần 0)" để xem đúng triệu chứng của một link thiếu <code>&lt;inertial&gt;</code>:</p>
+<div class="scene" data-scene="inertial-stability"></div>
+
+<h2>Vì sao Atlas chưa từng gặp lỗi này</h2>
+<p><code>base_link</code>, bánh xe, caster, LiDAR, IMU trong <code>atlas.urdf.xacro</code> đều đi qua 3 macro dùng chung của <code>inertial_macros.xacro</code> (<code>inertial_box</code>, <code>inertial_cylinder</code>, <code>inertial_sphere</code>) — không ai tự tay gõ số <code>ixx/iyy/izz</code>, macro tự tính đúng công thức từ khối lượng và kích thước đã khai báo. Cách phòng lỗi hiệu quả nhất không phải là "cẩn thận khi gõ số", mà là <strong>không cho người viết URDF có cơ hội tự gõ số sai ngay từ đầu</strong>.</p>
+
+<h2>Thử ngay</h2>
+<p>Tự gây lỗi có kiểm soát để thấy triệu chứng thật — nhớ trả lại file gốc sau khi xong:</p>
+<pre><code>sed -i 's#<xacro:inertial_box mass="${base_mass}"#<xacro:inertial_box mass="0.0001"#' \
+  src/atlas_description/urdf/atlas.urdf.xacro
+colcon build --packages-select atlas_description
+ros2 launch atlas_gazebo spawn_robot.launch.py world:=maze.sdf</code></pre>
+<p>Quan sát <code>base_link</code> (khối lượng lớn nhất, 5kg thật) rơi vào Gazebo với khối lượng giả gần 0 — so với lần chạy bình thường. Trả lại file gốc:</p>
+<pre><code>git checkout src/atlas_description/urdf/atlas.urdf.xacro
+colcon build --packages-select atlas_description</code></pre>

@@ -1,0 +1,51 @@
+<h1>Đọc spawn_robot.launch.py</h1>
+<p class="lead">4 node, nhưng thứ tự phụ thuộc giữa chúng không hiển nhiên nhìn từ code: node nào publish cái gì, node nào chờ đọc cái đó. Đọc đúng thứ tự dữ liệu chảy mới hiểu vì sao cả 4 cần có mặt.</p>
+
+<h2>Sơ đồ dữ liệu — bấm từng bước để xem luồng</h2>
+<div class="scene" data-scene="spawn-pipeline"></div>
+
+<h2>Đọc từng node</h2>
+
+<h3>1. Mở world</h3>
+<pre><code>world_path = PathJoinSubstitution([gazebo_pkg_share, "worlds", LaunchConfiguration("world")])
+gz_sim = IncludeLaunchDescription(
+    PythonLaunchDescriptionSource(os.path.join(ros_gz_sim_share, "launch", "gz_sim.launch.py")),
+    launch_arguments={"gz_args": [world_path, " -r"]}.items(),
+)</code></pre>
+<p><code>gz_sim.launch.py</code> không phải code của dự án — nó thuộc gói <code>ros_gz_sim</code> (cài cùng <code>ros-humble-ros-gz</code>), chỉ wrap lệnh <code>gz sim</code> dưới dạng launch file ROS 2. <code>-r</code> trong <code>gz_args</code> nghĩa là "run" — world bắt đầu chạy vật lý ngay, không đợi bấm nút Play trong GUI (mặc định gz-sim mở ở trạng thái tạm dừng).</p>
+
+<h3>2. robot_description từ xacro</h3>
+<pre><code>robot_description = ParameterValue(
+    Command(["xacro ", LaunchConfiguration("model")]), value_type=str,
+)
+robot_state_publisher_node = Node(
+    package="robot_state_publisher", executable="robot_state_publisher",
+    parameters=[{"robot_description": robot_description, "use_sim_time": True}],
+)</code></pre>
+<p>Giống hệt <code>display.launch.py</code> đã học ở <a href="lesson.html?m=3&amp;l=05-robot-state-publisher">Module 3</a>, chỉ khác 2 chỗ: <code>model</code> mặc định trỏ tới <code>atlas.gazebo.xacro</code> (có tag <code>&lt;gazebo&gt;</code>) thay vì <code>atlas.urdf.xacro</code> thuần; và thêm <code>use_sim_time: True</code> — bắt buộc khi có Gazebo, nếu không <code>robot_state_publisher</code> dùng đồng hồ hệ điều hành thay vì đồng hồ mô phỏng, TF sẽ lệch thời gian với mọi dữ liệu khác trong hệ thống.</p>
+
+<h3>3. Spawn — từ topic, không phải từ file</h3>
+<pre><code>spawn_robot_node = Node(
+    package="ros_gz_sim", executable="create",
+    arguments=["-topic", "robot_description", "-name", "atlas",
+               "-x", LaunchConfiguration("x"), "-y", LaunchConfiguration("y"),
+               "-z", "0.05", "-Y", LaunchConfiguration("yaw")],
+)</code></pre>
+<p><code>-topic robot_description</code>, không phải <code>-file some.urdf</code>: <code>robot_state_publisher</code> không chỉ giữ <code>robot_description</code> làm parameter nội bộ, nó còn publish ra topic cùng tên (QoS transient local — tin nhắn cuối được giữ lại cho subscriber đến sau). <code>ros_gz_sim create</code> subscribe đúng topic đó, đợi đến khi có dữ liệu rồi mới spawn — nghĩa là <strong>không cần</strong> tự thêm delay hay event handler để đảm bảo <code>robot_state_publisher</code> chạy xong trước: thứ tự 2 action trong <code>LaunchDescription</code> không quan trọng, chỉ cần cả 2 đều được khởi động.</p>
+<p><code>-z 0.05</code> đúng bằng <code>wheel_radius</code> — spawn robot với tâm <code>base_link</code> ở độ cao bằng bán kính bánh xe, để bánh vừa chạm sàn ngay khi xuất hiện, không rơi tự do một đoạn (dù rơi vài cm cũng không sao, chỉ là spawn cho "sạch").</p>
+
+<h3>4. Bridge — chỉ /clock ở bước này</h3>
+<pre><code>gz_bridge_node = Node(
+    package="ros_gz_bridge", executable="parameter_bridge",
+    arguments=["--ros-args", "-p", f"config_file:={...}/gz_bridge.yaml"],
+    parameters=[{"use_sim_time": True}],
+)</code></pre>
+<p><code>gz_bridge.yaml</code> khai báo 3 dòng bridge (<code>/clock</code>, <code>/scan</code>, <code>/imu</code>) nhưng ở module này chỉ <code>/clock</code> thật sự có dữ liệu để bridge — chưa có sensor plugin nào phát <code>/scan</code>/<code>/imu</code> (đó là <a href="lesson.html?m=6&amp;l=00-gioi-thieu">Module 6</a>). <code>/clock</code> đi theo chiều <code>GZ_TO_ROS</code>: Gazebo tự tính thời gian mô phỏng, bridge chuyển sang ROS 2 dưới dạng topic chuẩn <code>rosgraph_msgs/msg/Clock</code> — đúng nguồn mà <code>use_sim_time: True</code> ở 2 node trên đang chờ đọc.</p>
+
+<div class="callout tip"><p><code>/cmd_vel</code> và <code>/odom</code> <strong>không</strong> nằm trong <code>gz_bridge.yaml</code> — ghi rõ trong comment của chính file đó. Lý do: chúng thuộc <code>gz_ros2_control</code> (<a href="lesson.html?m=5&amp;l=00-gioi-thieu">Module 5</a>), publish/subscribe thẳng bằng <code>rclcpp</code> bên trong tiến trình Gazebo, không đi qua Gazebo Transport nên không cần bridge. Không phải mọi dữ liệu ROS 2 liên quan Gazebo đều cần bridge — chỉ dữ liệu thật sự sinh ra bên phía Gazebo Transport mới cần.</p></div>
+
+<h2>Thử ngay</h2>
+<pre><code>ros2 launch atlas_gazebo spawn_robot.launch.py x:=1.0 y:=0.5 yaw:=1.57</code></pre>
+<p>Robot spawn lệch tâm, xoay 90°. Terminal khác, xác nhận <code>/clock</code> đang chạy:</p>
+<pre><code>ros2 topic echo /clock --once</code></pre>
+<pre><code>ros2 topic list | grep robot_description   # xác nhận đúng là một topic, không chỉ là parameter</code></pre>

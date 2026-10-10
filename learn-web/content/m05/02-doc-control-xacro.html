@@ -1,0 +1,47 @@
+<h1>Đọc atlas.control.xacro</h1>
+<p class="lead">File này từng xuất hiện ngắn gọn ở <a href="lesson.html?m=3&amp;l=06-doc-urdf-atlas">Module 3 bài 6</a> và <a href="lesson.html?m=4&amp;l=06-doc-gazebo-xacro">Module 4 bài 6</a> như lớp thứ 3 chưa mở ra. Giờ đọc trọn, từng dòng khớp đúng khái niệm bài trước.</p>
+
+<h2>Dòng include — lớp thứ 3 chồng lên lớp thứ 2</h2>
+<pre><code>&lt;xacro:include filename="$(find atlas_gazebo)/urdf/atlas.gazebo.xacro"/&gt;</code></pre>
+<p><code>atlas.gazebo.xacro</code> đã include <code>atlas.urdf.xacro</code> — nên dòng này kéo theo <strong>cả 2 lớp dưới</strong>: hình học thuần (Module 3) + ma sát/sensor (Module 4). File này chỉ cần thêm đúng phần của riêng nó.</p>
+
+<h2>Khối &lt;ros2_control&gt; — khai báo interface</h2>
+<pre><code>&lt;ros2_control name="atlas_system" type="system"&gt;
+  &lt;hardware&gt;
+    &lt;plugin&gt;gz_ros2_control/GazeboSimSystem&lt;/plugin&gt;
+  &lt;/hardware&gt;
+  &lt;joint name="left_wheel_joint"&gt;
+    &lt;command_interface name="velocity"&gt;
+      &lt;param name="min"&gt;-10&lt;/param&gt;
+      &lt;param name="max"&gt;10&lt;/param&gt;
+    &lt;/command_interface&gt;
+    &lt;state_interface name="velocity"/&gt;
+    &lt;state_interface name="position"/&gt;
+  &lt;/joint&gt;
+  &lt;joint name="right_wheel_joint"&gt;... giống hệt ...&lt;/joint&gt;
+&lt;/ros2_control&gt;</code></pre>
+<ul>
+  <li><code>type="system"</code> — khai báo đây là một hệ thống hoàn chỉnh (nhiều joint), khác <code>actuator</code> (1 joint đơn lẻ) hay <code>sensor</code> (chỉ đọc, không điều khiển).</li>
+  <li><code>&lt;hardware&gt;&lt;plugin&gt;</code> — đúng chỗ đã nhắc ở Module 4: đây là <strong>dòng duy nhất</strong> đổi khi chuyển sang robot thật.</li>
+  <li><code>min="-10" max="10"</code> — giới hạn tốc độ (rad/s) <strong>khai báo</strong> cho interface này. Nhớ đúng 2 số này cho bài 4 — và nhớ luôn cả việc kiểm tra xem khai báo này có thật sự được ai đó enforce hay không, đừng mặc định là có.</li>
+  <li>Chỉ 2 joint bánh chủ động xuất hiện — caster <code>fixed</code> (Module 3) không có gì để điều khiển, nên không khai báo interface nào cho nó.</li>
+</ul>
+
+<h2>Plugin gz_ros2_control — cầu nối sang Gazebo</h2>
+<pre><code>&lt;gazebo&gt;
+  &lt;plugin filename="gz_ros2_control-system" name="gz_ros2_control::GazeboSimROS2ControlPlugin"&gt;
+    &lt;ros&gt;
+      &lt;remapping&gt;/diff_drive_controller/cmd_vel_unstamped:=/cmd_vel&lt;/remapping&gt;
+      &lt;remapping&gt;/diff_drive_controller/odom:=/odom&lt;/remapping&gt;
+    &lt;/ros&gt;
+    &lt;parameters&gt;$(find atlas_control)/config/diff_drive_controller.yaml&lt;/parameters&gt;
+  &lt;/plugin&gt;
+&lt;/gazebo&gt;</code></pre>
+<p>Đây chính là plugin <strong>sinh ra controller_manager</strong> — không phải node riêng bạn tự chạy, nó tự khởi động <strong>bên trong tiến trình Gazebo</strong> ngay khi robot được spawn, đọc file tham số (bài sau) để biết nạp controller nào.</p>
+<p>2 dòng <code>&lt;remapping&gt;</code> giải thích vì sao lệnh <code>ros2 topic pub /cmd_vel ...</code> ở bài trước hoạt động: <code>diff_drive_controller</code> mặc định đặt tên topic theo namespace của chính nó (<code>/diff_drive_controller/cmd_vel_unstamped</code>) — remap về <code>/cmd_vel</code>/<code>/odom</code> cho khớp quy ước chung mà mọi công cụ ROS 2 (<code>teleop_twist_keyboard</code> Module 7, Nav2 Module 10) mặc định dùng.</p>
+<div class="callout warn"><p>Không có dòng remap cho <code>joint_state_broadcaster</code> vì không cần: nó publish thẳng <code>/joint_states</code> theo đúng tên chuẩn ngay từ đầu.</p></div>
+
+<h2>Thử ngay</h2>
+<pre><code>xacro src/atlas_control/urdf/atlas.control.xacro | grep -A2 "ros2_control"</code></pre>
+<pre><code>xacro src/atlas_control/urdf/atlas.control.xacro | grep -c "command_interface"</code></pre>
+<p>Kết quả phải ra <strong>2</strong> — đúng 1 command interface cho mỗi bánh chủ động, không hơn.</p>

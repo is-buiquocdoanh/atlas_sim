@@ -1,0 +1,35 @@
+<h1>REP-103 & REP-105 — quy ước chuẩn của ROS</h1>
+<p class="lead"><strong>REP</strong> (ROS Enhancement Proposal) là tài liệu quy ước chính thức của ROS. <strong>REP-103</strong> quy định đơn vị và chiều trục. <strong>REP-105</strong> quy định tên và quan hệ của các frame chuẩn mà mọi package ROS (Nav2, <code>robot_state_publisher</code>, <code>slam_toolbox</code>...) đều giả định có sẵn.</p>
+<p>Không tuân theo 2 quy ước này không làm chương trình báo lỗi ngay — mọi thứ vẫn "chạy", chỉ là các package phối hợp sai với nhau theo cách rất khó phát hiện (ví dụ Nav2 hiểu nhầm đơn vị cm thành mét, robot "dạy" đi xa gấp 100 lần dự kiến).</p>
+
+<h2>REP-103: đơn vị và trục</h2>
+<p>Đơn vị luôn là <strong>mét / giây / radian</strong> — không phải cm, không phải độ. Chiều trục theo quy tắc bàn tay phải: X hướng tới trước, Y hướng sang trái, Z hướng lên trên. Quaternion <code>(0,0,0,1)</code> nghĩa là "không xoay".</p>
+
+<h2>REP-105: map → odom → base_link</h2>
+<table>
+  <tr><th>Frame</th><th>Đặc điểm</th><th>Transform cập nhật thế nào</th></tr>
+  <tr><td><code>map</code></td><td>Cố định tuyệt đối, gốc tại 1 điểm trên bản đồ</td><td><code>map</code>→<code>odom</code>: rời rạc, <strong>nhảy bậc</strong> — mỗi khi AMCL/SLAM sửa lại ước lượng vị trí toàn cục</td></tr>
+  <tr><td><code>odom</code></td><td>Gốc là nơi robot khởi động, không bao giờ nhảy</td><td><code>odom</code>→<code>base_link</code>: liên tục, <strong>mượt</strong> (vd 50 Hz, tính từ encoder bánh xe) nhưng <strong>trôi dần</strong> — sai số cộng dồn, không có gì tự sửa</td></tr>
+  <tr><td><code>base_link</code></td><td>Gắn cứng vào chính robot</td><td>—</td></tr>
+</table>
+
+<h2>Xem độ trôi và cú nhảy, trực tiếp trên biểu đồ</h2>
+<p>Đường xám đứt là vị trí thật của robot. Đường cam (odom) trôi dần khỏi đường thật — không có gì tự sửa. Đường xanh (vị trí trong frame <code>map</code>) bám theo odom nhưng được "sửa" định kỳ — mỗi lần sửa là một cú nhảy trong transform <code>map</code>→<code>odom</code>.</p>
+<div class="scene" data-scene="rep105-timeline"></div>
+
+<h2>Vì sao tách riêng thay vì gộp 1 frame map→base_link?</h2>
+<p>Bộ điều khiển vận động (local controller, Module 10) cần dữ liệu <strong>mượt, không nhảy</strong> để tính lệnh vận tốc. Nếu dùng thẳng <code>map</code>→<code>base_link</code> (có thể nhảy bậc mỗi lần AMCL sửa), robot sẽ giật cục theo mỗi lần sửa lỗi định vị. Tách <code>odom</code> ra làm frame trung gian luôn mượt để điều khiển cục bộ dùng, còn <code>map</code>→<code>odom</code> chỉ ảnh hưởng tới hiểu biết "toàn cục" (global planning), không ảnh hưởng chuyển động tức thời.</p>
+
+<h2>Thử ngay</h2>
+<p>Kiểm tra đơn vị thật trên dữ liệu thật — cần 2 terminal (đã <code>source install/setup.bash</code>, xem <a href="lesson.html?m=0&amp;l=00-cai-dat">Module 0</a>):</p>
+<pre><code># Terminal 1 — để chạy, đừng tắt
+ros2 run ros2_basics tf_broadcaster</code></pre>
+<pre><code># Terminal 2 — Ctrl+C để dừng
+ros2 run tf2_ros tf2_echo world moving_frame</code></pre>
+<p><code>Translation</code> in ra đơn vị mét, <code>Rotation (RPY)</code> in ra radian — đúng REP-103, không phải cm/độ.</p>
+
+<h2>Ví dụ trong dự án Atlas</h2>
+<ul>
+  <li><code>diff_drive_controller</code> (Module 5) tự publish <code>odom</code> → <code>base_footprint</code> liên tục từ encoder bánh xe — dữ liệu này trôi dần theo quãng đường đi.</li>
+  <li><code>amcl</code> (Module 9) publish <code>map</code> → <code>odom</code> — chỉ cập nhật khi có ước lượng mới, không liên tục như <code>odom</code>→<code>base_link</code>. Đúng lý do <code>local_costmap</code> cấu hình <code>global_frame: odom</code> (cần mượt) còn <code>global_costmap</code> dùng <code>global_frame: map</code> (cần đúng vị trí tuyệt đối) — hai lựa chọn khác nhau, không phải ngẫu nhiên.</li>
+</ul>

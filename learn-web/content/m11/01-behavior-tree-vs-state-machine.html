@@ -1,0 +1,26 @@
+<h1>Behavior Tree là gì, so với state machine</h1>
+<p class="lead"><strong>Behavior Tree (BT)</strong> là cách mô tả logic điều khiển dưới dạng 1 CÂY (không phải sơ đồ trạng thái) — mỗi lần "tick" (cập nhật), hệ thống duyệt cây từ gốc, mỗi node trả về 1 trong 3 trạng thái: <code>SUCCESS</code>, <code>FAILURE</code>, hoặc <code>RUNNING</code> (đang làm dở).</p>
+
+<h2>Vì sao không dùng state machine</h2>
+<p><strong>State machine truyền thống</strong>: mỗi trạng thái tự "biết" nó có thể chuyển sang trạng thái nào khi nào — N trạng thái có thể cần tới N² đường chuyển, càng thêm hành vi mới càng rối, dễ quên 1 đường chuyển nào đó.</p>
+<p><strong>Behavior Tree</strong>: không node nào "biết" về node khác ngoài phạm vi cha-con trực tiếp — node cha quyết định cách xử lý kết quả của con (chạy tuần tự, chạy cho tới khi 1 con thành công, chạy song song...). Thêm hành vi mới = thêm 1 nhánh, không phải vẽ lại cả sơ đồ.</p>
+
+<h2>Tự xem: thêm 1 hành vi mới tốn gì</h2>
+<p>Bấm nút — thêm đúng 1 hành vi mới vào cả 2 mô hình, xem bên nào phải sửa nhiều chỗ hơn:</p>
+<div class="scene" data-scene="bt-vs-state-machine"></div>
+
+<h2>4 loại node cốt lõi</h2>
+<ul>
+  <li><strong>Action/Condition</strong> (lá) — làm 1 việc cụ thể (vd <code>Spin</code>, <code>Wait</code>) hoặc kiểm tra 1 điều kiện (vd <code>GoalUpdated</code>).</li>
+  <li><strong>Sequence</strong> — chạy con lần lượt, 1 con <code>FAILURE</code> là dừng cả nhánh, báo <code>FAILURE</code> lên cha.</li>
+  <li><strong>Fallback</strong> (hay <code>Selector</code>) — chạy con lần lượt, 1 con <code>SUCCESS</code> là dừng — dùng cho "thử cách A, không được thì thử cách B".</li>
+  <li><strong>RecoveryNode</strong> — biến thể riêng của Nav2: nếu con đầu <code>FAILURE</code>, chạy con thứ 2 (hành vi khắc phục) rồi THỬ LẠI con đầu, lặp tới N lần.</li>
+</ul>
+<p>Bài sau sẽ thấy đúng 4 loại này (và 2 biến thể <code>PipelineSequence</code>/<code>ReactiveFallback</code>) trong cây thật của Atlas.</p>
+
+<h2>Ví dụ trong dự án Atlas</h2>
+<p><code>atlas_slam/launch/navigation.launch.py</code> khai <code>bt_navigator</code> dùng file BT <strong>mặc định của chính Nav2</strong> (<code>navigate_to_pose_w_replanning_and_recovery.xml</code>, cài sẵn trong <code>nav2_bt_navigator</code>) — dự án chưa tự viết BT riêng, nhưng mọi lần gửi goal ở Module 10 đều đã chạy qua đúng cây này. Bài tiếp theo đọc nguyên văn file đó.</p>
+
+<h2>Thử ngay</h2>
+<pre><code>find /opt/ros/humble/share/nav2_bt_navigator/behavior_trees/ -name "*.xml"</code></pre>
+<p>Có hơn 10 file BT khác nhau cài sẵn — mỗi file ứng với 1 chiến lược điều hướng khác nhau (replanning theo thời gian, theo khoảng cách, chỉ khi path không còn hợp lệ...). Atlas dùng đúng 1 trong số đó — tên file dễ đoán nếu đọc kỹ (gợi ý: tên có "w_replanning_and_recovery").</p>

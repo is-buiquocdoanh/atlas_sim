@@ -1,0 +1,56 @@
+<h1>LiDAR: từ khối sensor tới /scan</h1>
+<p class="lead">Nguyên văn khối <code>&lt;lidar&gt;</code> trong <code>atlas.gazebo.xacro</code> — mỗi dòng map thẳng sang một trường trong message <code>sensor_msgs/msg/LaserScan</code> bạn sẽ đọc được bằng <code>ros2 topic echo /scan</code>.</p>
+
+<pre><code>&lt;sensor name="lidar_sensor" type="gpu_lidar"&gt;
+  &lt;update_rate&gt;10&lt;/update_rate&gt;
+  &lt;topic&gt;scan&lt;/topic&gt;
+  &lt;lidar&gt;
+    &lt;scan&gt;
+      &lt;horizontal&gt;
+        &lt;samples&gt;360&lt;/samples&gt;
+        &lt;resolution&gt;1&lt;/resolution&gt;
+        &lt;min_angle&gt;-3.14159&lt;/min_angle&gt;
+        &lt;max_angle&gt;3.14159&lt;/max_angle&gt;
+      &lt;/horizontal&gt;
+    &lt;/scan&gt;
+    &lt;range&gt;
+      &lt;min&gt;0.12&lt;/min&gt;
+      &lt;max&gt;10.0&lt;/max&gt;
+      &lt;resolution&gt;0.01&lt;/resolution&gt;
+    &lt;/range&gt;
+    &lt;noise&gt;
+      &lt;type&gt;gaussian&lt;/type&gt;
+      &lt;mean&gt;0.0&lt;/mean&gt;
+      &lt;stddev&gt;0.01&lt;/stddev&gt;
+    &lt;/noise&gt;
+  &lt;/lidar&gt;
+&lt;/sensor&gt;</code></pre>
+
+<h2>type="gpu_lidar" — vì sao không phải "lidar" thường</h2>
+<p><code>gpu_lidar</code> dùng GPU để render khoảng cách (giống render một ảnh depth), nhanh hơn hẳn kiểu <code>lidar</code> thường (tính giao điểm hình học tia-vật thể trên CPU, từng tia một). Với 360 tia mỗi lần cập nhật, 10 lần/giây, khác biệt tốc độ đủ lớn để GPU gần như luôn là lựa chọn đúng khi máy có card đồ họa hỗ trợ.</p>
+
+<h2>samples, resolution, min/max_angle → angle_min, angle_max, angle_increment</h2>
+<table>
+  <tr><th>SDF</th><th>Trường <code>LaserScan</code></th><th>Giá trị Atlas</th></tr>
+  <tr><td><code>min_angle</code> / <code>max_angle</code></td><td><code>angle_min</code> / <code>angle_max</code></td><td>-π / π rad — quét trọn 360°</td></tr>
+  <tr><td><code>samples</code> (× <code>resolution</code>)</td><td>độ dài mảng <code>ranges[]</code></td><td>360 × 1 = 360</td></tr>
+  <tr><td>suy ra từ 2 dòng trên</td><td><code>angle_increment</code></td><td>≈ 2π/360 rad ≈ 1° — xem lưu ý dưới</td></tr>
+</table>
+<p><code>ranges[i]</code> ứng với góc <code>angle_min + i × angle_increment</code>, đo theo quy ước REP-103: góc 0 là thẳng trục X của <code>lidar_link</code>, dương ngược chiều kim đồng hồ nhìn từ trên xuống.</p>
+<div class="callout warn"><p>File <code>sdformat</code> (<code>/usr/share/sdformat12/.../lidar.sdf</code> trên máy bạn) chỉ nói <code>resolution</code> nhân với <code>samples</code> ra số điểm trả về — không nói rõ <code>angle_increment</code> chia cho <code>samples</code> hay <code>samples − 1</code> (quét trọn 360° có thể lấy mẫu trùng ở 2 đầu <code>-π</code>/<code>π</code>, hoặc không). Đừng tin số ước lượng ở bảng trên — đọc thẳng trường <code>angle_increment</code> thật trong <code>/scan</code> ở phần "Thử ngay" mới là nguồn đáng tin.</p></div>
+
+<h2>range.min/max/resolution → range_min, range_max</h2>
+<p><code>range_min: 0.12</code>/<code>range_max: 10.0</code> map thẳng sang <code>range_min</code>/<code>range_max</code> của message. Vật cản gần hơn 12cm hoặc xa hơn 10m: giá trị <code>ranges[i]</code> tương ứng <strong>không đáng tin</strong> — theo đúng comment trong định nghĩa message gốc, driver có thể trả về <code>inf</code>, <code>range_max</code>, hoặc một giá trị ngoài khoảng, tùy cách bridge triển khai; code đọc <code>/scan</code> luôn phải tự kiểm tra 2 biên này, không giả định mọi phần tử đều là khoảng cách thật.</p>
+
+<h2>noise — vì sao số đọc được không bao giờ "tròn"</h2>
+<p><code>stddev: 0.01</code> cộng nhiễu Gauss (trung bình 0, độ lệch chuẩn 1cm) vào mỗi giá trị <code>ranges[i]</code>. Vật cản thật cách đúng 2.000m, giá trị đọc được sẽ dao động quanh 2.0 (phần lớn trong khoảng 1.97–2.03m) — đây là cố ý, mô phỏng sai số cảm biến thật, không phải lỗi. Thuật toán dùng dữ liệu LiDAR (SLAM Module 8, costmap Module 10) đều phải tính tới nhiễu này, không bao giờ coi <code>ranges[i]</code> là số chính xác tuyệt đối.</p>
+
+<h2>Xem trực quan: index → góc → tia</h2>
+<p>Mô hình dưới <strong>không</strong> mô phỏng cách <code>gpu_lidar</code> thật hoạt động (nó tính toàn bộ 360 tia cùng lúc mỗi 1/10 giây, không quét cơ học từng tia) — tia quét chuyển động ở đây chỉ để bạn theo dõi đúng từng góc một, tốc độ được chỉnh nhanh hơn thật nhiều lần cho dễ xem:</p>
+<div class="scene" data-scene="lidar-scan"></div>
+
+<h2>Thử ngay</h2>
+<pre><code>ros2 topic echo /scan --once</code></pre>
+<p>Đếm số phần tử <code>ranges</code> — đúng 360. Đọc trường <code>angle_increment</code> thật, so với 2 cách tính ở trên — <code>2π/360</code> hay <code>2π/359</code> mới khớp? Giờ mới chắc chắn, thay vì đoán. Tìm giá trị nhỏ nhất trong mảng — đó là hướng gần vật cản nhất; nhân chỉ số (index) của nó với <code>angle_increment</code> thật rồi cộng <code>angle_min</code> để tính ra đúng hướng đó theo rad.</p>
+<pre><code>ros2 topic hz /scan</code></pre>
+<p>Phải ra gần <strong>10</strong> — đúng <code>update_rate</code> đã đọc ở trên.</p>

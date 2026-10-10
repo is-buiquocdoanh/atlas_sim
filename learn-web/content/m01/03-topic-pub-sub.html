@@ -1,0 +1,37 @@
+<h1>Topic, Publisher/Subscriber, QoS</h1>
+<p class="lead">Topic là một kênh dữ liệu có tên và có kiểu message cố định (ví dụ <code>/sensor_data</code> mang <code>std_msgs/Float64</code>). Publisher đẩy message lên topic đó theo nhịp riêng của mình; subscriber nào đã đăng ký nghe topic đó thì tự động nhận.</p>
+<p>Publisher không cần biết có ai đang nghe hay không, và một topic cũng không giới hạn số publisher/subscriber. Đây là mô hình giao tiếp phổ biến nhất trong ROS 2 vì phản ánh đúng bản chất robot: dữ liệu cảm biến, trạng thái, lệnh điều khiển đều là các luồng liên tục, không phải các yêu cầu rời rạc.</p>
+
+<div class="keywords"><span>pub/sub</span><span>luồng liên tục</span><span>một chiều</span><span>QoS</span></div>
+
+<h2>Kết nối được thiết lập như thế nào?</h2>
+<p>Publisher và subscriber khớp nhau bằng <strong>tên topic</strong> và <strong>kiểu message</strong>. Lệch một trong hai là không nối; ROS 2 chỉ ghi cảnh báo trong log. Một topic có thể có nhiều publisher và nhiều subscriber.</p>
+
+<h2>QoS: "chất lượng" của việc truyền</h2>
+<p>Mỗi bên đi kèm một bộ QoS. Hai trường quan trọng nhất:</p>
+<table>
+  <tr><th>Trường</th><th>Giá trị</th><th>Ý nghĩa</th></tr>
+  <tr><td>Reliability</td><td><code>RELIABLE</code></td><td>Mất gói thì gửi lại. Không mất dữ liệu, có thể trễ.</td></tr>
+  <tr><td>Reliability</td><td><code>BEST_EFFORT</code></td><td>Mất là mất. Nhanh, phù hợp dữ liệu liên tục như cảm biến.</td></tr>
+  <tr><td>Durability</td><td><code>VOLATILE</code></td><td>Chỉ nhận message phát sau khi kết nối (mặc định).</td></tr>
+  <tr><td>Durability</td><td><code>TRANSIENT_LOCAL</code></td><td>Nhận luôn message cuối, kể cả phát trước khi kết nối. Dùng cho trạng thái như bản đồ.</td></tr>
+</table>
+
+<h2>Thử: đổi QoS và đường truyền</h2>
+<p>Chọn RELIABLE rồi tăng tỷ lệ mất gói. Sau đó đổi sang BEST_EFFORT với cùng tỷ lệ và so sánh số liệu.</p>
+
+<div class="scene" data-scene="pubsub-qos"></div>
+
+<div class="callout key"><p><strong>Quy tắc quan trọng:</strong> nếu publisher và subscriber có QoS không tương thích (ví dụ publisher BEST_EFFORT, subscriber RELIABLE), kết nối sẽ không được thiết lập. Thường chỉ có một dòng cảnh báo "incompatible QoS" trong log, dễ bỏ qua, và subscriber không nhận được gì.</p></div>
+
+<h2>Thử ngay</h2>
+<p>Cần 2 terminal (đã <code>source install/setup.bash</code>, xem <a href="lesson.html?m=0&amp;l=00-cai-dat">Module 0</a>):</p>
+<pre><code># Terminal 1 — để chạy, đừng tắt
+ros2 launch ros2_basics demo.launch.py</code></pre>
+<pre><code># Terminal 2
+ros2 topic list</code></pre>
+<pre><code># Terminal 2 — lệnh này chạy liên tục, Ctrl+C để dừng
+ros2 topic echo /sensor_data</code></pre>
+<pre><code># Terminal 2 — sau khi đã Ctrl+C lệnh echo ở trên
+ros2 topic info /sensor_data --verbose</code></pre>
+<p>Lệnh <code>--verbose</code> hiện QoS của từng publisher và subscriber, giúp tìm lý do hai bên không nói chuyện được.</p>

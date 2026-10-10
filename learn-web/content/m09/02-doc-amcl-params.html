@@ -1,0 +1,50 @@
+<h1>Đọc trọn cấu hình amcl</h1>
+<p class="lead">Bài trước đã trích <code>alpha1-5</code> và <code>z_hit/z_rand/sigma_hit</code> để nói toán học. Bài này đi hết khối <code>amcl:</code> trong <code>atlas_slam/config/nav2_params_mppi.yaml</code> theo đúng thứ tự thật, không bỏ sót tham số nào.</p>
+
+<h2>Khung & frame</h2>
+<pre><code>base_frame_id: "base_footprint"
+global_frame_id: "map"
+odom_frame_id: "odom"
+scan_topic: scan
+tf_broadcast: true
+transform_tolerance: 1.0</code></pre>
+<p>Đúng 3 frame đã quen từ TF tree (Module 2). <code>tf_broadcast: true</code> — AMCL tự publish TF <code>map → odom</code>, đây chính là mảnh TF tree Module 3 từng nói "để trống, module sau sẽ lấp" nay mới có ai publish. <code>transform_tolerance: 1.0</code> — cho phép TF cũ tới 1 giây vẫn coi là hợp lệ (bộ đệm dung sai trước khi Nav2 báo lỗi "TF quá cũ").</p>
+
+<h2>Giới hạn phần cứng LiDAR</h2>
+<pre><code>laser_max_range: 10.0
+laser_min_range: 0.12</code></pre>
+<p>Khác với giá trị Module 8 (<code>max_laser_range: 9.5</code> trong <code>mapper_params.yaml</code>) — 2 node khác nhau, 2 tham số tên gần giống nhau nhưng không bắt buộc bằng nhau. Chênh lệch nhỏ (9.5 so với 10.0) không gây lỗi gì — chỉ là 2 lần cấu hình độc lập, không có cơ chế nào tự đồng bộ 2 file.</p>
+
+<h2>Particle filter: số hạt</h2>
+<pre><code>min_particles: 500
+max_particles: 2000</code></pre>
+<p>AMCL không giữ cố định 1 số hạt — nó tự điều chỉnh trong khoảng này (thuật toán KLD-sampling, nằm ngoài phạm vi module): đám mây càng tỏa rộng/không chắc chắn, càng cần nhiều hạt để biểu diễn đủ giả thuyết; càng hội tụ chặt, càng ít hạt vẫn đủ mô tả — giảm số hạt giúp mỗi vòng lọc nhanh hơn khi đã tự tin.</p>
+
+<h2>Mô hình chuyển động (bài trước)</h2>
+<pre><code>robot_model_type: "nav2_amcl::DifferentialMotionModel"
+alpha1: 0.2
+alpha2: 0.2
+alpha3: 0.2
+alpha4: 0.2
+alpha5: 0.2</code></pre>
+<p><code>DifferentialMotionModel</code> đúng kiểu robot Atlas (vi sai, Module 5) — có cả <code>OmniMotionModel</code> cho robot omni-wheel, không dùng ở đây. Chi tiết công thức <code>alpha1-5</code> đã học ở bài trước.</p>
+
+<h2>Khi nào mới chạy lại filter</h2>
+<pre><code>update_min_d: 0.25
+update_min_a: 0.2</code></pre>
+<p>Giống hệt ý tưởng <code>minimum_travel_distance</code>/<code>heading</code> đã học ở Module 8 — AMCL chỉ chạy predict/update/resample khi robot đã đi ít nhất 0.25m HOẶC xoay ít nhất 0.2rad kể từ lần chạy trước. Đứng yên tại chỗ, particle filter ngừng cập nhật dù <code>/scan</code> vẫn đang chảy liên tục — cùng triết lý tiết kiệm tính toán của SLAM.</p>
+
+<h2>Mô hình cảm biến (bài trước)</h2>
+<pre><code>laser_model_type: "likelihood_field"
+z_hit: 0.5
+z_rand: 0.5
+sigma_hit: 0.2
+laser_likelihood_max_dist: 2.0</code></pre>
+<div class="callout warn"><p><code>z_max: 0.05</code> và <code>z_short: 0.05</code> cũng có trong file — nhưng như đã chỉ ra ở bài trước, 2 tham số này thuộc <code>BeamModel</code>, không được <code>LikelihoodFieldModel</code> đọc. Với <code>laser_model_type: "likelihood_field"</code> như Atlas đang dùng, chúng tồn tại trong config nhưng không ảnh hưởng gì tới kết quả.</p></div>
+
+<h2>Bản đồ này module nào đọc, module nào không</h2>
+<p>Khối <code>amcl:</code> nằm chung file <code>nav2_params_mppi.yaml</code> với các khối Module 10 (<code>controller_server</code>, <code>planner_server</code>...) — chỉ đúng khối <code>amcl:</code> và <code>map_server:</code> liên quan tới module này; phần còn lại của file thuộc <a href="lesson.html?m=10&amp;l=00-gioi-thieu">Module 10</a>.</p>
+
+<h2>Thử ngay</h2>
+<pre><code>grep -A26 "^amcl:" src/atlas_slam/config/nav2_params_mppi.yaml</code></pre>
+<p>So với 2 file <code>nav2_params_dwb.yaml</code>/<code>nav2_params_rpp.yaml</code> — khối <code>amcl:</code> giống hệt nhau cả 3 file (chỉ khối controller khác tên) — xác nhận cấu hình AMCL hoàn toàn độc lập với việc chọn controller nào ở Module 10.</p>

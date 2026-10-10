@@ -1,0 +1,41 @@
+<h1>IMU: từ khối sensor tới /imu</h1>
+<p class="lead">Khối <code>&lt;sensor type="imu"&gt;</code> ngắn hơn hẳn LiDAR — không có hình học tia nào để khai báo, IMU chỉ đo chuyển động của chính nó:</p>
+<pre><code>&lt;gazebo reference="imu_link"&gt;
+  &lt;sensor name="imu_sensor" type="imu"&gt;
+    &lt;always_on&gt;true&lt;/always_on&gt;
+    &lt;update_rate&gt;100&lt;/update_rate&gt;
+    &lt;topic&gt;imu&lt;/topic&gt;
+    &lt;gz_frame_id&gt;imu_link&lt;/gz_frame_id&gt;
+  &lt;/sensor&gt;
+&lt;/gazebo&gt;</code></pre>
+<p><code>update_rate: 100</code> — tình cờ trùng với <code>update_rate</code> của <code>controller_manager</code> (<a href="lesson.html?m=5&amp;l=03-diff-drive-controller">Module 5</a>), nhưng là 2 đồng hồ hoàn toàn độc lập: IMU cần cập nhật nhanh vì nó đo chuyển động tức thời (rung lắc, va chạm), không liên quan gì tới tần số vòng lặp điều khiển bánh xe.</p>
+
+<h2>3 nhóm trường của sensor_msgs/msg/Imu</h2>
+<pre><code>geometry_msgs/Quaternion orientation
+float64[9] orientation_covariance
+
+geometry_msgs/Vector3 angular_velocity      # rad/s
+float64[9] angular_velocity_covariance
+
+geometry_msgs/Vector3 linear_acceleration   # m/s²
+float64[9] linear_acceleration_covariance</code></pre>
+<ul>
+  <li><strong>orientation</strong> — hướng hiện tại của <code>imu_link</code>, dạng quaternion (4 số, không phải góc Euler quen thuộc — lý do né "gimbal lock", nằm ngoài phạm vi module này).</li>
+  <li><strong>angular_velocity</strong> — tốc độ quay quanh 3 trục, đơn vị rad/s. Trục Z chính là tốc độ xoay thân robot — có thể so trực tiếp với <code>angular.z</code> đã gửi ở <a href="lesson.html?m=5&amp;l=04-dong-hoc-vi-sai">Module 5</a>.</li>
+  <li><strong>linear_acceleration</strong> — gia tốc đo được theo 3 trục, đơn vị m/s².</li>
+</ul>
+<div class="callout warn"><p>Comment gốc trong định nghĩa message (<code>ros2 interface show sensor_msgs/msg/Imu</code>): nếu phần tử đầu tiên của một ma trận covariance là <code>-1</code>, nghĩa là <strong>trường tương ứng không có ước lượng đáng tin</strong> — ví dụ một IMU giá rẻ thật sự thường không tự tính được <code>orientation</code> (chỉ có con quay hồi chuyển + gia tốc kế thô, cần bộ lọc riêng như <code>robot_localization</code> mới suy ra hướng). Trang này <strong>không khẳng định</strong> cảm biến giả lập của Atlas có rơi vào trường hợp đó hay không — tự <code>echo</code> ở phần "Thử ngay" để biết chắc, đừng giả định.</p></div>
+
+<h2>Đứng yên không có nghĩa là gia tốc bằng 0</h2>
+<p>Đây là một sự thật chung cho mọi gia tốc kế, không riêng Atlas: một IMU nằm yên trên mặt đất đo được lực <strong>phản lực</strong> từ mặt đất đẩy ngược lên — đúng bằng trọng lực, khoảng <code>9.8 m/s²</code> theo trục thẳng đứng. Muốn gia tốc kế đọc ra 0, robot phải đang <strong>rơi tự do</strong> — hoàn toàn ngược trực giác "đứng yên = 0" nhưng đúng về mặt vật lý: gia tốc kế đo lực tác dụng lên nó, không đo gia tốc chuyển động tuyệt đối.</p>
+
+<h2>Kéo thử: nghiêng máy bay, xem 3 nhóm trường đổi ra sao</h2>
+<p>Dùng mô hình máy bay 3D thay vì <code>imu_link</code> thật (chỉ là khối hộp nhỏ, khó hình dung hướng) — roll/pitch/yaw là quy ước quen thuộc trong hàng không, đúng ý nghĩa vật lý với <code>orientation</code> của bất kỳ IMU nào, kể cả trên Atlas.</p>
+<div class="scene" data-scene="imu-fields"></div>
+
+<h2>Thử ngay</h2>
+<pre><code>ros2 topic echo /imu --once</code></pre>
+<p>Robot đứng yên: <code>linear_acceleration</code> phải gần <code>(0, 0, ±9.8)</code> tùy chiều trục Z cục bộ của <code>imu_link</code> — không phải <code>(0,0,0)</code>, đúng lý do ở trên. Kiểm tra luôn <code>orientation_covariance[0]</code>: bằng <code>-1</code> hay một số khác?</p>
+<pre><code>ros2 topic pub --once /cmd_vel geometry_msgs/msg/Twist "{angular: {z: 1.0}}"
+ros2 topic echo /imu --once</code></pre>
+<p>Xoay robot, đọc lại — <code>angular_velocity.z</code> phải gần <code>1.0</code>, đúng lệnh vừa gửi.</p>

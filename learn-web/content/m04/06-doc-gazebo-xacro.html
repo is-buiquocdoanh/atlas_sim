@@ -1,0 +1,54 @@
+<h1>Đọc trọn atlas.gazebo.xacro</h1>
+<p class="lead">78 dòng, nhưng ghép đúng mọi khái niệm 2 bài trước lại với nhau. Đọc từ đầu đến cuối một lần, đối chiếu với file thật đang nằm trên máy bạn.</p>
+
+<h2>Cấu trúc</h2>
+<pre><code>atlas.gazebo.xacro
+├── include atlas.urdf.xacro         → toàn bộ link/joint hình học (Module 3)
+├── <gazebo reference="left/right_wheel_link">   mu1=mu2=1.0
+├── <gazebo reference="front/rear_caster_link">  mu1=mu2=0.0
+├── <gazebo reference="lidar_link"><sensor type="gpu_lidar">   (Module 6)
+└── <gazebo reference="imu_link"><sensor type="imu">           (Module 6)</code></pre>
+<p>Dòng đầu tiên sau khai báo <code>&lt;robot&gt;</code>:</p>
+<pre><code>&lt;xacro:include filename="$(find atlas_description)/urdf/atlas.urdf.xacro"/&gt;</code></pre>
+<p><code>$(find atlas_description)</code> — không phải đường dẫn tương đối (<code>../atlas_description</code>). Xacro phân giải tên package qua hệ thống ament lúc build, nên <code>atlas.gazebo.xacro</code> không cần biết <code>atlas_description</code> nằm ở đâu trên đĩa, chỉ cần package đó có khai báo <code>exec_depend</code> đúng (xem <code>package.xml</code>) và đã được <code>colcon build</code>.</p>
+
+<h2>4 khối <code>&lt;gazebo reference&gt;</code> — 2 việc khác hẳn nhau</h2>
+<p>2 khối đầu (bánh xe, caster) gắn <strong>ma sát</strong> — nội dung trọn vẹn ở <a href="lesson.html?m=4&amp;l=03-gazebo-tag-ma-sat">bài 3</a>. 2 khối sau (LiDAR, IMU) gắn <strong>cảm biến</strong>:</p>
+<pre><code>&lt;gazebo reference="lidar_link"&gt;
+  &lt;sensor name="lidar_sensor" type="gpu_lidar"&gt;
+    &lt;topic&gt;scan&lt;/topic&gt;
+    &lt;gz_frame_id&gt;lidar_link&lt;/gz_frame_id&gt;
+    ...
+  &lt;/sensor&gt;
+&lt;/gazebo&gt;</code></pre>
+<p>Dự án cố tình để nguyên trong file — không tách riêng — nhưng <strong>chưa</strong> nói chi tiết ý nghĩa từng tham số (<code>samples</code>, <code>noise</code>, <code>update_rate</code>...) ở module này. Comment ngay trong file thật đã đánh dấu rõ: phần này dành cho <a href="lesson.html?m=6&amp;l=00-gioi-thieu">Module 6</a>. Ở đây chỉ cần biết: gz-sim (Fortress) tự mô phỏng sensor khai báo bằng <code>&lt;sensor&gt;</code>, không cần viết plugin riêng như Gazebo Classic từng yêu cầu — dữ liệu phát ra trên Gazebo Transport, rồi mới cần bridge sang ROS 2 (đã thấy <code>gz_bridge.yaml</code> ở bài trước).</p>
+
+<h2>Lớp thứ 3: atlas_control sẽ include chính file này</h2>
+<p>Bảng 3 lớp đã giới thiệu ở <a href="lesson.html?m=3&amp;l=06-doc-urdf-atlas">Module 3 bài 6</a> giờ xem được trọn vẹn lớp thứ 2 (vừa đọc) và xem trước lớp thứ 3 — <code>atlas_control/urdf/atlas.control.xacro</code>, nơi <code>ros2_control</code> được thêm vào Module 5:</p>
+<pre><code>&lt;xacro:include filename="$(find atlas_gazebo)/urdf/atlas.gazebo.xacro"/&gt;
+
+&lt;ros2_control name="atlas_system" type="system"&gt;
+  &lt;hardware&gt;&lt;plugin&gt;gz_ros2_control/GazeboSimSystem&lt;/plugin&gt;&lt;/hardware&gt;
+  &lt;joint name="left_wheel_joint"&gt;...&lt;/joint&gt;
+  &lt;joint name="right_wheel_joint"&gt;...&lt;/joint&gt;
+&lt;/ros2_control&gt;
+
+&lt;gazebo&gt;
+  &lt;plugin filename="gz_ros2_control-system" name="gz_ros2_control::GazeboSimROS2ControlPlugin"&gt;
+    &lt;ros&gt;
+      &lt;remapping&gt;/diff_drive_controller/cmd_vel_unstamped:=/cmd_vel&lt;/remapping&gt;
+      &lt;remapping&gt;/diff_drive_controller/odom:=/odom&lt;/remapping&gt;
+    &lt;/ros&gt;
+    &lt;parameters&gt;$(find atlas_control)/config/diff_drive_controller.yaml&lt;/parameters&gt;
+  &lt;/plugin&gt;
+&lt;/gazebo&gt;</code></pre>
+<p>Y hệt pattern bạn vừa đọc: <code>&lt;xacro:include&gt;</code> lớp dưới, rồi <strong>thêm</strong> chứ không sửa. 3 lớp giờ đã thấy đủ cả — <code>atlas_description</code> (link/joint) → <code>atlas_gazebo</code> (ma sát + sensor) → <code>atlas_control</code> (ros2_control + plugin điều khiển). Mỗi lớp chỉ thêm đúng một mối quan tâm, không lớp nào sửa lại lớp dưới.</p>
+
+<p>Comment trong chính <code>atlas.control.xacro</code> ghi rõ hướng đi tương lai: robot thật sẽ có một file tương tự lớp 3 này, chỉ khác <code>&lt;hardware&gt;&lt;plugin&gt;</code> trỏ driver thật thay vì <code>GazeboSimSystem</code> — hai lớp dưới (<code>atlas_description</code>, <code>atlas_gazebo</code>) không đổi gì khi rời mô phỏng sang phần cứng thật.</p>
+
+<h2>Thử ngay</h2>
+<pre><code># 2 lớp đầu cho ra 2 URDF khác nhau từ cùng một base
+xacro src/atlas_description/urdf/atlas.urdf.xacro | grep -c "<link"
+xacro src/atlas_gazebo/urdf/atlas.gazebo.xacro   | grep -c "<link"   # bằng nhau — không link nào bị thêm/bớt
+xacro src/atlas_gazebo/urdf/atlas.gazebo.xacro   | grep -c "<gazebo" # > 0 — phần vừa học đã được chèn vào</code></pre>
+<p>Số link không đổi giữa 2 lớp xác nhận đúng điều đã học: <code>&lt;gazebo reference&gt;</code> chỉ <strong>gắn thêm</strong> vào link có sẵn, không tạo link mới.</p>

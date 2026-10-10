@@ -1,0 +1,39 @@
+<h1>Gửi goal: RViz, CLI, code</h1>
+<p class="lead">Gửi goal = gọi action <code>NavigateToPose</code> (action — tác vụ dài, cần feedback + hủy được, khác service/topic đã học ở Module 1) tới <code>bt_navigator</code> (bài trước). 3 cách gọi tương đương, khác ở mức độ tiện/tự động hóa.</p>
+
+<h2>3 cách, cùng 1 action</h2>
+<ul>
+  <li><strong>RViz, nút "Nav2 Goal"</strong> — click trực quan trên bản đồ, kéo chọn hướng. Cách nhanh nhất để test tay, không ghi lại được số liệu.</li>
+  <li><strong>CLI</strong> — <code>ros2 action send_goal</code>, gọi được từ script shell, thấy được cấu trúc message thật.</li>
+  <li><strong>Code (<code>nav2_simple_commander</code>)</strong> — <code>BasicNavigator</code> bọc sẵn action client, có <code>waitUntilNav2Active()</code> (chờ toàn bộ lifecycle manager active trước khi gửi, tránh gửi hụt lúc hệ thống chưa sẵn sàng) và <code>isTaskComplete()</code>/<code>getResult()</code> tiện polling — đây là cách DUY NHẤT đo được thời gian hoàn thành tự động, cần cho <a href="lesson.html?m=10&amp;l=07-bai-tap">bài tập</a>.</li>
+</ul>
+
+<h2>Ví dụ trong dự án Atlas: send_goal_and_time.py</h2>
+<pre><code>nav = BasicNavigator()
+nav.waitUntilNav2Active()
+goal = PoseStamped()
+goal.header.frame_id = "map"
+goal.pose.position.x, goal.pose.position.y = args.goal_x, args.goal_y
+goal.pose.orientation.w = 1.0
+
+t0 = time.time()
+nav.goToPose(goal)
+while not nav.isTaskComplete():
+    rclpy.spin_once(nav, timeout_sec=0.2)
+elapsed = time.time() - t0
+
+result = nav.getResult()</code></pre>
+<p>Vòng lặp <code>spin_once</code> + <code>isTaskComplete()</code> là pattern CHUẨN để chờ 1 action chạy xong mà không block hẳn (khác <code>rclpy.spin()</code> thông thường) — sẽ gặp lại chính pattern này khi tự viết node điều hướng ở <a href="lesson.html?m=12&amp;l=00-gioi-thieu">Module 12</a>.</p>
+
+<h2>Thử ngay</h2>
+<pre><code>ros2 launch atlas_bringup bringup.launch.py world:=maze.sdf</code></pre>
+<pre><code>ros2 launch atlas_slam navigation.launch.py \
+  map:=$(pwd)/src/atlas_slam/maps/maze_map.yaml</code></pre>
+<p><strong>Cách 1 — RViz</strong>: đặt 2D Pose Estimate (Module 9), bấm "Nav2 Goal", click 1 điểm trên map.</p>
+<p><strong>Cách 2 — CLI</strong> (terminal khác):</p>
+<pre><code>ros2 action send_goal /navigate_to_pose nav2_msgs/action/NavigateToPose \
+  "{pose: {header: {frame_id: 'map'}, pose: {position: {x: -1.5, y: 1.8}, \
+  orientation: {w: 1.0}}}}" --feedback</code></pre>
+<p><strong>Cách 3 — script có sẵn</strong>:</p>
+<pre><code>ros2 run atlas_slam send_goal_and_time.py --goal_x -1.5 --goal_y 1.8</code></pre>
+<p>So kết quả cả 3 cách — robot phải đi tới đúng 1 chỗ, chỉ khác cách bạn ra lệnh. Quan sát <code>--feedback</code> ở cách 2: action <code>NavigateToPose</code> publish feedback liên tục trong lúc chạy (quãng đường còn lại, thời gian ước tính) — đúng lý do action tồn tại thay vì chỉ dùng service (service không hỗ trợ cập nhật tiến trình giữa chừng).</p>

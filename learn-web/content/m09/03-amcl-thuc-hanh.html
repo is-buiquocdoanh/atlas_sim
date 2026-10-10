@@ -1,0 +1,27 @@
+<h1>AMCL thực hành: 2D Pose Estimate</h1>
+<p class="lead">AMCL là node Nav2 chuẩn, nạp bản đồ qua <code>map_server</code> rồi tự định vị robot trên đó — khác <code>slam_toolbox</code> (Module 8), nó <strong>không bao giờ sửa bản đồ</strong>, chỉ ước lượng pose của robot.</p>
+
+<h2>Không bắt buộc biết pose ban đầu</h2>
+<p>AMCL không bắt buộc biết pose ban đầu — nếu không đặt gì, nó rải hạt khắp map (chờ bạn tự hội tụ bằng cách lái vòng vòng, rất chậm và không chắc đúng, đúng hiệu ứng đã thấy ở mô hình "độ lệch rải hạt 100%" bài trước). Cách chuẩn: đặt <strong>"2D Pose Estimate"</strong> trong RViz — click vào vị trí ước lượng + kéo chỉ hướng — AMCL rải hạt tập trung QUANH điểm đó thay vì khắp map, hội tụ nhanh hơn nhiều.</p>
+
+<h2>Ví dụ trong dự án Atlas</h2>
+<p><code>atlas_slam/launch/navigation.launch.py</code> mặc định <code>localization:=amcl</code> — khai báo tường minh <code>map_server</code> + <code>amcl</code> + <code>lifecycle_manager_localization</code> (không <code>include</code> gói sẵn của <code>nav2_bringup</code>, đúng triết lý "thấy rõ từng node" xuyên suốt dự án — đọc chi tiết ở <a href="lesson.html?m=9&amp;l=05-doc-navigation-launch">bài sau</a>).</p>
+
+<h2>Đọc /amcl_pose — ước lượng + độ không chắc chắn trong cùng 1 message</h2>
+<p><code>/amcl_pose</code> kiểu <code>geometry_msgs/msg/PoseWithCovarianceStamped</code> — không chỉ 1 pose, mà kèm theo ma trận hiệp phương sai 6×6 (chỉ 3 chiều x, y, yaw có ý nghĩa với robot 2D). Đường chéo ma trận chính là phương sai từng chiều — căn bậc 2 của nó xấp xỉ độ lệch chuẩn, cùng đơn vị với độ lệch chuẩn đám mây hạt đã thấy ở mô hình bài trước:</p>
+<pre><code>covariance[0]  = Var(x)       -- ô (0,0): phương sai theo x
+covariance[7]  = Var(y)       -- ô (1,1): phương sai theo y
+covariance[35] = Var(yaw)     -- ô (5,5): phương sai theo góc xoay</code></pre>
+<p>Hiệp phương sai càng nhỏ, AMCL càng "tự tin" vào ước lượng của nó — đúng là cùng 1 khái niệm độ lệch chuẩn đã thấy ở mô hình particle filter, chỉ khác là AMCL tự tính sẵn và gói vào message thay vì bạn phải tự đo bằng mắt.</p>
+
+<h2>Thử ngay</h2>
+<pre><code># Terminal 1: bringup
+ros2 launch atlas_bringup bringup.launch.py world:=maze.sdf</code></pre>
+<pre><code># Terminal 2: Nav2 với AMCL (mặc định)
+ros2 launch atlas_slam navigation.launch.py \
+  map:=$(pwd)/src/atlas_slam/maps/maze_map.yaml</code></pre>
+<p>Trong RViz: click <strong>2D Pose Estimate</strong>, đặt đúng vị trí robot (mặc định spawn tại gốc tọa độ). Quan sát đám mây hạt đỏ co dần lại — đúng hiệu ứng vừa thấy ở mô hình, lần này với dữ liệu LiDAR thật. Lái vài bước bằng bàn phím — hạt càng tụm chặt hơn.</p>
+<pre><code>ros2 topic echo /amcl_pose --once</code></pre>
+<p>Đọc <code>pose.covariance[0]</code>, <code>[7]</code>, <code>[35]</code> — so giá trị ngay sau khi đặt "2D Pose Estimate" với giá trị sau khi đã lái vài bước. Số càng nhỏ, AMCL càng tự tin.</p>
+<pre><code>ros2 topic echo /particle_cloud --once</code></pre>
+<p>Kiểu <code>nav2_msgs/msg/ParticleCloud</code> — mảng toàn bộ hạt hiện có, đúng dữ liệu RViz dùng để vẽ đám mây đỏ. Đếm thử số phần tử trong mảng <code>particles</code> — đối chiếu với <code>min_particles</code>/<code>max_particles</code> đã đọc ở bài trước, xem lúc này AMCL đang giữ bao nhiêu hạt.</p>

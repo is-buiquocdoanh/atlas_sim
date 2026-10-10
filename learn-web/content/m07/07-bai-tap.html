@@ -1,0 +1,53 @@
+<h1>Bài tập: tự tay thử cơ chế ưu tiên</h1>
+<p class="lead">Mục tiêu: tự chứng minh luật thắng của <code>twist_mux</code> bằng số thật thay vì chỉ tin lý thuyết, và sửa đúng lỗi kiến trúc đã cảnh báo từ bài 1 — cho bàn phím đi qua cơ chế ưu tiên thay vì đi tắt.</p>
+
+<h2>Phần A — tái hiện và quan sát xung đột</h2>
+<pre><code>ros2 launch atlas_control controller.launch.py world:=maze.sdf</code></pre>
+<pre><code># terminal khác
+ros2 launch atlas_bringup joystick_teleop.launch.py</code></pre>
+<pre><code># terminal khác -- CHẠY SONG SONG, cố ý tái hiện lỗi đã cảnh báo ở bài 1
+ros2 run teleop_twist_keyboard teleop_twist_keyboard</code></pre>
+<p>Dùng <code>ros2 topic echo /cmd_vel</code> ở một terminal thứ 4, bấm phím ở terminal bàn phím trong khi KHÔNG chạm joystick — ghi lại: lệnh bàn phím có luôn thắng không, hay thỉnh thoảng bị joystick (đang gửi toàn số 0 vì không ai chạm) ghi đè?</p>
+
+<h2>Phần B — tự tính người thắng</h2>
+<p>Trước khi chạy, tự tính bằng tay 3 tình huống sau (dựa đúng bảng priority/timeout ở <a href="lesson.html?m=7&amp;l=03-twist-mux">bài 3</a>), rồi mới kiểm chứng bằng <code>ros2 topic pub --once</code> cho từng nguồn kèm <code>ros2 topic echo /cmd_vel</code>:</p>
+<table>
+  <tr><th>Tình huống</th><th>Dự đoán ai thắng</th></tr>
+  <tr><td><code>cmd_vel_nav</code> gửi lúc t=0s, <code>cmd_vel_joy</code> gửi lúc t=0.2s</td><td>?</td></tr>
+  <tr><td><code>cmd_vel_joy</code> gửi lúc t=0s, <code>cmd_vel_nav</code> gửi lúc t=0.2s</td><td>?</td></tr>
+  <tr><td><code>cmd_vel_joy</code> gửi lúc t=0s, <code>cmd_vel_nav</code> gửi lúc t=0.6s (sau khi joystick đã hết hạn)</td><td>?</td></tr>
+</table>
+
+<h2>Phần C — sửa lỗi kiến trúc: cho bàn phím đi qua twist_mux</h2>
+<p>Thay vì để <code>teleop_twist_keyboard</code> ghi thẳng <code>/cmd_vel</code> (bài 1), remap nó thành một input hợp lệ:</p>
+<pre><code>ros2 run teleop_twist_keyboard teleop_twist_keyboard --ros-args -r cmd_vel:=cmd_vel_joy</code></pre>
+<p>Chạy lại đúng kịch bản Phần A (bàn phím + joystick cùng lúc) với lệnh đã remap này thay cho lệnh gốc. Quan sát: còn xung đột giật cục như trước không? Giải thích bằng đúng khái niệm priority/timeout vừa học — 2 nguồn giờ cùng ghi vào <code>cmd_vel_joy</code>, nghĩa là gì theo luật của <code>twist_mux</code> (gợi ý: twist_mux không biết có 2 node khác nhau đang ghi cùng 1 topic nó lắng nghe — điều gì xảy ra khi coi cả 2 là "cùng một nguồn joystick")?</p>
+
+<h2>Phần D — gây lỗi có chủ đích</h2>
+<table>
+  <tr><th>Thay đổi</th><th>Đoán xem hỏng thế nào</th></tr>
+  <tr><td>Xoá dòng <code>remappings=[("/cmd_vel_out", "/cmd_vel")]</code> trong <code>joystick_teleop.launch.py</code></td><td><code>ros2 topic echo /cmd_vel</code> còn ra gì không? Robot còn di chuyển không? <code>ros2 topic list</code> có topic nào mới xuất hiện?</td></tr>
+  <tr><td>Đổi <code>cmd_vel_out_topic</code> trong <code>collision_monitor.yaml</code> thẳng thành <code>"cmd_vel_collision"</code> (bỏ qua relay)</td><td>Đúng y hệt tình huống đã cảnh báo ở bài 5 — tự quan sát: robot còn nhận lệnh joystick được không, kể cả khi không có vật cản nào?</td></tr>
+  <tr><td>Đặt <code>timeout: 0.01</code> cho input <code>joystick</code> (thay vì 0.5)</td><td>Joystick vẫn gửi đều ở tần số bình thường — có còn điều khiển mượt được không, hay robot giật cục dừng liên tục?</td></tr>
+</table>
+<pre><code>git checkout src/atlas_bringup/launch/joystick_teleop.launch.py src/atlas_bringup/config/</code></pre>
+<p>Chạy để trả lại nguyên trạng khi xong — <strong>đặc biệt chú ý</strong> dòng thay đổi ở Phần D thứ 2, nếu quên trả lại, robot sẽ không bao giờ di chuyển bình thường được nữa ở các module sau.</p>
+
+<h2>Nộp bài</h2>
+<ul>
+  <li>Phần B: bảng 3 dòng, mỗi dòng ghi dự đoán + kết quả thật + có khớp không</li>
+  <li>Phần C: giải thích bằng đúng khái niệm priority/timeout vì sao remap giải quyết được xung đột</li>
+  <li>Phần D: bảng 3 dòng, mỗi dòng ghi triệu chứng quan sát được</li>
+</ul>
+
+<h2>Tự kiểm tra trước khi qua Module 8</h2>
+<div class="goals">
+  <ul>
+    <li>Giải thích đúng vì sao bàn phím và joystick không nên chạy cùng lúc nếu bàn phím chưa được remap</li>
+    <li>Tính tay được nguồn nào thắng trong <code>twist_mux</code> từ một chuỗi thời điểm publish bất kỳ</li>
+    <li>Giải thích được vì sao <code>collision_monitor</code> cần một node relay riêng, không nối thẳng vào <code>twist_mux</code></li>
+    <li>Đọc đúng 2 vùng đa giác an toàn và tính được action_type cho một vị trí vật cản bất kỳ</li>
+    <li>Phân biệt được Fixed Frame và Target Frame trong RViz, biết khi nào 2 khái niệm này trông giống nhau và khi nào không</li>
+  </ul>
+</div>
+<p>Xong hết → sang <strong>Module 8 — SLAM</strong> (sắp có trên trang này), nơi <code>/scan</code> lần đầu được dùng để <em>dựng bản đồ</em>, không chỉ để né vật cản.</p>

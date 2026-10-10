@@ -1,0 +1,29 @@
+<h1>TF tree</h1>
+<p class="lead"><strong>TF tree</strong> là tập hợp mọi transform trong hệ thống, ghép lại thành một <strong>cây</strong> — không phải một đồ thị tùy ý. Mỗi frame có đúng <strong>một frame cha</strong> (trừ frame gốc), nhưng có thể có nhiều frame con.</p>
+<p>Ràng buộc "đúng một cha" không phải giới hạn kỹ thuật cho vui — đó là điều làm TF <strong>luôn giải được</strong>. Muốn biết transform giữa hai frame bất kỳ, kể cả không nối trực tiếp, chỉ cần đi ngược lên tổ tiên chung rồi ghép các transform lại. Khai báo 2 frame cha cho cùng một frame con sẽ phá vỡ tính chất này — TF báo lỗi hoặc cho kết quả không xác định.</p>
+
+<h2>Xem tf2 "đi tìm" transform thế nào</h2>
+<p>Cây ví dụ dưới đây là một cánh tay robot chung chung — không phải cây thật của Atlas, để dành cho bài tập cuối module. Mỗi cạnh của cây có sẵn một transform cụ thể (x, y, yaw). "Ghép transform lại" ở trên không phải phép cộng — về mặt toán, mỗi transform 2D viết được dưới dạng một <strong>ma trận đồng nhất 3×3</strong>:</p>
+<pre><code>T = [ cosθ  -sinθ   x ]
+    [ sinθ   cosθ   y ]
+    [  0      0     1 ]</code></pre>
+<p>Ghép hai transform liên tiếp = <strong>nhân hai ma trận</strong>; đi ngược chiều (con → cha thay vì cha → con) = <strong>nhân với ma trận nghịch đảo</strong>. tf2 không làm gì khác hơn thế — chỉ là làm với ma trận 4×4 và quaternion cho đủ 3 chiều, thay vì 3×3 và góc yaw như ở đây. Chọn 2 frame không nối trực tiếp, bấm "Tìm transform", rồi theo dõi từng phép nhân:</p>
+<div class="scene" data-scene="tf-lookup"></div>
+<p>Tắt ô "Hiện phép nhân ma trận" nếu chỉ muốn xem đường đi trực quan, không cần nhìn số.</p>
+
+<h2>Bên dưới chỉ là topic</h2>
+<p>TF không có cơ chế truyền tải gì đặc biệt — nó chỉ là 2 topic <code>/tf</code> (động, kiểu <code>TFMessage</code>) và <code>/tf_static</code> (tĩnh, publish một lần với QoS <a href="lesson.html?m=1&amp;l=03-topic-pub-sub">TRANSIENT_LOCAL</a> — subscriber tới trễ vẫn nhận được). Thư viện <code>tf2_ros</code> tự gộp message từ nhiều node lại thành một cây hoàn chỉnh trong bộ nhớ (<code>Buffer</code>), kèm nội suy theo thời gian — không có gì bạn chưa học ở <a href="lesson.html?m=1&amp;l=00-gioi-thieu">Module 1</a>, chỉ là một lớp tiện ích xây trên pub/sub.</p>
+
+<h2>Thử ngay</h2>
+<p>Cần 2 terminal (đã <code>source install/setup.bash</code>, xem <a href="lesson.html?m=0&amp;l=00-cai-dat">Module 0</a>):</p>
+<pre><code># Terminal 1 — để chạy, đừng tắt
+ros2 launch ros2_basics demo_tf.launch.py</code></pre>
+<pre><code># Terminal 2 — nghe /tf + /tf_static trong 5 giây rồi tự thoát, xuất ra PDF
+ros2 run tf2_tools view_frames</code></pre>
+<p>Mở file <code>frames_&lt;timestamp&gt;.pdf</code> vừa xuất ra — đúng cây 3 frame: <code>world</code> → <code>static_frame</code> (tĩnh) + <code>world</code> → <code>moving_frame</code> (động), minh họa "một cha, nhiều con".</p>
+
+<h2>Ví dụ trong dự án Atlas</h2>
+<p>Atlas hoàn chỉnh (từ Module 3 trở đi) có TF tree với gốc <code>map</code>, nhánh qua <code>odom</code> → <code>base_link</code>, rồi từ <code>base_link</code> tỏa ra nhiều frame con (bánh xe, caster, cảm biến — xem <a href="lesson.html?m=2&amp;l=05-bai-tap">bài tập</a>, cố tình chưa vẽ ở đây). Khi Nav2 chạy (Module 10) còn có thêm nhánh <code>base_link</code> → <code>local_costmap</code>… — cây TF thật của một robot hoàn chỉnh dễ có 10+ frame.</p>
+<p>Hai lệnh sẽ dùng lại xuyên suốt các module sau để debug TF của Atlas:</p>
+<pre><code>ros2 run tf2_tools view_frames
+ros2 run tf2_ros tf2_echo &lt;frame_cha&gt; &lt;frame_con&gt;</code></pre>

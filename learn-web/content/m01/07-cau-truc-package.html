@@ -1,0 +1,49 @@
+<h1>Cấu trúc package</h1>
+<p class="lead">Package là đơn vị đóng gói và phân phối nhỏ nhất của ROS 2: code, launch file, file cấu hình (YAML), và một file metadata <code>package.xml</code> khai báo tên, phiên bản, dependency, đi cùng nhau trong một thư mục.</p>
+<p>Mỗi package build và cài đặt độc lập qua <code>colcon</code>, và có thể được package khác khai báo làm dependency (như <code>atlas_control</code> phụ thuộc <code>atlas_description</code>) mà không cần biết bên trong cài đặt ra sao — chỉ cần biết nó cung cấp executable, launch file hay interface gì. ROS 2 có 2 kiểu package chính: <strong>ament_python</strong> (code Python thuần, như <code>ros2_basics</code>) và <strong>ament_cmake</strong> (C++ hoặc hỗn hợp); bài này tập trung vào <code>ament_python</code> vì đó là loại bạn viết nhiều nhất khi mới học.</p>
+
+<h2>Cây thư mục của ros2_basics</h2>
+<p>Bấm vào tên thư mục để mở/đóng, giống panel Explorer trong VS Code:</p>
+<div class="filetree">
+  <details open><summary>ros2_basics/</summary>
+    <ul>
+      <li class="ft-file">package.xml <span class="ft-note"># tên, phiên bản, phụ thuộc</span></li>
+      <li class="ft-file">setup.py <span class="ft-note"># khai báo executable (console_scripts)</span></li>
+      <li class="ft-file">setup.cfg</li>
+      <li>
+        <details open><summary>resource/</summary>
+          <ul><li class="ft-file">ros2_basics <span class="ft-note"># file rỗng, chỉ để đánh dấu cho ament</span></li></ul>
+        </details>
+      </li>
+      <li>
+        <details open><summary>ros2_basics/ <span class="ft-note">— code Python thật</span></summary>
+          <ul>
+            <li class="ft-file">sensor_publisher.py</li>
+            <li class="ft-file">data_logger.py</li>
+          </ul>
+        </details>
+      </li>
+      <li>
+        <details open><summary>launch/</summary>
+          <ul><li class="ft-file">demo.launch.py</li></ul>
+        </details>
+      </li>
+    </ul>
+  </details>
+</div>
+
+<h2>Điểm then chốt: executable phải khai báo</h2>
+<p>Viết xong file Python chưa đủ. <code>ros2 run</code> chỉ tìm được thứ có khai báo trong <code>setup.py</code>:</p>
+<pre><code>entry_points={
+    'console_scripts': [
+        'sensor_publisher = ros2_basics.sensor_publisher:main',
+    ],
+},</code></pre>
+<div class="callout warn"><p>Thêm node mới mà quên dòng này, <code>ros2 run</code> sẽ báo không tìm thấy executable, dù file vẫn nằm đó. Đây là lỗi rất hay gặp khi mới bắt đầu.</p></div>
+
+<h2>Quy trình làm việc</h2>
+<pre><code>cd ~/atlas_sim
+colcon build --packages-select ros2_basics
+source install/setup.bash
+ros2 run ros2_basics sensor_publisher</code></pre>
+<p><code>colcon build</code> đưa code vào thư mục <code>install/</code>. Lệnh <code>source install/setup.bash</code> cho terminal biết package nằm ở đâu. Quên bước source là lỗi thường gặp nhất.</p>

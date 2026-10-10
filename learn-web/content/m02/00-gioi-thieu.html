@@ -1,0 +1,27 @@
+<h1>Vì sao cần TF2</h1>
+<p class="lead">Mọi dữ liệu robot trong ROS 2 — vị trí, cảm biến, bản đồ — đều vô nghĩa nếu không biết nó <strong>tính từ đâu</strong>. "Robot ở (1.5, 2.0)" so với cái gì? So với bản đồ? So với lúc robot khởi động? So với chính thân robot?</p>
+<p>TF2 (Transform Framework, phiên bản 2) là lớp hạ tầng ROS 2 dùng để trả lời câu hỏi đó một cách thống nhất: mọi vị trí đều gắn với một <strong>frame</strong> có tên, và TF2 biết cách quy đổi giữa các frame với nhau.</p>
+
+<div class="goals">
+  <h3>Sau module này bạn sẽ</h3>
+  <ul>
+    <li>Phân biệt được <strong>frame</strong> và <strong>transform</strong></li>
+    <li>Đọc được một cây TF (TF tree) và biết vì sao nó luôn là cây, không phải đồ thị tùy ý</li>
+    <li>Giải thích được vì sao ROS tách riêng frame <code>map</code> và <code>odom</code> thay vì gộp làm một</li>
+    <li>Dùng được <code>view_frames</code>, <code>tf2_echo</code> để debug TF — bộ lệnh sẽ dùng hàng ngày từ Module 4 trở đi</li>
+  </ul>
+</div>
+
+<h2>Chuẩn bị</h2>
+<p>Module này giả định bạn đã xong <a href="lesson.html?m=0&amp;l=00-cai-dat">Module 0</a> và <a href="lesson.html?m=1&amp;l=00-gioi-thieu">Module 1</a> — đặc biệt bài <a href="lesson.html?m=1&amp;l=03-topic-pub-sub">Topic, Publisher/Subscriber</a>, vì TF chỉ là một lớp tiện ích xây trên pub/sub, không phải cơ chế gì mới.</p>
+<pre><code>cd ~/atlas_sim
+colcon build --packages-select ros2_basics
+source install/setup.bash</code></pre>
+
+<h2>Bản đồ module</h2>
+<div class="cards">
+  <div class="mini"><b>Frame & Transform</b><span>Một gốc tọa độ, và độ lệch giữa 2 gốc</span></div>
+  <div class="mini"><b>TF tree</b><span>Ghép nhiều transform thành 1 cây</span></div>
+  <div class="mini"><b>REP-103 / REP-105</b><span>Quy ước đơn vị, trục, và chuỗi frame chuẩn</span></div>
+  <div class="mini"><b>Công cụ debug</b><span>view_frames, tf2_echo, static_transform_publisher</span></div>
+</div>

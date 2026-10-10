@@ -1,0 +1,45 @@
+<h1>twist_mux: trộn nhiều nguồn lệnh</h1>
+<p class="lead"><code>twist_mux</code> giải đúng bài toán đặt ra ở bài 1: nhiều nguồn cùng muốn điều khiển robot, ai thắng? Luật chơi chỉ có 2 khái niệm — <strong>priority</strong> (ưu tiên) và <strong>timeout</strong> (hết hạn) — không có gì phức tạp hơn.</p>
+
+<h2>Đọc đúng config thật của Atlas</h2>
+<pre><code>twist_mux:
+  ros__parameters:
+    topics:
+      magnetic:
+        topic   : cmd_vel_mag
+        timeout : 0.5
+        priority: 10
+      navigation:
+        topic   : cmd_vel_nav
+        timeout : 0.5
+        priority: 50
+      joystick:
+        topic   : cmd_vel_joy
+        timeout : 0.5
+        priority: 100
+      collision_detect:
+        topic   : cmd_vel_collision
+        timeout : 0.5
+        priority: 1000</code></pre>
+<p>4 nguồn. <code>magnetic</code> và <code>navigation</code> là <strong>placeholder</strong> — comment thật trong file ghi rõ: 2 package tương ứng (dò line, Nav2) chưa tồn tại trong dự án ở thời điểm này, không có gì publish vào 2 topic đó, <code>twist_mux</code> vẫn chạy bình thường, chỉ đơn giản 2 input này luôn ở trạng thái hết hạn.</p>
+
+<h2>Luật thắng: priority cao nhất trong số các nguồn còn hạn</h2>
+<p>Mỗi chu kỳ, <code>twist_mux</code> nhìn tất cả nguồn <strong>còn trong thời hạn</strong> <code>timeout</code> (tính từ lần cuối có message tới) và chọn đúng 1: nguồn có <code>priority</code> cao nhất trong số đó. Nguồn đã quá <code>timeout</code> (0.5s không có message mới) coi như không tồn tại, dù trước đó nó đang là nguồn thắng.</p>
+<p>Output luôn cố định tên <code>/cmd_vel_out</code> trong code — <code>joystick_teleop.launch.py</code> (bài 2) remap thành <code>/cmd_vel</code>, đúng topic <code>diff_drive_controller</code> đang lắng nghe (Module 5).</p>
+
+<h2>Một phát hiện thật: priority 1000 không phải 1000</h2>
+<div class="callout warn"><p>Comment ngay trong file cấu hình: <code>twist_mux</code> giới hạn <code>priority</code> trong khoảng <code>[0, 255]</code> — giá trị <code>1000</code> khai ở trên <strong>tự động bị kẹp (clamp) về 255</strong> lúc chạy. Không chỉ tin lời comment — mã nguồn C++ thật của <code>twist_mux</code> (<code>topic_handle.hpp</code>, cài sẵn trên máy) có đúng dòng này:</p></div>
+<pre><code>priority_(clamp(priority, priority_type(0), priority_type(255)))</code></pre>
+<p>Thứ tự ưu tiên tương đối vẫn đúng (255 > 100 > 50 > 10) nên hành vi không đổi — chỉ là con số hiển thị qua <code>ros2 topic echo</code> không phải <code>1000</code> như bạn tưởng đọc được từ file YAML.</p>
+
+<h2>Kéo thử: ai đang thắng trong /cmd_vel</h2>
+<p>4 nguồn, đúng priority/timeout thật ở trên, mỗi nguồn kèm 1 lệnh Twist minh họa. Bấm "Bật nguồn" để giả lập một node đang publish <strong>liên tục</strong> (giống joystick thật khi bạn giữ cần) — nguồn đó không tự hết hạn cho tới khi bạn bấm tắt. Bật cùng lúc nhiều nguồn để thấy ngay nguồn priority cao hơn giành quyền tức thì, không cần canh giờ; tắt một nguồn để xem đúng cảnh timeout thật: thanh ngang rút dần trong 0.5s trước khi nhường quyền lại. Robot 2D phía dưới luôn chuyển động theo đúng lệnh của nguồn <strong>đang thắng</strong> — thân và bánh đổi màu theo đúng nguồn, để thấy rõ quyền điều khiển đổi tay ngay khi một nguồn ưu tiên cao hơn được bật:</p>
+<div class="scene" data-scene="twist-mux-priority"></div>
+
+<h2>Thử ngay</h2>
+<pre><code>ros2 launch atlas_control controller.launch.py world:=maze.sdf</code></pre>
+<pre><code># terminal khác
+ros2 launch atlas_bringup joystick_teleop.launch.py</code></pre>
+<pre><code># terminal khác -- giả lập một nguồn ưu tiên cao hơn joystick (priority 1000 -> 255)
+ros2 topic pub /cmd_vel_collision geometry_msgs/msg/Twist "{}" --once</code></pre>
+<p>Trong 0.5s sau lệnh trên, giữ joystick đẩy cần — robot <strong>không di chuyển</strong> theo joystick, vì <code>collision_detect</code> (priority 255) đang thắng dù Twist nó gửi toàn số 0. Đợi quá 0.5s, thử lại — joystick hoạt động bình thường vì nguồn kia đã hết hạn.</p>

@@ -1,0 +1,38 @@
+<h1>ROS 2 và kiến trúc DDS</h1>
+<p class="lead">ROS 2 không tự cài đặt cơ chế truyền dữ liệu qua mạng — phần đó do một chuẩn công nghiệp có tên <strong>DDS</strong> (Data Distribution Service) đảm nhiệm, vốn dùng từ trước trong hàng không, quốc phòng, tài chính vì độ tin cậy cao.</p>
+<p>ROS 2 đứng trên DDS, cung cấp một lớp API quen thuộc (publisher, subscriber, service...) để bạn không phải làm việc trực tiếp với các khái niệm phức tạp bên dưới. Đây là khác biệt lớn nhất so với ROS 1 — vốn tự viết toàn bộ tầng giao tiếp riêng và cần một tiến trình trung tâm (<code>roscore</code>) để điều phối.</p>
+
+<h2>Vì sao ROS 2 không cần roscore?</h2>
+<p>ROS 1 có một máy chủ trung tâm (<code>roscore</code>) để các node tìm nhau. Nếu nó chết, cả hệ thống mất liên lạc. ROS 2 bỏ máy chủ đó: các node tự phát hiện nhau qua DDS. Đây gọi là <strong>discovery</strong>.</p>
+
+<div class="callout key"><p>Mỗi node "phát thông báo" định kỳ. Node nào nhận thông báo có topic và kiểu message khớp với mình thì tự nối với nhau. Xem mô hình dưới.</p></div>
+
+<div class="scene" data-scene="discovery"></div>
+
+<h2>Dữ liệu đi qua những tầng nào?</h2>
+<p>Bạn viết code ở tầng trên cùng. Mỗi tầng dưới làm một việc cụ thể hơn. Khi publish, dữ liệu đi xuống; khi nhận, đi lên.</p>
+
+<div class="scene" data-scene="encap"></div>
+
+<div class="callout tip"><p>Code dưới khung mô hình đổi theo đúng vị trí của chấm: chấm ở tầng nào, đoạn code của tầng đó hiện ra (đơn giản hóa để dễ hình dung, không phải chữ ký hàm thật của <code>rcl</code>/<code>rmw</code>). Bấm "Gửi 1 message" rồi theo dõi.</p></div>
+
+<h2>Bốn tầng, mỗi tầng một việc</h2>
+<table>
+  <tr><th>Tầng</th><th>Vai trò</th><th>Bạn gặp ở đâu</th></tr>
+  <tr><td>Code của bạn</td><td>API: publisher, subscription, service</td><td><code>rclpy</code> (Python), <code>rclcpp</code> (C++)</td></tr>
+  <tr><td>rcl</td><td>Lõi C dùng chung cho mọi ngôn ngữ</td><td>Không gọi trực tiếp</td></tr>
+  <tr><td>rmw</td><td>Lớp trung gian che DDS cụ thể</td><td>Biến <code>RMW_IMPLEMENTATION</code></td></tr>
+  <tr><td>DDS</td><td>Discovery, truyền dữ liệu, QoS</td><td>Fast DDS (mặc định Humble), Cyclone DDS</td></tr>
+</table>
+
+<h2>Cách cô lập mạng: ROS_DOMAIN_ID</h2>
+<p>Nhiều robot có thể chạy trên cùng một mạng. Để tránh node của robot này nói chuyện với robot kia, mỗi nhóm đặt một <strong>domain</strong> riêng bằng biến <code>ROS_DOMAIN_ID</code>. Thử đổi domain của từng node:</p>
+
+<div class="scene" data-scene="domain"></div>
+
+<div class="callout warn"><p>Hai node khác <code>ROS_DOMAIN_ID</code> sẽ <strong>không thấy nhau</strong>, dù chạy cùng máy. Khi "không thấy topic" trong terminal, hãy kiểm tra domain trước tiên.</p></div>
+
+<h2>Thử ngay</h2>
+<pre><code>echo $ROS_DOMAIN_ID
+echo $RMW_IMPLEMENTATION</code></pre>
+<p>Nếu biến trống, ROS 2 dùng giá trị mặc định: domain 0 và DDS mặc định của bản cài.</p>

@@ -1,0 +1,58 @@
+<h1>Local controller: DWB vs RPP vs MPPI</h1>
+<p class="lead"><strong>Local controller</strong> (Nav2 gọi là <code>FollowPath</code>, chạy trong <code>controller_server</code>) biến đường đi tĩnh từ planner thành lệnh <code>cmd_vel</code> LIÊN TỤC, mỗi chu kỳ (<code>controller_frequency: 20.0</code>Hz) — việc thật sự làm robot di chuyển, né vật cản phát sinh (local costmap, bài 1), và là phần ảnh hưởng rõ nhất tới "cảm giác lái" của robot.</p>
+
+<h2>3 cách tính vận tốc kế tiếp</h2>
+<ul>
+  <li><strong>DWB</strong> (Dynamic Window Approach) — từ vận tốc hiện tại, chỉ xét các cặp <code>(v, ω)</code> robot CÓ THỂ đạt được ở bước kế tiếp (giới hạn bởi gia tốc tối đa), mô phỏng trước quỹ đạo ngắn cho từng cặp, chấm điểm (gần path, tránh vật cản, tốc độ), chọn cặp điểm cao nhất. Rẻ tính toán, phản ứng nhanh, nhưng "nhìn" không xa — dễ mắc kẹt ở cực tiểu cục bộ.</li>
+  <li><strong>RPP</strong> (Regulated Pure Pursuit) — chọn 1 điểm "nhìn trước" (lookahead point) trên đường đi, lái theo 1 cung tròn nối thẳng robot tới điểm đó. Đơn giản, mượt, dễ tinh chỉnh (chỉnh khoảng cách lookahead là chính) — "regulated" (tự giảm tốc khi cua gấp/gần vật cản) là phần thêm vào bản gốc Pure Pursuit để an toàn hơn.</li>
+  <li><strong>MPPI</strong> (Model Predictive Path Integral) — lấy mẫu HÀNG NGHÌN quỹ đạo tương lai ngẫu nhiên (<code>batch_size</code>), mô phỏng trước mỗi quỹ đạo qua nhiều bước (<code>time_steps</code>), chấm điểm bằng nhiều "critic" cùng lúc (né vật cản, bám đường, hướng đúng...), lấy trung bình trọng số các quỹ đạo tốt làm lệnh thật. Nhìn xa nhất, né vật cản phức tạp tốt nhất, nhưng tốn CPU nhất — và CÓ THAM SỐ NGẪU NHIÊN (<code>vx_std</code>/<code>wz_std</code>), nên 2 lần chạy cùng kịch bản có thể ra quỹ đạo hơi khác nhau.</li>
+</ul>
+
+<h2>Hình học thật đứng sau mỗi công thức</h2>
+<p>3 gạch đầu dòng trên chỉ là lời kể — bấm từng tab để xem đúng phép tính dựng ra con số, lấy trực tiếp từ mã nguồn thật trên máy (không phải diễn giải chung chung), dùng đúng tham số Atlas:</p>
+<div class="scene" data-scene="controller-geometry"></div>
+<ul>
+  <li><strong>DWB</strong> — ô vàng (cửa sổ động) tính bằng đúng hàm <code>projectVelocity()</code> thật trong <code>one_d_velocity_iterator.hpp</code>: <code>max = min(giới hạn tuyệt đối, v₀ + acc_lim·dt)</code>, <code>min = max(giới hạn tuyệt đối, v₀ + decel_lim·dt)</code>, với <code>dt = 1/controller_frequency = 0.05s</code>. Quạt quỹ đạo bên phải là kết quả mô phỏng từng cặp <code>(v, ω)</code> lấy mẫu trong đúng ô đó qua <code>sim_time</code>.</li>
+  <li><strong>RPP</strong> — đúng công thức <code>calculateCurvature()</code> thật: <code>κ = 2y / (x² + y²)</code>, với <code>(x, y)</code> là toạ độ điểm nhìn trước trong hệ quy chiếu robot. Bán kính cung <code>R = 1/κ</code> — tâm cung luôn nằm vuông góc hướng robot tại khoảng cách R, đây chính là lý do pure pursuit luôn ra quỹ đạo mượt (tiếp tuyến khớp hướng robot tại gốc).</li>
+  <li><strong>MPPI</strong> — đúng công thức softmax thật trong <code>optimizer.cpp</code>: <code>wᵢ = exp(-(costᵢ - min(cost))/temperature) / Σexp(...)</code>, rồi lấy trung bình trọng số của CHÍNH các chuỗi điều khiển đã lấy mẫu — không phải "chọn ra 1 mẫu tốt nhất" như hay bị hiểu nhầm, mà là trộn có trọng số toàn bộ batch.</li>
+</ul>
+
+<h2>Tự xem "tính cách" của từng controller qua cùng 1 góc cua</h2>
+<p>Cả 3 chạy cùng lúc trong 1 khung hình, cùng xuất phát — xem chú thích màu bên dưới để phân biệt — để thấy ngay sự khác biệt "tính cách" khi cùng bám 1 đường gấp khúc, dùng đúng tham số thật (minh hoạ phong cách, không chạy lại chính xác thuật toán gốc). Tới đích cùng lúc thì vệt tự xoá, quay lại từ đầu:</p>
+<div class="scene" data-scene="controller-comparison"></div>
+<p>Không có lựa chọn "tốt nhất tuyệt đối" — đây chính xác là nội dung <a href="lesson.html?m=10&amp;l=07-bai-tap">bài tập</a>: tự đo, tự so sánh trên chính robot Atlas, không suy luận suông.</p>
+
+<h2>3 file cấu hình, khác nhau DUY NHẤT ở khối FollowPath</h2>
+<table>
+  <tr><th>File</th><th>Plugin</th></tr>
+  <tr><td><code>nav2_params_dwb.yaml</code></td><td><code>dwb_core::DWBLocalPlanner</code></td></tr>
+  <tr><td><code>nav2_params_rpp.yaml</code></td><td><code>nav2_regulated_pure_pursuit_controller::RegulatedPurePursuitController</code></td></tr>
+  <tr><td><code>nav2_params_mppi.yaml</code></td><td><code>nav2_mppi_controller::MPPIController</code></td></tr>
+</table>
+<p>Mọi khối khác — costmap, planner, BT — giống hệt nhau cả 3 file, đã xác nhận ở bài trước.</p>
+
+<h2>Lỗi thật vừa tìm và sửa khi viết module này</h2>
+<p><code>nav2_params_mppi.yaml</code> từng có:</p>
+<pre><code>vx_max: 0.7   # robot CHỈ đạt tối đa 0.5 m/s thật (Module 5)
+wz_max: 2.0   # robot CHỈ đạt tối đa 1.5 rad/s thật</code></pre>
+<p>MPPI lấy mẫu quỹ đạo giả định tốc độ <em>0.7 m/s</em>/<em>2.0 rad/s</em> — những tốc độ <strong>robot không bao giờ đạt được</strong> (<code>diff_drive_controller</code> tự cắt ở 0.5/1.5, đã xác nhận ở Module 5 rằng giới hạn phần cứng không được <code>gz_ros2_control</code> enforce, nhưng giới hạn của chính <code>diff_drive_controller</code> thì có) — lãng phí 1 phần <code>batch_size</code> cho quỹ đạo bất khả thi, một dạng mất hiệu năng âm thầm (không crash, không log lỗi, chỉ đơn giản kém tối ưu hơn đáng lẽ). Đã sửa khớp đúng giới hạn thật:</p>
+<pre><code>vx_max: 0.5    # khớp đúng linear.x.max_velocity thật
+wz_max: 1.5    # khớp đúng angular.z.max_velocity thật</code></pre>
+<div class="callout warn"><p><strong>Bài học:</strong> giới hạn vận tốc khai trong Nav2 PHẢI khớp giới hạn vận tốc khai trong <code>ros2_control</code> (Module 5) — 2 lớp cấu hình hoàn toàn độc lập, không ai tự đồng bộ hộ. Verify trực tiếp sau khi sửa: <code>controller_server</code> chạy 1 goal thật hoàn thành với <code>TaskResult.SUCCEEDED</code> trong 22.86s.</p></div>
+
+<h2>Góc nhìn khác: DWB và RPP cũng tự giới hạn tốc độ thấp hơn mức cho phép</h2>
+<pre><code># nav2_params_dwb.yaml
+max_vel_x: 0.5        # đúng bằng max thật
+max_vel_theta: 1.0     # THẤP HƠN max thật (1.5) -- lựa chọn an toàn riêng của DWB
+
+# nav2_params_rpp.yaml
+desired_linear_vel: 0.3   # THẤP HƠN hẳn max thật (0.5) -- RPP không "giới
+                            # hạn", mà chọn tốc độ mong muốn thận trọng ngay từ đầu</code></pre>
+<p>Khác MPPI (đặt đúng trần phần cứng để tận dụng hết dư địa lấy mẫu), DWB và RPP chủ động đặt thấp hơn mức cho phép ở một số trục — không phải lỗi, là lựa chọn tinh chỉnh riêng (đọc kỹ hơn ở <a href="lesson.html?m=10&amp;l=06-doc-so-sanh-config">bài so sánh config</a>).</p>
+
+<h2>Thử ngay</h2>
+<pre><code>ros2 launch atlas_bringup bringup.launch.py world:=maze.sdf</code></pre>
+<pre><code>ros2 launch atlas_slam navigation.launch.py controller:=mppi \
+  map:=$(pwd)/src/atlas_slam/maps/maze_map.yaml</code></pre>
+<pre><code>ros2 param get /controller_server FollowPath.vx_max</code></pre>
+<p>Phải ra <code>0.5</code>, không phải <code>0.7</code>. Gửi 1 goal, quan sát <code>/local_plan</code> trong RViz (nếu bật display) hoặc cảm nhận trực tiếp chuyển động — ghi lại cảm giác (mượt/giật, có dừng khựng ở góc cua không) để so sánh ở bài tập.</p>

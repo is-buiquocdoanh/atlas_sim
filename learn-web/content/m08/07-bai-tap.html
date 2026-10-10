@@ -1,0 +1,55 @@
+<h1>Bài tập: tự vẽ bản đồ maze</h1>
+<p class="lead">Mục tiêu: tự tay chạy đúng chu trình SLAM từ đầu tới cuối, lưu đúng cả 2 định dạng bản đồ, và quan sát bằng mắt 2 hiện tượng đã học — độ trễ của ngưỡng quét và (nếu robot của bạn chưa sửa) nguy cơ loop closure sai.</p>
+
+<h2>Phần A — dựng bản đồ từ đầu</h2>
+<pre><code>ros2 launch atlas_bringup bringup.launch.py world:=maze.sdf</code></pre>
+<pre><code># terminal khác
+ros2 launch atlas_slam slam.launch.py</code></pre>
+<pre><code># terminal khác
+ros2 run teleop_twist_keyboard teleop_twist_keyboard</code></pre>
+<p>Lái robot đi <strong>trọn một vòng</strong> quanh toàn bộ mê cung, cố gắng đi chậm và đều — quay lại gần điểm xuất phát ít nhất một lần để có cơ hội loop closure xảy ra. Quan sát RViz trong lúc lái:</p>
+<ul>
+  <li>Bản đồ có "dày" lên liên tục không, hay dừng hẳn mỗi khi bạn dừng robot? (đúng ngưỡng <code>minimum_travel_distance</code>/<code>heading</code>, bài 1)</li>
+  <li>Lúc quay lại gần điểm xuất phát, bản đồ có "giật" một chút không? Nếu có — đó là một loop closure vừa được chấp nhận và Ceres vừa tối ưu lại graph (bài 2-3)</li>
+</ul>
+
+<h2>Phần B — lưu cả 2 định dạng</h2>
+<p>Giữ terminal 1, 2 đang chạy, mở terminal mới:</p>
+<pre><code>mkdir -p ~/atlas_sim/src/atlas_slam/maps
+cd ~/atlas_sim/src/atlas_slam/maps
+ros2 run nav2_map_server map_saver_cli -f maze_map_baitap</code></pre>
+<pre><code>ros2 service call /slam_toolbox/serialize_map slam_toolbox/srv/SerializePoseGraph \
+  "{filename: '/home/$(whoami)/atlas_sim/src/atlas_slam/maps/maze_map_baitap'}"</code></pre>
+<p>Kiểm tra bằng <code>ls -la</code>: phải thấy đủ 4 file — <code>maze_map_baitap.pgm</code>, <code>.yaml</code>, <code>.posegraph</code>, <code>.data</code>. Thiếu file nào nghĩa là lệnh tương ứng đã thất bại hoặc lưu sai thư mục (nhớ gotcha đường dẫn tuyệt đối, bài 5) — kiểm tra lại trước khi qua Phần C.</p>
+
+<h2>Phần C — đối chiếu với bản đồ đã có sẵn trong repo</h2>
+<p><code>atlas_slam/maps/</code> đã có sẵn 4 file từ một lần vẽ mê cung trước đó: <code>maze_map.pgm</code>, <code>.yaml</code>, <code>.posegraph</code>, <code>.data</code>. Mở cả 2 file <code>.yaml</code> (cái có sẵn và cái bạn vừa lưu) và so <code>resolution</code>/<code>origin</code>:</p>
+<ul>
+  <li>Giống hay khác? Giải thích vì sao — gợi ý: <code>origin</code> phụ thuộc chính xác điểm robot đứng lúc bắt đầu mapping (thường là gốc odometry), nếu bạn thả robot ở vị trí xuất phát khác lần trước, 2 bản đồ sẽ có <code>origin</code> khác nhau dù vẽ cùng 1 world</li>
+  <li>Mở cả 2 ảnh <code>.pgm</code> (bất kỳ trình xem ảnh hỗ trợ PGM, hoặc <code>convert maze_map.pgm maze_map.png</code> nếu có ImageMagick) — hình dạng mê cung có khớp nhau không? Đây là cách kiểm tra "sức khoẻ" của lần vẽ bạn vừa làm mà không cần công cụ gì phức tạp</li>
+</ul>
+
+<h2>Phần D — nạp lại pose graph, đi thêm</h2>
+<pre><code># dừng teleop + slam.launch.py (Ctrl+C), robot vẫn đứng yên trong Gazebo
+ros2 launch atlas_slam slam.launch.py</code></pre>
+<p>Trong RViz, mở panel <strong>SlamToolboxPlugin</strong> (góc trái) → <em>Deserialize Map</em> → chọn đúng file <code>.posegraph</code> vừa lưu ở Phần B. Lái robot đi thêm một đoạn ngắn chưa từng quét tới — quan sát: bản đồ cũ còn giữ nguyên không, và phần mới có "nối liền mạch" vào bản đồ cũ không? Đây chính là lý do định dạng <code>.posegraph</code> tồn tại — thử làm y hệt với <code>.pgm</code> (không có cách nạp lại nào cho định dạng này) để tự thấy sự khác biệt.</p>
+
+<h2>Nộp bài</h2>
+<ul>
+  <li>Phần A: 2 quan sát bằng mắt (ngưỡng quét, loop closure nếu có) — mô tả ngắn, không cần ảnh</li>
+  <li>Phần B: xác nhận đủ 4 file, kèm output <code>ls -la</code></li>
+  <li>Phần C: so sánh 2 <code>origin</code> + nhận xét hình dạng 2 ảnh <code>.pgm</code></li>
+  <li>Phần D: xác nhận nạp lại pose graph thành công, mô tả phần bản đồ mới có nối liền mạch không</li>
+</ul>
+
+<h2>Tự kiểm tra trước khi qua Module 9</h2>
+<div class="goals">
+  <ul>
+    <li>Giải thích được scan matching ước lượng chuyển động bằng cách nào, và vì sao vùng tìm kiếm của nó có giới hạn</li>
+    <li>Vẽ được sơ đồ pose graph tối thiểu 4 node và chỉ đúng đâu là cạnh thường, đâu là cạnh loop closure</li>
+    <li>Kể lại chính xác câu chuyện world đối xứng đã đánh lừa slam_toolbox, và 2 lớp phòng vệ đã thêm vào</li>
+    <li>Đọc đúng mọi tham số trong <code>mapper_params.yaml</code>, biết tham số nào gắn với phần cứng, tham số nào gắn với một lỗi đã từng xảy ra</li>
+    <li>Lưu và phân biệt đúng 2 định dạng bản đồ, biết chính xác khi nào dùng cái nào</li>
+  </ul>
+</div>
+<p>Xong hết → sang <strong>Module 9 — Localization với AMCL</strong>, nơi bản đồ <code>.pgm</code> vừa lưu được dùng để robot tự định vị lại từ đầu mà không cần vẽ lại gì nữa.</p>

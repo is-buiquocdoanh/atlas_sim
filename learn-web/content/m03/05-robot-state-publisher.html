@@ -1,0 +1,42 @@
+<h1>Từ URDF ra TF: robot_state_publisher</h1>
+<p class="lead"><strong><code>robot_state_publisher</code></strong> là node đọc URDF (qua parameter <code>robot_description</code>) và publish toàn bộ cây TF của robot. Đây là mắt xích biến file XML tĩnh thành dữ liệu sống trong hệ thống ROS 2 — không có nó, URDF chỉ là một file nằm im, không ai biết robot đang ở tư thế nào.</p>
+
+<h2>Hình học và trạng thái là 2 việc khác nhau</h2>
+<p><code>robot_state_publisher</code> chia joint làm 2 nhóm. Kéo thanh trượt dưới đây, xem điều gì đổi và điều gì không:</p>
+<div class="scene" data-scene="rsp-pipeline"></div>
+<p><code>robot_state_publisher</code> biết <strong>hình học</strong> (đọc từ URDF), không biết <strong>trạng thái</strong> (góc khớp hiện tại). Ai cấp <code>/joint_states</code> là tùy ngữ cảnh:</p>
+<table>
+  <tr><th>Ngữ cảnh</th><th>Nguồn <code>/joint_states</code></th></tr>
+  <tr><td>Module 3 (chỉ xem hình)</td><td><code>joint_state_publisher_gui</code> — slider kéo tay</td></tr>
+  <tr><td>Module 5 trở đi (mô phỏng)</td><td><code>joint_state_broadcaster</code> của <code>ros2_control</code> — góc bánh xe thật trong Gazebo</td></tr>
+  <tr><td>Robot thật</td><td>driver đọc encoder</td></tr>
+</table>
+<p>Cả 3 trường hợp, <code>robot_state_publisher</code> và URDF <strong>không đổi một dòng nào</strong> — đó chính là lợi ích của việc tách hình học khỏi trạng thái.</p>
+
+<h2>Ví dụ trong dự án Atlas</h2>
+<p><code>atlas_description/launch/display.launch.py</code> dựng đúng 3 node của sơ đồ trên:</p>
+<pre><code>robot_description = ParameterValue(
+    Command(["xacro ", LaunchConfiguration("model")]), value_type=str
+)
+robot_state_publisher_node = Node(
+    package="robot_state_publisher", executable="robot_state_publisher",
+    parameters=[{"robot_description": robot_description}],
+)
+joint_state_publisher_gui_node = Node(
+    package="joint_state_publisher_gui", executable="joint_state_publisher_gui",
+    condition=IfCondition(LaunchConfiguration("use_joint_state_gui")),
+)</code></pre>
+<p><code>value_type=str</code> là chi tiết bắt buộc: thiếu nó, launch cố đoán kiểu và có thể parse chuỗi XML thành kiểu khác, dẫn tới <code>robot_description</code> rỗng (RViz báo "No robot model"). Truyền URDF vào node bằng <code>Command(["xacro ", ...])</code>: xacro được chạy <strong>lúc launch</strong>, kết quả nạp thẳng vào parameter, không cần sinh file <code>.urdf</code> trung gian.</p>
+<p><code>use_joint_state_gui</code> để <code>false</code> khi chạy cùng Gazebo (Module 4-5): lúc đó <code>/joint_states</code> đến từ mô phỏng, hai nguồn cùng publish một topic sẽ đánh nhau và bánh xe giật.</p>
+
+<h2>Thử ngay</h2>
+<pre><code>ros2 launch atlas_description display.launch.py</code></pre>
+<p>Cần terminal khác (đã <code>source install/setup.bash</code>) để kiểm tra từng mắt xích:</p>
+<pre><code>ros2 param get /robot_state_publisher robot_description | head -5   # URDF đã vào chưa
+ros2 topic echo /joint_states --once                                # GUI đang phát gì</code></pre>
+<pre><code># Lệnh này chạy liên tục, Ctrl+C để dừng
+ros2 run tf2_ros tf2_echo base_link lidar_link       # fixed: số KHÔNG đổi</code></pre>
+<pre><code># Kéo slider left_wheel_joint ở cửa sổ GUI trong lúc lệnh dưới đang chạy
+ros2 run tf2_ros tf2_echo base_link left_wheel_link  # continuous: số ĐỔI theo slider</code></pre>
+
+<div class="callout warn"><p><strong>Bài thử quan trọng nhất:</strong> tắt GUI — <code>ros2 launch atlas_description display.launch.py use_joint_state_gui:=false</code>. RViz báo lỗi TF, bánh xe không hiện đúng chỗ, vì không ai cấp <code>/joint_states</code> nên <code>robot_state_publisher</code> không tính nổi transform tới 2 bánh, trong khi các frame <code>fixed</code> (LiDAR, IMU, caster) vẫn bình thường. Nhận ra được triệu chứng này sẽ tiết kiệm rất nhiều thời gian ở Module 5 và Module 8.</p></div>

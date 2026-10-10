@@ -1,0 +1,30 @@
+<h1>Vòng đời controller</h1>
+<p class="lead">Một controller không bật lên là chạy ngay. Nó đi qua các trạng thái rõ ràng — đúng mô hình <strong>managed node</strong> chuẩn của ROS 2 (gói <code>rclcpp_lifecycle</code>), <code>controller_manager</code> áp dụng y hệt mô hình đó cho từng controller nó quản lý.</p>
+
+<h2>4 trạng thái</h2>
+<table>
+  <tr><th>Trạng thái</th><th>Ý nghĩa</th></tr>
+  <tr><td><code>unconfigured</code></td><td>Mới nạp xong plugin, chưa đọc tham số, chưa cấp phát tài nguyên.</td></tr>
+  <tr><td><code>inactive</code></td><td>Đã đọc tham số (<code>on_configure</code>), đã biết joint nào, nhưng <strong>chưa</strong> ghi vào command interface — update() không làm gì.</td></tr>
+  <tr><td><code>active</code></td><td>Đang chạy thật: mỗi chu kỳ 100Hz, update() đọc state interface, tính toán, ghi command interface.</td></tr>
+  <tr><td><code>finalized</code></td><td>Đã dừng hẳn, giải phóng tài nguyên — trạng thái kết thúc, không quay lại được.</td></tr>
+</table>
+
+<h2>Bấm thử từng bước chuyển trạng thái</h2>
+<p>4 lệnh chuyển trạng thái tương ứng 4 nút <code>ros2 control</code> thật — chỉ những nút hợp lệ từ trạng thái hiện tại mới bấm được, đúng như <code>controller_manager</code> thật sự từ chối lệnh chuyển trạng thái không hợp lệ:</p>
+<div class="scene" data-scene="controller-lifecycle"></div>
+
+<h2>Vì sao bạn hiếm khi thấy trạng thái inactive đứng yên</h2>
+<p><code>controller.launch.py</code> (bài sau) gọi:</p>
+<pre><code>ros2 run controller_manager spawner diff_drive_controller</code></pre>
+<p><code>spawner</code> không chỉ "bật" controller — nó tự làm <strong>cả 2 bước</strong> liền nhau: <code>configure</code> rồi <code>activate</code>, mặc định không dừng lại ở <code>inactive</code>. Đây là lý do <code>ros2 control list_controllers</code> luôn thấy Atlas ở thẳng <code>active</code> — bạn chưa từng thấy trạng thái <code>inactive</code> xuất hiện tự nhiên, dù nó luôn tồn tại trên đường đi.</p>
+
+<h2>Khi nào trạng thái inactive thật sự hữu ích</h2>
+<p>Chuyển một controller đang <code>active</code> về <code>inactive</code> (không <code>unconfigured</code>) là cách <strong>tạm dừng an toàn</strong> mà không mất cấu hình đã nạp — ví dụ đổi từ <code>diff_drive_controller</code> sang một controller khác đang test, mà không cần khởi động lại toàn bộ <code>controller_manager</code>. Đây chính là cơ chế <code>ros2 control switch_controllers</code> dùng phía sau: deactivate controller cũ, activate controller mới, cả hai vẫn ở <code>inactive</code>/<code>active</code> chứ không bị <code>unconfigured</code>.</p>
+
+<h2>Thử ngay</h2>
+<pre><code>ros2 launch atlas_control controller.launch.py</code></pre>
+<pre><code>ros2 control list_controllers</code></pre>
+<p>Tự tay đưa <code>diff_drive_controller</code> về <code>inactive</code> rồi kích hoạt lại — quan sát robot ngừng phản hồi <code>/cmd_vel</code> khi inactive, chạy lại ngay khi active:</p>
+<pre><code>ros2 control set_controller_state diff_drive_controller inactive</code></pre>
+<pre><code>ros2 control set_controller_state diff_drive_controller active</code></pre>

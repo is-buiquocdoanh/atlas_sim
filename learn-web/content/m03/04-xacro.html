@@ -1,0 +1,42 @@
+<h1>XACRO — property, macro, include</h1>
+<p class="lead"><strong>XACRO</strong> là bộ tiền xử lý XML cho URDF, cung cấp 3 thứ URDF thuần không có: <strong><code>&lt;xacro:property&gt;</code></strong> (hằng số + biểu thức toán), <strong><code>&lt;xacro:macro&gt;</code></strong> (khối XML tái sử dụng, có tham số), <strong><code>&lt;xacro:include&gt;</code></strong> (tách file). File phải khai namespace ở thẻ gốc: <code>&lt;robot name="atlas" xmlns:xacro="http://www.ros.org/wiki/xacro"&gt;</code>.</p>
+
+<h2>Property — đặt tên cho một con số</h2>
+<p>Dùng lại bằng <code>${...}</code>. Trong <code>${}</code> viết được biểu thức Python-like, kể cả <code>pi</code>:</p>
+<pre><code>&lt;xacro:property name="wheel_radius" value="0.05"/&gt;
+...
+&lt;origin xyz="0 0 ${wheel_radius}"/&gt;
+&lt;origin xyz="0 0 ${base_height + lidar_height / 2}"/&gt;
+&lt;origin rpy="${pi/2} 0 0"/&gt;</code></pre>
+
+<h2>Kéo thử: đổi 1 property, cả robot đổi theo</h2>
+<p>Đây mới là giá trị thật của xacro: một tham số chảy sang nhiều công thức cùng lúc. Các số dưới đây tính <strong>đúng hệt</strong> công thức trong <code>atlas.urdf.xacro</code>/<code>wheel.xacro</code>:</p>
+<div class="scene" data-scene="robot-geometry"></div>
+
+<h2>Macro — hàm sinh XML</h2>
+<p><code>params</code> liệt kê tham số. Hai bánh xe của Atlas chỉ khác nhau đúng 1 tham số <code>reflect</code>:</p>
+<pre><code>&lt;xacro:macro name="atlas_wheel" params="prefix reflect"&gt;
+  &lt;link name="${prefix}_wheel_link"&gt; ... &lt;/link&gt;
+  &lt;joint name="${prefix}_wheel_joint" type="continuous"&gt;
+    &lt;origin xyz="0 ${reflect * wheel_separation / 2} 0"/&gt;
+  &lt;/joint&gt;
+&lt;/xacro:macro&gt;
+
+&lt;xacro:atlas_wheel prefix="left"  reflect="1"/&gt;
+&lt;xacro:atlas_wheel prefix="right" reflect="-1"/&gt;</code></pre>
+<p>Hai bánh xe = 2 dòng gọi thay vì ~35 dòng lặp. Sửa bánh xe chỉ sửa 1 chỗ, không bao giờ có chuyện "sửa bánh trái quên bánh phải".</p>
+
+<h2>Include — và một cái bẫy thứ tự</h2>
+<p><code>&lt;xacro:include filename="$(find atlas_description)/urdf/wheel.xacro"/&gt;</code> — dùng <code>$(find &lt;package&gt;)</code> thay vì đường dẫn tuyệt đối, để file chạy được trên máy người khác.</p>
+<p>Xacro trải file từ trên xuống. Một <code>&lt;link&gt;</code> viết trực tiếp trong file được include sẽ bị xử lý <strong>ngay lúc include</strong>, khi các property khai báo bên dưới chưa tồn tại → lỗi "property chưa định nghĩa". Bọc nội dung file include trong <code>&lt;xacro:macro&gt;</code> thì tránh được: thân macro chỉ được trải khi <strong>gọi</strong> macro, lúc đó property đã có giá trị. Đây đúng là lý do <code>sensors.xacro</code> của Atlas bọc LiDAR + IMU trong <code>&lt;xacro:macro name="atlas_sensors"&gt;</code> rồi mới gọi <code>&lt;xacro:atlas_sensors/&gt;</code> ở cuối file chính.</p>
+
+<h2>Ví dụ trong dự án Atlas</h2>
+<p><code>wheel_radius</code> quyết định cả 3 chỗ: (1) bán kính hình trụ bánh xe, (2) chiều cao <code>base_joint</code> nâng <code>base_link</code> khỏi mặt đất, (3) độ cao đặt caster <code>${-wheel_radius + caster_radius}</code>. Đổi 1 số, cả 3 chỗ tự khớp — robot vẫn chạm đất đúng (kéo thử slider <code>wheel_radius</code> ở mô hình trên để xem). Viết URDF thuần thì phải nhớ sửa cả 3, quên 1 chỗ là robot lún xuống sàn hoặc lơ lửng.</p>
+
+<h2>Thử ngay</h2>
+<pre><code># Xem kết quả trải phẳng -- macro đã biến mất, chỉ còn link/joint thuần
+xacro src/atlas_description/urdf/atlas.urdf.xacro | grep -A6 'name="left_wheel_joint"'</code></pre>
+<pre><code># So số dòng: file nguồn vs URDF sinh ra
+wc -l src/atlas_description/urdf/*.xacro
+xacro src/atlas_description/urdf/atlas.urdf.xacro | wc -l</code></pre>
+<p>Thử cố tình gây lỗi để nhận mặt thông báo: đổi <code>${wheel_radius}</code> thành <code>${wheel_radiuss}</code> rồi chạy lại <code>xacro</code> → thông báo chỉ rõ property không tồn tại. Lỗi xacro luôn xuất hiện ở bước này, <strong>trước</strong> khi ROS khởi động, nên cứ chạy <code>xacro</code> tay mỗi khi sửa URDF là cách debug nhanh nhất.</p>

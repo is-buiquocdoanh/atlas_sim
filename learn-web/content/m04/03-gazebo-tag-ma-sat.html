@@ -1,0 +1,28 @@
+<h1>&lt;gazebo&gt; tag và ma sát</h1>
+<p class="lead">URDF thuần (<code>atlas_description</code>) không có chỗ nào để ghi "bánh này ma sát bao nhiêu" — đó không phải việc của hình học. <code>&lt;gazebo reference="..."&gt;</code> là cách sdformat <strong>gắn thêm</strong> thuộc tính mô phỏng vào đúng một link đã tồn tại, mà không phải sửa link đó.</p>
+
+<h2>Cú pháp: tham chiếu bằng tên, không định nghĩa lại</h2>
+<pre><code>&lt;gazebo reference="left_wheel_link"&gt;
+  &lt;mu1&gt;1.0&lt;/mu1&gt;
+  &lt;mu2&gt;1.0&lt;/mu2&gt;
+&lt;/gazebo&gt;</code></pre>
+<p><code>reference="left_wheel_link"</code> phải khớp <strong>chính xác</strong> tên một <code>&lt;link&gt;</code> đã khai báo ở <code>atlas.urdf.xacro</code> (include vào đầu file, xem bài sau). sdformat đọc toàn bộ URDF trước, rồi với mỗi khối <code>&lt;gazebo reference="X"&gt;</code>, nó tìm link tên X và chèn nội dung bên trong vào đúng chỗ <code>&lt;collision&gt;&lt;surface&gt;</code> của link đó khi sinh ra SDF. Gõ sai tên link (lỗi gõ phím, hoặc link đã đổi tên) — sdformat <strong>không báo lỗi</strong>, chỉ lặng lẽ bỏ qua khối đó, ma sát mặc định của engine được dùng thay thế.</p>
+
+<h2>mu1 / mu2 là gì</h2>
+<p>Một mặt tiếp xúc có 2 trục ma sát vuông góc với nhau (mặt phẳng tiếp xúc là 2D). <code>mu1</code> và <code>mu2</code> là hệ số ma sát Coulomb theo 2 trục đó — với bánh xe hình trụ, 2 trục gần như tương đương nên dự án đặt chúng bằng nhau. Số càng lớn, lực ma sát tối đa càng lớn (vật khó trượt hơn); <code>0</code> nghĩa là hoàn toàn không ma sát, trượt tự do.</p>
+
+<h2>4 link, 2 chủ ý trái ngược nhau</h2>
+<table>
+  <tr><th>Link</th><th>mu1 / mu2</th><th>Vì sao</th></tr>
+  <tr><td><code>left_wheel_link</code>, <code>right_wheel_link</code></td><td>1.0 / 1.0</td><td>Bánh <strong>chủ động</strong> — phải bám sàn để chuyển động quay thành chuyển động tịnh tiến. Trượt = động học vi sai (Module 5) tính sai quãng đường thật đã đi.</td></tr>
+  <tr><td><code>front_caster_link</code>, <code>rear_caster_link</code></td><td>0.0 / 0.0</td><td>Bánh <strong>bị động</strong>, hình cầu (<a href="lesson.html?m=3&amp;l=03-joint">Module 3</a>: joint <code>fixed</code>, không có bậc tự do cơ khí). Ma sát 0 là thứ duy nhất cho phép nó "lăn" tự do theo mọi hướng khi robot rẽ — thay cho một khớp xoay thật.</td></tr>
+</table>
+<p>Đây chính là câu trả lời đầy đủ cho câu hỏi để ngỏ ở <a href="lesson.html?m=3&amp;l=03-joint">Module 3 bài 3</a>: vì sao caster dùng joint <code>fixed</code> mà vẫn "lăn" được — bí mật nằm ở <code>atlas_gazebo</code>, không nằm ở <code>atlas_description</code>.</p>
+
+<h2>Kéo thử: ma sát quyết định bánh lăn hay trượt</h2>
+<p>Một lực đẩy ngang cố định tác dụng lên tâm bánh. Kéo <code>mu</code> xem bánh chủ động chuyển từ lăn đúng (đi được quãng đường = bán kính × góc quay) sang trượt tại chỗ (quay tít nhưng không tiến); so sánh với caster luôn ở mu thấp:</p>
+<div class="scene" data-scene="friction-wheel-caster"></div>
+
+<h2>Thử ngay</h2>
+<pre><code>ros2 launch atlas_gazebo spawn_robot.launch.py world:=maze.sdf</code></pre>
+<p>Trong Gazebo GUI, chuột phải vào robot → <em>View</em> → <em>Wireframe</em> không giúp thấy ma sát (đó là hình học, không phải vật lý). Cách thấy ma sát thật: kéo thả robot (chuột phải → <em>Move to</em>) để nó va hoặc trượt theo vách, 2 bánh chủ động sẽ "bám" lại gần như ngay khi chạm sàn trong khi phần caster trượt theo hướng kéo.</p>

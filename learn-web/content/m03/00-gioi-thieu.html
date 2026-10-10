@@ -1,0 +1,31 @@
+<h1>URDF là nền của mọi thứ</h1>
+<p class="lead">Từ module này, bạn không còn thao tác với node trừu tượng nữa — robot Atlas sẽ có hình dạng, kích thước, và một cây TF thật thay vì ví dụ chung chung. <strong>URDF</strong> (Unified Robot Description Format) là file XML mô tả robot: những khối cứng nào ghép lại, nối với nhau ra sao.</p>
+<p>Quan hệ trực tiếp với <a href="lesson.html?m=2&amp;l=02-tf-tree">Module 2</a>: mỗi <code>&lt;link&gt;</code> trong URDF chính là một <strong>frame</strong>, mỗi <code>&lt;joint&gt;</code> chính là một <strong>transform</strong>. URDF thực chất là cách khai báo cả một cây TF bằng XML, thay vì tự viết <code>TransformBroadcaster</code> tay cho từng frame.</p>
+
+<div class="goals">
+  <h3>Sau module này bạn sẽ</h3>
+  <ul>
+    <li>Tự viết được URDF/XACRO cho một robot diff-drive từ đầu</li>
+    <li>Phân biệt được <code>&lt;link&gt;</code>/<code>&lt;joint&gt;</code>, và biết chọn đúng loại joint cho từng bộ phận</li>
+    <li>Hiểu vì sao dùng xacro macro thay vì copy-paste XML</li>
+    <li>Đọc được URDF thật của Atlas và giải thích được từng quyết định thiết kế</li>
+  </ul>
+</div>
+
+<div class="callout tip"><p>Module này <strong>chưa có vật lý</strong> — robot chưa rơi, chưa va chạm, chưa nặng nhẹ gì cả (đó là Module 4, sắp có trên trang này). Ở đây robot chỉ là hình học và quan hệ tọa độ thuần túy.</p></div>
+
+<h2>Chuẩn bị</h2>
+<p>Module này giả định bạn đã xong <a href="lesson.html?m=0&amp;l=00-cai-dat">Module 0</a> và <a href="lesson.html?m=2&amp;l=00-gioi-thieu">Module 2</a>.</p>
+<pre><code>cd ~/atlas_sim
+colcon build --packages-select atlas_description
+source install/setup.bash
+ros2 launch atlas_description display.launch.py</code></pre>
+<p>RViz mở lên, thấy robot Atlas trắng-đen cùng cửa sổ slider <code>joint_state_publisher_gui</code> — môi trường đã sẵn sàng. Kéo slider, 2 bánh xe phải quay. Để cửa sổ này mở song song khi đọc các bài dưới.</p>
+
+<h2>Bản đồ module</h2>
+<div class="cards">
+  <div class="mini"><b>Link</b><span>visual, collision, inertial — 3 lớp độc lập</span></div>
+  <div class="mini"><b>Joint</b><span>nối 2 link, quyết định được phép chuyển động thế nào</span></div>
+  <div class="mini"><b>XACRO</b><span>property, macro, include — khỏi lặp XML</span></div>
+  <div class="mini"><b>robot_state_publisher</b><span>biến URDF tĩnh thành TF sống</span></div>
+</div>

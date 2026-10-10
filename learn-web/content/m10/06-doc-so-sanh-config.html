@@ -1,0 +1,37 @@
+<h1>Đọc & so sánh 3 file cấu hình controller</h1>
+<p class="lead">3 bài trước đã trích từng mảnh. Bài này đọc hệ thống: xác nhận bằng chính <code>diff</code> xem 3 file <code>nav2_params_dwb/rpp/mppi.yaml</code> thật sự giống nhau ở đâu, khác nhau ở đâu — kỹ năng đọc config hữu ích hơn nhiều so với nhớ từng con số.</p>
+
+<h2>Xác nhận bằng diff thật, không chỉ tin lời kể</h2>
+<pre><code>diff src/atlas_slam/config/nav2_params_dwb.yaml \
+     src/atlas_slam/config/nav2_params_mppi.yaml</code></pre>
+<p>Kết quả thật: chỉ khác ở <strong>dòng comment đầu file</strong> (tên controller) và <strong>toàn bộ khối <code>FollowPath</code></strong> — mọi khối còn lại (<code>global_costmap</code>, <code>local_costmap</code>, <code>planner_server</code>, <code>bt_navigator</code>, <code>behavior_server</code>, <code>smoother_server</code>, <code>map_server</code>) giống hệt từng ký tự. Đây là cấu trúc "1 tham số thay đổi, mọi thứ khác giữ nguyên" — đúng tinh thần so sánh khoa học của bài tập cuối module: chỉ đổi controller, mọi điều kiện khác phải y hệt.</p>
+
+<h2>Đọc trọn khối FollowPath — xếp 3 cạnh nhau</h2>
+<table>
+  <tr><th>Tham số</th><th>DWB</th><th>RPP</th><th>MPPI</th></tr>
+  <tr><td>Tốc độ tiến tối đa</td><td><code>max_vel_x: 0.5</code></td><td><code>desired_linear_vel: 0.3</code></td><td><code>vx_max: 0.5</code></td></tr>
+  <tr><td>Tốc độ xoay tối đa</td><td><code>max_vel_theta: 1.0</code></td><td colspan="2" style="text-align:center">không đặt trực tiếp (RPP: suy ra từ cung tròn; MPPI: <code>wz_max: 1.5</code>)</td></tr>
+  <tr><td>Cách "nhìn" trước</td><td><code>sim_time: 1.5</code>s mô phỏng</td><td><code>lookahead_dist: 0.5</code>m trên path</td><td><code>time_steps: 35 × model_dt: 0.05</code> = 1.75s horizon</td></tr>
+  <tr><td>Số lượng mẫu đánh giá mỗi chu kỳ</td><td><code>vx_samples:20 × vtheta_samples:30</code> = 600</td><td>1 cung tròn, không lấy mẫu</td><td><code>batch_size: 3000</code></td></tr>
+  <tr><td>Yếu tố ngẫu nhiên?</td><td>Không (tất định)</td><td>Không (tất định)</td><td>Có (<code>vx_std/wz_std</code>)</td></tr>
+</table>
+<p><code>max_vel_x: 0.5</code> của DWB mang comment <code>[CHỈNH] thấp hơn max thật (0.5) để còn biên độ an toàn</code> — đọc kỹ sẽ thấy comment hơi lệch nghĩa (0.5 chính là đúng mức trần thật, không "thấp hơn") nhưng <code>max_vel_theta: 1.0</code> NGAY DƯỚI thì đúng là thấp hơn trần thật (1.5) — 1 ví dụ thật về việc không nên tin mù quáng vào comment, luôn đối chiếu lại con số.</p>
+
+<h2>600 vs 3000: vì sao chênh lệch chi phí tính toán lớn vậy</h2>
+<p>DWB chỉ cần mô phỏng 600 quỹ đạo NGẮN (<code>sim_time: 1.5</code>s); MPPI mô phỏng 3000 quỹ đạo DÀI hơn (horizon 1.75s, gần tương đương) nhưng số lượng gấp 5 lần — đúng lý do bài Local controller nói MPPI "tốn CPU nhất". Đổi lại, 3000 mẫu phủ không gian quỹ đạo rộng hơn nhiều so với lưới 20×30 cố định của DWB — ít khả năng bỏ sót 1 lối thoát mà DWB không "nhìn" tới.</p>
+
+<h2>9 critic của MPPI — trọng số nói lên ưu tiên gì</h2>
+<pre><code>critics: ["ObstaclesCritic","ConstraintCritic","CostCritic","GoalCritic",
+          "GoalAngleCritic","PathAlignCritic","PathFollowCritic",
+          "PathAngleCritic","PreferForwardCritic"]
+
+ObstaclesCritic.critical_weight: 20.0     # cao nhất trong mọi trọng số đơn
+PathFollowCritic.cost_weight: 9.0   # ưu tiên bám path hơn mọi path-critic khác
+PathAlignCritic.cost_weight: 4.0
+GoalCritic.cost_weight: 5.0</code></pre>
+<p><code>ObstaclesCritic.critical_weight: 20.0</code> cao vượt trội — đúng thiết kế an toàn-trước-tiên: dù các critic khác (bám path, hướng đúng) cộng dồn bao nhiêu, 1 quỹ đạo gần va chạm vẫn bị phạt nặng hơn hẳn, gần như luôn bị loại (<code>collision_cost: 10000.0</code> cho quỹ đạo va chạm thật sự — comment gốc trong file: "gần như loại bỏ hoàn toàn các quỹ đạo đó khỏi lựa chọn").</p>
+
+<h2>Thử ngay</h2>
+<pre><code>diff src/atlas_slam/config/nav2_params_rpp.yaml \
+     src/atlas_slam/config/nav2_params_mppi.yaml</code></pre>
+<p>Tự chạy diff cho cặp còn lại (RPP vs MPPI) — xác nhận cùng kết luận: chỉ khối <code>FollowPath</code> khác nhau. Sau đó mở cả 3 file cạnh nhau, tự tìm thêm 1 tham số <code>[CHỈNH]</code> nào đó (comment đánh dấu "đã chỉnh tay") chưa được nhắc tới trong module — giải thích bằng lời tại sao cần chỉnh.</p>

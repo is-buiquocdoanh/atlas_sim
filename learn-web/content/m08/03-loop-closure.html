@@ -1,0 +1,37 @@
+<h1>Loop closure: khi world đối xứng đánh lừa SLAM</h1>
+<p class="lead">Đây không phải lý thuyết suông — đây là lỗi <strong>thật</strong> dự án Atlas đã gặp, đọc nguyên văn trong comment của <code>mapper_params.yaml</code>. World mê cung bản đầu đối xứng hoàn toàn qua tâm, và <code>slam_toolbox</code> đã trả giá cho điều đó.</p>
+
+<h2>Loop closure là gì, và vì sao cần nó</h2>
+<p>Bài trước đã nói: mỗi cạnh trong pose graph là một ước lượng có sai số, cộng dồn dần theo hành trình. Nếu robot đi một vòng kín và quay lại đúng chỗ cũ, <code>slam_toolbox</code> nhận ra "quét hiện tại rất giống một quét đã lưu từ lâu" → thêm một <strong>cạnh mới</strong> nối 2 node đó, dù chúng không liên tiếp trong thời gian. Ceres Solver (bài trước) giải lại toàn bộ graph với cạnh mới này — sai số tích lũy dọc theo cả vòng được "chia đều" ra, bản đồ hết cong vênh.</p>
+
+<h2>Khi "giống nhau" lại là 2 chỗ khác nhau</h2>
+<p>Vấn đề: thuật toán so khớp 2 quét LiDAR chỉ nhìn <strong>hình dạng cục bộ</strong> của vật cản quanh robot — nó không biết "vị trí tuyệt đối" là gì. Nếu world có 2 vị trí mà hình dạng tường xung quanh <strong>giống nhau tới mức đối xứng</strong>, scan matching có thể chấm "khớp" nhầm giữa 2 chỗ hoàn toàn khác nhau. Comment thật trong <code>mapper_params.yaml</code>:</p>
+<pre><code># BUG THẬT đã gặp: world mê cung bản đầu đối xứng điểm qua tâm (180°)
+# giữa 2 bức tường trong — slam_toolbox từng nhận nhầm 2 vị trí đối xứng
+# là "đã từng ở đây", tạo loop closure SAI → bản đồ "nhảy"/biến dạng
+# vĩnh viễn sau khi closure sai được Ceres tối ưu vào graph.
+#
+# Sửa tận gốc: thêm 1 cột mốc KHÔNG đối xứng vào maze.sdf.
+# Sửa thêm lớp 2 (phòng khi world khác của học viên cũng đối xứng):
+# nâng ngưỡng response tối thiểu để loop closure khó "tự tin nhầm" hơn.</code></pre>
+
+<h2>Thử tự tay: world đối xứng vs. world đã sửa</h2>
+<p>Mô phỏng đơn giản hoá: robot đi vòng quanh 2 góc tường giống nhau ở 2 đầu một hành lang đối xứng. Chuyển đổi giữa world gốc (đối xứng, lỗi) và world đã sửa (có cột mốc) — xem loop closure chọn đúng/sai thế nào:</p>
+<div class="scene" data-scene="loop-closure-symmetry"></div>
+
+<h2>2 lớp phòng vệ thật trong file config</h2>
+<pre><code>loop_search_maximum_distance: 3.0   # chỉ tìm ứng viên loop trong bán kính 3m
+loop_match_minimum_chain_size: 10   # ứng viên phải là 1 chuỗi ≥10 scan liên tiếp khớp, không phải 1 scan lẻ
+loop_match_maximum_variance_coarse: 3.0
+loop_match_minimum_response_coarse: 0.45   # bước dò thô: nâng từ 0.35 → 0.45
+loop_match_minimum_response_fine: 0.55     # bước dò tinh: nâng từ 0.45 → 0.55</code></pre>
+<p>Hai bước <code>coarse</code>/<code>fine</code> là kiểu lọc 2 tầng: dò thô nhanh trước (ngưỡng thấp hơn, chấp nhận nhiều ứng viên), rồi dò tinh chỉ trên ứng viên đã qua tầng thô (ngưỡng cao hơn, loại bớt nhầm lẫn). Nâng cả 2 ngưỡng (giá trị cũ ghi lại trong comment) làm loop closure "khó tính" hơn — chấp nhận rủi ro bỏ sót vài loop closure đúng, đổi lại gần như không còn chấp nhận loop closure sai do đối xứng.</p>
+
+<h2>Vì sao sửa world vẫn là lớp phòng vệ chính</h2>
+<p>Nâng ngưỡng chỉ giảm xác suất, không triệt tiêu được — một world đối xứng gần hoàn hảo vẫn có thể vượt ngưỡng 0.55 nếu đủ giống. Cột mốc không đối xứng (một vật cản có hình dạng/vị trí duy nhất, không lặp lại ở đâu khác trong world) phá vỡ đối xứng <strong>từ gốc</strong> — mọi vị trí trong world giờ có một "chữ ký" LiDAR riêng, scan matching không còn 2 ứng viên nào đủ giống nhau để nhầm. Đây là lý do thiết kế world cho SLAM không chỉ là vẽ tường cho đẹp — tính đối xứng của world là một quyết định kỹ thuật.</p>
+
+<h2>Thử ngay</h2>
+<pre><code>ros2 launch atlas_bringup bringup.launch.py world:=maze.sdf</code></pre>
+<pre><code># terminal khác
+ros2 launch atlas_slam slam.launch.py</code></pre>
+<p>Lái một vòng quanh mê cung thật rồi quay lại điểm xuất phát, quan sát RViz: nếu bản đồ "giật" hoặc tường tự dưng lệch hẳn đi ngay lúc quay lại chỗ cũ — đó chính là dấu hiệu một loop closure (đúng hoặc sai) vừa được chấp nhận và Ceres vừa tối ưu lại graph.</p>

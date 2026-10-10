@@ -1,0 +1,35 @@
+<h1>Lớp an toàn: collision_monitor</h1>
+<p class="lead"><code>nav2_collision_monitor</code> — dù tên có chữ "nav2", module này dùng nó <strong>độc lập hoàn toàn với Nav2</strong> (Nav2 thật xuất hiện từ Module 10). Nó chỉ làm đúng một việc: quét <code>/scan</code> quanh robot, phát hiện vật cản sắp va chạm nhanh hơn một chu kỳ costmap/planner đầy đủ có thể làm.</p>
+
+<h2>2 vùng đa giác — đúng kích thước thật của Atlas</h2>
+<pre><code>polygons: ["PolygonStop", "PolygonSlow"]
+
+PolygonStop:
+  points: [0.20, 0.17,  -0.20, 0.17,  -0.20, -0.17,  0.20, -0.17]
+  action_type: "stop"
+
+PolygonSlow:
+  points: [0.30, 0.27,  -0.30, 0.27,  -0.30, -0.27,  0.30, -0.27]
+  action_type: "slowdown"
+  slowdown_ratio: 0.5</code></pre>
+<p>Comment thật trong file: robot mô phỏng dài 30cm/rộng 24cm (<code>base_length</code>/<code>base_width</code>, <a href="lesson.html?m=3&amp;l=07-bai-tap">Module 3</a>), <code>base_footprint</code> ở tâm. <code>PolygonStop</code> = thân robot (±0.15m mỗi chiều) + biên an toàn 5cm = ±0.20/±0.17. <code>PolygonSlow</code> rộng hơn hẳn, biên 15cm, bọc ngoài <code>PolygonStop</code>.</p>
+
+<h2>Kéo thử: vật cản ở đâu, action_type nào</h2>
+<p>Bánh xe trên mô hình quay liên tục, phản ứng đúng theo <code>action_type</code> tại vị trí vật cản: bình thường (xanh) ở ngoài mọi vùng, còn đúng 50% tốc độ (cam) — đúng <code>slowdown_ratio</code> thật — khi vào <code>PolygonSlow</code>, và đứng khựng hẳn (đỏ) khi vào <code>PolygonStop</code>:</p>
+<div class="scene" data-scene="collision-zones"></div>
+
+<h2>Vì sao không dùng FootprintApproach</h2>
+<p><code>nav2_collision_monitor</code> còn hỗ trợ kiểu polygon thứ 3 (<code>FootprintApproach</code>) dự đoán va chạm dựa trên costmap. Comment thật giải thích vì sao Atlas không dùng: nó phụ thuộc <code>/local_costmap/published_footprint</code> — topic chỉ tồn tại khi <strong>Nav2 đang chạy</strong>. Lớp an toàn ở module này phải hoạt động được cả khi chỉ lái tay bằng joystick, không có Nav2 — nên chỉ dùng 2 polygon tĩnh, đơn giản, không phụ thuộc gì ngoài <code>/scan</code>.</p>
+
+<h2>cmd_vel_in / cmd_vel_out — quan sát, không phải nguồn lệnh</h2>
+<pre><code>cmd_vel_in_topic: "cmd_vel"                 # quan sát lệnh hiện tại (output của twist_mux)
+cmd_vel_out_topic: "cmd_vel_monitor_out"     # bản đã lọc an toàn</code></pre>
+<p><code>collision_monitor</code> đọc <code>/cmd_vel</code> — chính output của <code>twist_mux</code> (bài 3) — chứ không tạo lệnh từ đầu. Nó chỉ <strong>lọc bớt</strong> lệnh đang có (ép về 0 nếu <code>stop</code>, nhân <code>slowdown_ratio</code> nếu <code>slowdown</code>) rồi ghi ra <code>cmd_vel_monitor_out</code>. Chuyện gì xảy ra với output đó tiếp theo là nội dung bài 5.</p>
+
+<h2>Thử ngay</h2>
+<pre><code>ros2 launch atlas_control controller.launch.py world:=maze.sdf</code></pre>
+<pre><code># terminal khác
+ros2 launch atlas_bringup collision_monitor.launch.py</code></pre>
+<pre><code># terminal khác
+ros2 topic echo /collision_monitor_state</code></pre>
+<p>Kéo robot (chuột phải → Move to trong Gazebo) lại gần vách mê cung — <code>action_type</code> đổi từ <code>DO_NOTHING</code> sang <code>SLOWDOWN</code> rồi <code>STOP</code> đúng theo khoảng cách, khớp 2 vùng vừa đọc ở trên.</p>

@@ -1,0 +1,19 @@
+<h1>Lái bằng bàn phím</h1>
+<p class="lead"><code>teleop_twist_keyboard</code> là cách nhanh nhất để robot nhúc nhích — không cần launch file riêng của dự án, chỉ cần chạy đúng 1 lệnh có sẵn từ gói ROS 2 đã cài ở Module 0.</p>
+
+<h2>Thử ngay</h2>
+<p>Terminal 1 — mở mô phỏng (bất kỳ cách nào đã học từ Module 4-5):</p>
+<pre><code>ros2 launch atlas_control controller.launch.py world:=maze.sdf</code></pre>
+<p>Terminal 2 — bàn phím:</p>
+<pre><code>ros2 run teleop_twist_keyboard teleop_twist_keyboard</code></pre>
+<p>Giữ cửa sổ terminal 2 ở trạng thái <strong>focus</strong> (đang được chọn) — phím bấm được đọc trực tiếp từ terminal, không phải từ cửa sổ Gazebo. <kbd>i</kbd>/<kbd>,</kbd> tiến/lùi, <kbd>j</kbd>/<kbd>l</kbd> quay trái/phải tại chỗ, <kbd>k</kbd> hoặc khoảng trắng dừng khẩn. Terminal in sẵn bảng phím đầy đủ ngay khi chạy lên.</p>
+
+<h2>Đi tắt — và cái giá phải trả</h2>
+<p><code>teleop_twist_keyboard</code> publish <strong>thẳng</strong> vào topic <code>/cmd_vel</code> — không qua <code>twist_mux</code>, không qua bất kỳ lớp trung gian nào. Đây là lý do nó đơn giản để bắt đầu, nhưng cũng là lý do duy nhất nó nguy hiểm khi dùng chung với các nguồn khác.</p>
+<div class="callout warn"><p>Comment gốc trong chính <code>atlas_bringup/launch/joystick_teleop.launch.py</code> cảnh báo thẳng: <em>"một khi twist_mux đang publish /cmd_vel, KHÔNG chạy đồng thời <code>teleop_twist_keyboard</code> — node đó publish thẳng vào /cmd_vel, giẫm chân lên twist_mux thay vì đi qua cơ chế ưu tiên."</em> Nghĩa là: nếu bạn đang chạy <code>joystick_teleop.launch.py</code> (bài 2–3) và mở thêm bàn phím, <strong>cả 2 cùng ghi vào <code>/cmd_vel</code></strong> — ai ghi sau thắng, không theo quy tắc ưu tiên nào cả, robot giật cục khó đoán.</p></div>
+<p>Quy tắc dùng trong suốt module này: <strong>bàn phím dùng để test nhanh một mình</strong>, không chạy song song với <code>joystick_teleop.launch.py</code>. Muốn bàn phím cũng đi qua cơ chế ưu tiên như joystick, cách đúng là remap topic nó publish ra thành một trong các input của <code>twist_mux</code> (<code>cmd_vel_joy</code> chẳng hạn) thay vì để nó ghi thẳng <code>/cmd_vel</code> — bài tập cuối module sẽ tự làm việc này.</p>
+
+<h2>Thử ngay: tái hiện đúng triệu chứng xung đột</h2>
+<p>Terminal 3, trong lúc terminal 2 (bàn phím) vẫn đang mở:</p>
+<pre><code>ros2 launch atlas_bringup joystick_teleop.launch.py</code></pre>
+<p>Bấm phím ở terminal 2, đồng thời đẩy joystick (nếu có) hoặc giả lập bằng <code>ros2 topic pub</code> vào <code>/cmd_vel_joy</code> — quan sát robot phản ứng không nhất quán, có lúc theo bàn phím, có lúc theo joystick, không theo quy tắc nào đoán trước được. Đây chính xác là hệ quả của việc 2 node cùng ghi 1 topic — nhớ lại cảm giác này khi học <code>twist_mux</code> ở bài 3, nó được dựng ra để không bao giờ xảy ra tình huống này với các nguồn đi qua nó.</p>

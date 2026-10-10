@@ -1,0 +1,68 @@
+<h1>Cách bắt đầu & nộp bài</h1>
+<p class="lead">5 bước, theo đúng thứ tự — mỗi bước chỉ lặp lại 1 quy trình bạn đã làm được ở module trước, không có kỹ thuật mới.</p>
+
+<h2>Ví dụ minh họa 1 lượt chạy hoàn chỉnh</h2>
+<p>Tường + 6 kệ hàng dưới đây là toạ độ <strong>thật</strong> trong <code>atlas_gazebo/worlds/warehouse.sdf</code> — file này <strong>đã có sẵn</strong> trong repo, dùng ngay được bằng <code>world:=warehouse.sdf</code> (bước 1 bên dưới), không bắt buộc phải tự vẽ từ đầu. 3 điểm giao hàng + vật cản chỉ là ví dụ minh họa lộ trình của riêng scene này — quãng đường hiển thị cộng dồn đúng từ khoảng cách mét thật giữa các điểm đó:</p>
+<div class="scene" data-scene="warehouse-delivery-demo"></div>
+
+<h2>5 bước thực hiện</h2>
+<ol>
+  <li>
+    <strong>Thiết kế world</strong> — dùng sẵn <code>atlas_gazebo/worlds/warehouse.sdf</code> (6 kệ hàng, 2 lối đi ngang, 1 lối đi dọc ở giữa — đúng layout ở scene trên), hoặc copy <code>maze.sdf</code> làm điểm xuất phát rồi tự thêm/bớt tường. Nếu tự chỉnh: giữ nguyên khối vật lý (<code>dartsim</code> + <code>collision_detector: bullet</code>) đã fix bug xuyên tường (<a href="lesson.html?m=8&amp;l=00-gioi-thieu">ghi chú Module 8</a>) — đừng viết lại từ đầu.
+    <pre><code>ros2 launch atlas_bringup bringup.launch.py world:=warehouse.sdf</code></pre>
+  </li>
+  <li>
+    <strong>Lưu map</strong> — lặp lại quy trình SLAM + <code>map_saver_cli</code> (<a href="lesson.html?m=8&amp;l=00-gioi-thieu">Module 8</a>) trên world mới.
+    <pre><code>ros2 launch atlas_slam slam.launch.py
+# teleop đi hết world, rồi:
+ros2 run nav2_map_server map_saver_cli -f src/atlas_apps/maps/warehouse_map</code></pre>
+  </li>
+  <li>
+    <strong>Viết code giao hàng</strong> — mở rộng trực tiếp từ <code>patrol_node.py</code> (<a href="lesson.html?m=12&amp;l=03-bai-tap">Module 12, bài tập</a>): thay vòng lặp vô hạn bằng 1 lượt chạy hết danh sách rồi dừng, thêm đo thời gian (<code>time.monotonic()</code> trước/sau <code>followWaypoints()</code>) và đếm recovery (subscribe topic hoặc đọc log <code>bt_navigator</code>, <a href="lesson.html?m=11&amp;l=02-doc-bt-xml">Module 11</a>).
+    <pre><code># delivery_node.py -- khác patrol_node.py đúng 1 chỗ: không lặp lại khi SUCCEEDED
+import time
+t0 = time.monotonic()
+nav.followWaypoints(goal_poses)
+while not nav.isTaskComplete():
+    rclpy.spin_once(nav, timeout_sec=0.5)
+elapsed = time.monotonic() - t0
+result = nav.getResult()
+print(f"Giao xong -- {elapsed:.1f}s")  # KHÔNG lặp lại followWaypoints() nữa</code></pre>
+  </li>
+  <li>
+    <strong>Viết trong <code>atlas_apps</code></strong> — đúng package trống dành cho học viên (xem <a href="lesson.html?m=12&amp;l=00-gioi-thieu">00-gioi-thieu Module 12</a>), không sửa code mẫu trong <code>atlas_slam</code>.
+  </li>
+  <li>
+    <strong>Nộp bài</strong> — copy khung bên dưới vào <code>src/atlas_apps/CAPSTONE.md</code>, điền đủ 7 mục, kèm video demo.
+  </li>
+</ol>
+
+<h2>Đếm số lần recovery: 2 cách thật, không phải đoán</h2>
+<p>Đã đọc trực tiếp 2 file action thật (<code>/opt/ros/humble/share/nav2_msgs/action/</code>) để xác nhận: <code>FollowWaypoints.action</code> chỉ có đúng 1 trường feedback — <code>current_waypoint</code>, KHÔNG có số đếm recovery. Số đếm đó (<code>number_of_recoveries</code>) chỉ nằm trong feedback của <code>NavigateToPose.action</code> — action khác, không lồng vào feedback của <code>FollowWaypoints</code> dù <code>waypoint_follower</code> gọi <code>NavigateToPose</code> bên trong. Có 2 cách thật để lấy được số liệu này:</p>
+<ul>
+  <li><strong>Đọc log</strong> (đơn giản nhất, đi thẳng với <code>followWaypoints()</code> đang dùng) — <code>bt_navigator</code> in dòng khi vào <code>RecoveryNode</code>/<code>RoundRobin</code> (<a href="lesson.html?m=11&amp;l=02-doc-bt-xml">cây BT thật, Module 11</a>) — grep terminal output hoặc redirect ra file rồi đếm bằng tay/script sau khi chạy xong.</li>
+  <li><strong>Đổi sang gọi <code>goToPose()</code> từng điểm 1</strong> (thay vì <code>followWaypoints()</code> cả danh sách) — mỗi lần gọi dùng đúng <code>NavigateToPose</code>, <code>nav.getFeedback().number_of_recoveries</code> đọc được trực tiếp, cộng dồn qua từng điểm. Đánh đổi: tự quản lý vòng lặp qua từng waypoint thay vì để <code>waypoint_follower</code> lo (mất đúng cái tiện lợi của <code>followWaypoints()</code>, <a href="lesson.html?m=12&amp;l=02-nav2-simple-commander">Module 12</a>) — chọn cách nào tùy bạn, miễn số liệu nộp bài là thật.</li>
+</ul>
+
+<h2>Khung nộp bài</h2>
+<p>Copy nguyên <code>docs/course/module-13-capstone/template-README.md</code>, giữ đúng thứ tự 7 mục:</p>
+<ol>
+  <li><strong>Mục tiêu</strong> — 1-2 câu: kịch bản bạn chọn.</li>
+  <li><strong>Kiến trúc hệ thống</strong> — world nào, map nào, launch file nào gọi node nào, package tự viết nằm ở đâu (so với sơ đồ ở <a href="lesson.html?m=13&amp;l=00-gioi-thieu">00-gioi-thieu</a>).</li>
+  <li><strong>Cách chạy</strong> — các bước terminal, từ clone tới thấy robot tuần tra xong.</li>
+  <li><strong>Kết quả</strong> — số liệu thật: tổng thời gian, quãng đường, số lần recovery kích hoạt — không ước lượng, chạy thật và dán log/số liệu.</li>
+  <li><strong>Mở rộng đã làm</strong> (nếu có) — xem gợi ý ở <a href="lesson.html?m=13&amp;l=01-de-bai-va-rubric">bài trước</a>.</li>
+  <li><strong>Hạn chế / điều chưa làm được</strong> — thành thật, phần này được tính điểm "Hiểu lý thuyết", không trừ điểm vì nêu hạn chế.</li>
+  <li><strong>Video demo</strong> — link video (≤5 phút): robot chạy từ đầu tới cuối kịch bản.</li>
+</ol>
+
+<h2>Tự kiểm tra trước khi nộp</h2>
+<div class="goals">
+  <ul>
+    <li>Chạy được end-to-end từ <code>ros2 launch</code> đầu tiên tới giao hết các điểm, không cần can thiệp tay giữa chừng</li>
+    <li>Có log/số liệu thật (không phải ước lượng) cho thời gian, quãng đường, số lần recovery</li>
+    <li>Giải thích được vì sao chọn planner/controller này (đọc lại <a href="lesson.html?m=10&amp;l=03-local-controller">so sánh Module 10</a> nếu quên) — phần "Hiểu lý thuyết" trong rubric sẽ hỏi trực tiếp</li>
+    <li>File nộp theo đúng khung 7 mục ở trên</li>
+  </ul>
+</div>
+<p><strong>Hoàn thành Module 13 = hoàn thành khóa học.</strong> Chúc mừng đã đi hết lộ trình từ <code>ros2 node info</code> đầu tiên ở Module 1 tới 1 robot tự giao hàng hoàn chỉnh.</p>
