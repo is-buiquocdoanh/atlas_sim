@@ -6,7 +6,7 @@
          `ign gazebo --versions`) -- kiến trúc Fortress BẮT BUỘC khai báo tường minh từng system
          plugin (vật lý, spawn robot, v.v.) ngay trong world file, không tự nạp ngầm như Harmonic.
          Thiếu các plugin dưới đây + physics type "ignored" (không phải tên engine hợp lệ) là lý
-         do world KHÔNG chạy được -- đã thêm đủ, giữ nguyên toàn bộ bố cục phòng/nội thất gốc. -->
+         do world KHÔNG chạy được -- đã thêm đủ. -->
     <gui fullscreen="0">
       <plugin filename="MinimalScene" name="3D View">
         <gz-gui>
@@ -427,311 +427,109 @@
       </link>
     </model>
 
-    <model name="desk_1">
-      <static>true</static>
-      <pose>-4.000 -3.000 0.380 0 0 0</pose>
-      <link name="link">
-        <collision name="collision">
-          <geometry><box><size>1.200 0.600 0.760</size></box></geometry>
-        </collision>
-        <visual name="visual">
-          <geometry><box><size>1.200 0.600 0.760</size></box></geometry>
-          <material><ambient>0.60 0.39 0.22 1</ambient><diffuse>0.60 0.39 0.22 1</diffuse></material>
-        </visual>
-      </link>
-    </model>
+    <!-- ========================================================================
+         NỘI THẤT: đổi từ khối hộp màu phẳng sang asset mesh thật (AWS RoboMaker,
+         models/README.md) -- GIỮ NGUYÊN vị trí gốc của ChatGPT, chỉ xoay 90° các bàn (DeskC_01
+         dài 1.56m theo trục Y cục bộ, xoay để trục dài nằm theo X, khớp hướng bàn hộp gốc
+         1.2m(X) x 0.6m(Y)) và NHÍCH ghế ra xa thêm ~0.23m (từ 0.62m lên 0.85m tính từ tâm bàn)
+         vì DeskC_01 thật (0.88x1.56m) to hơn hộp gốc (1.2x0.6m) -- đã verify bằng toạ độ tay
+         trước khi build, không đoán, tránh chồng lấn bàn/ghế. ========================= -->
 
-    <model name="chair_1">
-      <static>true</static>
-      <pose>-4.000 -3.620 0.250 0 0 0</pose>
-      <link name="link">
-        <collision name="collision">
-          <geometry><box><size>0.420 0.420 0.500</size></box></geometry>
-        </collision>
-        <visual name="visual">
-          <geometry><box><size>0.420 0.420 0.500</size></box></geometry>
-          <material><ambient>0.16 0.20 0.25 1</ambient><diffuse>0.16 0.20 0.25 1</diffuse></material>
-        </visual>
-      </link>
-    </model>
+    <include><name>desk_1</name><uri>model://aws_robomaker_warehouse_DeskC_01</uri><pose>-4.000 -3.000 0 0 0 1.5708</pose></include>
+    <include><name>chair_1</name><uri>model://aws_robomaker_residential_ChairD_01</uri><pose>-4.000 -3.850 0 0 0 3.14159</pose></include>
+    <include><name>desk_2</name><uri>model://aws_robomaker_warehouse_DeskC_01</uri><pose>-1.000 -3.000 0 0 0 1.5708</pose></include>
+    <include><name>chair_2</name><uri>model://aws_robomaker_residential_ChairD_01</uri><pose>-1.000 -3.850 0 0 0 3.14159</pose></include>
+    <include><name>desk_3</name><uri>model://aws_robomaker_warehouse_DeskC_01</uri><pose>-4.000 -0.900 0 0 0 1.5708</pose></include>
+    <include><name>chair_3</name><uri>model://aws_robomaker_residential_ChairD_01</uri><pose>-4.000 -1.750 0 0 0 3.14159</pose></include>
+    <include><name>desk_4</name><uri>model://aws_robomaker_warehouse_DeskC_01</uri><pose>-1.000 -0.900 0 0 0 1.5708</pose></include>
+    <include><name>chair_4</name><uri>model://aws_robomaker_residential_ChairD_01</uri><pose>-1.000 -1.750 0 0 0 3.14159</pose></include>
 
-    <model name="desk_2">
-      <static>true</static>
-      <pose>-1.000 -3.000 0.380 0 0 0</pose>
-      <link name="link">
-        <collision name="collision">
-          <geometry><box><size>1.200 0.600 0.760</size></box></geometry>
-        </collision>
-        <visual name="visual">
-          <geometry><box><size>1.200 0.600 0.760</size></box></geometry>
-          <material><ambient>0.60 0.39 0.22 1</ambient><diffuse>0.60 0.39 0.22 1</diffuse></material>
-        </visual>
-      </link>
-    </model>
+    <!-- Quầy lễ tân -- TVCabinet_01 (tủ dài, dáng quầy) xoay ngang cho khớp hướng quầy gốc. -->
+    <include><name>reception_counter</name><uri>model://aws_robomaker_residential_TVCabinet_01</uri><pose>-8.000 -4.800 0 0 0 1.5708</pose></include>
 
-    <model name="chair_2">
-      <static>true</static>
-      <pose>-1.000 -3.620 0.250 0 0 0</pose>
-      <link name="link">
-        <collision name="collision">
-          <geometry><box><size>0.420 0.420 0.500</size></box></geometry>
-        </collision>
-        <visual name="visual">
-          <geometry><box><size>0.420 0.420 0.500</size></box></geometry>
-          <material><ambient>0.16 0.20 0.25 1</ambient><diffuse>0.16 0.20 0.25 1</diffuse></material>
-        </visual>
-      </link>
-    </model>
+    <!-- Góc chờ: sofa thật + bàn cà phê thật. -->
+    <include><name>lounge_sofa</name><uri>model://aws_robomaker_residential_SofaB_01</uri><pose>6.000 -5.000 0 0 0 1.5708</pose></include>
+    <include><name>lounge_table</name><uri>model://aws_robomaker_residential_CoffeeTable_01</uri><pose>6.000 -3.900 0 0 0 0</pose></include>
 
-    <model name="desk_3">
-      <static>true</static>
-      <pose>-4.000 -0.900 0.380 0 0 0</pose>
-      <link name="link">
-        <collision name="collision">
-          <geometry><box><size>1.200 0.600 0.760</size></box></geometry>
-        </collision>
-        <visual name="visual">
-          <geometry><box><size>1.200 0.600 0.760</size></box></geometry>
-          <material><ambient>0.60 0.39 0.22 1</ambient><diffuse>0.60 0.39 0.22 1</diffuse></material>
-        </visual>
-      </link>
-    </model>
+    <!-- Kệ lưu trữ -- ShoeRack_01 (kệ thật, thấp hơn khối hộp gốc 2m vì không có asset kệ cao
+         sát trần đáng tin cậy trong bộ dữ liệu -- xem models/README.md). -->
+    <include><name>storage_shelf_1</name><uri>model://aws_robomaker_residential_ShoeRack_01</uri><pose>-8.500 4.500 0.154 0 0 0</pose></include>
+    <include><name>storage_shelf_2</name><uri>model://aws_robomaker_residential_ShoeRack_01</uri><pose>-7.300 4.500 0.154 0 0 0</pose></include>
 
-    <model name="chair_3">
-      <static>true</static>
-      <pose>-4.000 -1.520 0.250 0 0 0</pose>
-      <link name="link">
-        <collision name="collision">
-          <geometry><box><size>0.420 0.420 0.500</size></box></geometry>
-        </collision>
-        <visual name="visual">
-          <geometry><box><size>0.420 0.420 0.500</size></box></geometry>
-          <material><ambient>0.16 0.20 0.25 1</ambient><diffuse>0.16 0.20 0.25 1</diffuse></material>
-        </visual>
-      </link>
-    </model>
+    <!-- Quầy pantry -- TVCabinet_01 xoay ngang. -->
+    <include><name>pantry_counter</name><uri>model://aws_robomaker_residential_TVCabinet_01</uri><pose>-4.400 5.300 0 0 0 1.5708</pose></include>
 
-    <model name="desk_4">
-      <static>true</static>
-      <pose>-1.000 -0.900 0.380 0 0 0</pose>
-      <link name="link">
-        <collision name="collision">
-          <geometry><box><size>1.200 0.600 0.760</size></box></geometry>
-        </collision>
-        <visual name="visual">
-          <geometry><box><size>1.200 0.600 0.760</size></box></geometry>
-          <material><ambient>0.60 0.39 0.22 1</ambient><diffuse>0.60 0.39 0.22 1</diffuse></material>
-        </visual>
-      </link>
-    </model>
+    <!-- Bàn họp (DeskC_01 xoay ngang) + 3 ghế -- vị trí ghế gốc đã đủ thoáng, không cần nhích
+         thêm (đã verify bằng toạ độ tay). -->
+    <include><name>meeting_table</name><uri>model://aws_robomaker_warehouse_DeskC_01</uri><pose>0.000 4.200 0 0 0 1.5708</pose></include>
+    <include><name>meeting_chair_1</name><uri>model://aws_robomaker_residential_ChairD_01</uri><pose>-1.200 4.200 0 0 0 1.5708</pose></include>
+    <include><name>meeting_chair_2</name><uri>model://aws_robomaker_residential_ChairD_01</uri><pose>1.200 4.200 0 0 0 -1.5708</pose></include>
+    <include><name>meeting_chair_3</name><uri>model://aws_robomaker_residential_ChairD_01</uri><pose>0.000 3.300 0 0 0 0</pose></include>
 
-    <model name="chair_4">
-      <static>true</static>
-      <pose>-1.000 -1.520 0.250 0 0 0</pose>
-      <link name="link">
-        <collision name="collision">
-          <geometry><box><size>0.420 0.420 0.500</size></box></geometry>
-        </collision>
-        <visual name="visual">
-          <geometry><box><size>0.420 0.420 0.500</size></box></geometry>
-          <material><ambient>0.16 0.20 0.25 1</ambient><diffuse>0.16 0.20 0.25 1</diffuse></material>
-        </visual>
-      </link>
-    </model>
-
-    <model name="reception_counter">
-      <static>true</static>
-      <pose>-8.000 -4.800 0.500 0 0 0</pose>
-      <link name="link">
-        <collision name="collision">
-          <geometry><box><size>2.000 0.650 1.000</size></box></geometry>
-        </collision>
-        <visual name="visual">
-          <geometry><box><size>2.000 0.650 1.000</size></box></geometry>
-          <material><ambient>0.88 0.88 0.84 1</ambient><diffuse>0.88 0.88 0.84 1</diffuse></material>
-        </visual>
-      </link>
-    </model>
-
-    <model name="lounge_sofa">
-      <static>true</static>
-      <pose>6.000 -5.000 0.380 0 0 0</pose>
-      <link name="link">
-        <collision name="collision">
-          <geometry><box><size>1.800 0.750 0.760</size></box></geometry>
-        </collision>
-        <visual name="visual">
-          <geometry><box><size>1.800 0.750 0.760</size></box></geometry>
-          <material><ambient>0.35 0.42 0.47 1</ambient><diffuse>0.35 0.42 0.47 1</diffuse></material>
-        </visual>
-      </link>
-    </model>
-
-    <model name="lounge_table">
-      <static>true</static>
-      <pose>6.000 -3.900 0.220 0 0 0</pose>
-      <link name="link">
-        <collision name="collision">
-          <geometry><box><size>0.800 0.500 0.440</size></box></geometry>
-        </collision>
-        <visual name="visual">
-          <geometry><box><size>0.800 0.500 0.440</size></box></geometry>
-          <material><ambient>0.58 0.40 0.25 1</ambient><diffuse>0.58 0.40 0.25 1</diffuse></material>
-        </visual>
-      </link>
-    </model>
-
-    <model name="storage_shelf_1">
-      <static>true</static>
-      <pose>-8.500 4.500 1.000 0 0 0</pose>
-      <link name="link">
-        <collision name="collision">
-          <geometry><box><size>0.500 2.200 2.000</size></box></geometry>
-        </collision>
-        <visual name="visual">
-          <geometry><box><size>0.500 2.200 2.000</size></box></geometry>
-          <material><ambient>0.48 0.36 0.25 1</ambient><diffuse>0.48 0.36 0.25 1</diffuse></material>
-        </visual>
-      </link>
-    </model>
-
-    <model name="storage_shelf_2">
-      <static>true</static>
-      <pose>-7.300 4.500 1.000 0 0 0</pose>
-      <link name="link">
-        <collision name="collision">
-          <geometry><box><size>0.500 2.200 2.000</size></box></geometry>
-        </collision>
-        <visual name="visual">
-          <geometry><box><size>0.500 2.200 2.000</size></box></geometry>
-          <material><ambient>0.48 0.36 0.25 1</ambient><diffuse>0.48 0.36 0.25 1</diffuse></material>
-        </visual>
-      </link>
-    </model>
-
-    <model name="pantry_counter">
-      <static>true</static>
-      <pose>-4.400 5.300 0.480 0 0 0</pose>
-      <link name="link">
-        <collision name="collision">
-          <geometry><box><size>2.000 0.550 0.960</size></box></geometry>
-        </collision>
-        <visual name="visual">
-          <geometry><box><size>2.000 0.550 0.960</size></box></geometry>
-          <material><ambient>0.78 0.78 0.74 1</ambient><diffuse>0.78 0.78 0.74 1</diffuse></material>
-        </visual>
-      </link>
-    </model>
-
-    <model name="meeting_table">
-      <static>true</static>
-      <pose>0.000 4.200 0.380 0 0 0</pose>
-      <link name="link">
-        <collision name="collision">
-          <geometry><box><size>2.000 1.000 0.760</size></box></geometry>
-        </collision>
-        <visual name="visual">
-          <geometry><box><size>2.000 1.000 0.760</size></box></geometry>
-          <material><ambient>0.60 0.39 0.22 1</ambient><diffuse>0.60 0.39 0.22 1</diffuse></material>
-        </visual>
-      </link>
-    </model>
-
-    <model name="meeting_chair_1">
-      <static>true</static>
-      <pose>-1.200 4.200 0.250 0 0 0</pose>
-      <link name="link">
-        <collision name="collision">
-          <geometry><box><size>0.420 0.420 0.500</size></box></geometry>
-        </collision>
-        <visual name="visual">
-          <geometry><box><size>0.420 0.420 0.500</size></box></geometry>
-          <material><ambient>0.16 0.20 0.25 1</ambient><diffuse>0.16 0.20 0.25 1</diffuse></material>
-        </visual>
-      </link>
-    </model>
-
-    <model name="meeting_chair_2">
-      <static>true</static>
-      <pose>1.200 4.200 0.250 0 0 0</pose>
-      <link name="link">
-        <collision name="collision">
-          <geometry><box><size>0.420 0.420 0.500</size></box></geometry>
-        </collision>
-        <visual name="visual">
-          <geometry><box><size>0.420 0.420 0.500</size></box></geometry>
-          <material><ambient>0.16 0.20 0.25 1</ambient><diffuse>0.16 0.20 0.25 1</diffuse></material>
-        </visual>
-      </link>
-    </model>
-
-    <model name="meeting_chair_3">
-      <static>true</static>
-      <pose>0.000 3.300 0.250 0 0 0</pose>
-      <link name="link">
-        <collision name="collision">
-          <geometry><box><size>0.420 0.420 0.500</size></box></geometry>
-        </collision>
-        <visual name="visual">
-          <geometry><box><size>0.420 0.420 0.500</size></box></geometry>
-          <material><ambient>0.16 0.20 0.25 1</ambient><diffuse>0.16 0.20 0.25 1</diffuse></material>
-        </visual>
-      </link>
-    </model>
-
+    <!-- Chậu cây -- KHÔNG dùng asset mesh Vase_01: đo thật bằng dae_bbox.py phát hiện bounding
+         box 1.08 x 3.1 x 1.39m -- bị lỗi tỉ lệ ở trục Y (cùng loại lỗi file gốc đã gặp ở
+         ChairA_01/KitchenTable_01/KitchenCabinet_01/Sofa_01/SofaC_01, không phải do đo sai đơn
+         vị). Không có asset "cây cảnh" nào khác đáng tin cậy trong bộ AWS RoboMaker đang có --
+         tự dựng chậu (hình trụ nâu đất nung) + tán lá (hình cầu xanh) bằng primitive geometry
+         thay vì box vuông phẳng như bản gốc -- đẹp hơn hẳn mà không phụ thuộc asset lỗi. -->
     <model name="plant_obstacle_1">
       <static>true</static>
-      <pose>-6.000 -5.000 0.450 0 0 0</pose>
+      <pose>-6.000 -5.000 0 0 0 0</pose>
       <link name="link">
-        <collision name="collision">
-          <geometry><box><size>0.450 0.450 0.900</size></box></geometry>
-        </collision>
-        <visual name="visual">
-          <geometry><box><size>0.450 0.450 0.900</size></box></geometry>
-          <material><ambient>0.20 0.48 0.28 1</ambient><diffuse>0.20 0.48 0.28 1</diffuse></material>
-        </visual>
+        <collision name="collision_pot"><pose>0 0 0.175 0 0 0</pose><geometry><cylinder><radius>0.20</radius><length>0.35</length></cylinder></geometry></collision>
+        <visual name="visual_pot"><pose>0 0 0.175 0 0 0</pose><geometry><cylinder><radius>0.20</radius><length>0.35</length></cylinder></geometry>
+          <material><ambient>0.55 0.33 0.22 1</ambient><diffuse>0.55 0.33 0.22 1</diffuse></material></visual>
+        <collision name="collision_trunk"><pose>0 0 0.55 0 0 0</pose><geometry><cylinder><radius>0.035</radius><length>0.4</length></cylinder></geometry></collision>
+        <visual name="visual_trunk"><pose>0 0 0.55 0 0 0</pose><geometry><cylinder><radius>0.035</radius><length>0.4</length></cylinder></geometry>
+          <material><ambient>0.32 0.22 0.14 1</ambient><diffuse>0.32 0.22 0.14 1</diffuse></material></visual>
+        <collision name="collision_foliage"><pose>0 0 0.92 0 0 0</pose><geometry><sphere><radius>0.30</radius></sphere></geometry></collision>
+        <visual name="visual_foliage"><pose>0 0 0.92 0 0 0</pose><geometry><sphere><radius>0.30</radius></sphere></geometry>
+          <material><ambient>0.18 0.46 0.24 1</ambient><diffuse>0.18 0.46 0.24 1</diffuse></material></visual>
       </link>
     </model>
-
     <model name="plant_obstacle_2">
       <static>true</static>
-      <pose>2.800 -4.000 0.450 0 0 0</pose>
+      <pose>2.800 -4.000 0 0 0 0</pose>
       <link name="link">
-        <collision name="collision">
-          <geometry><box><size>0.450 0.450 0.900</size></box></geometry>
-        </collision>
-        <visual name="visual">
-          <geometry><box><size>0.450 0.450 0.900</size></box></geometry>
-          <material><ambient>0.20 0.48 0.28 1</ambient><diffuse>0.20 0.48 0.28 1</diffuse></material>
-        </visual>
+        <collision name="collision_pot"><pose>0 0 0.175 0 0 0</pose><geometry><cylinder><radius>0.20</radius><length>0.35</length></cylinder></geometry></collision>
+        <visual name="visual_pot"><pose>0 0 0.175 0 0 0</pose><geometry><cylinder><radius>0.20</radius><length>0.35</length></cylinder></geometry>
+          <material><ambient>0.55 0.33 0.22 1</ambient><diffuse>0.55 0.33 0.22 1</diffuse></material></visual>
+        <collision name="collision_trunk"><pose>0 0 0.55 0 0 0</pose><geometry><cylinder><radius>0.035</radius><length>0.4</length></cylinder></geometry></collision>
+        <visual name="visual_trunk"><pose>0 0 0.55 0 0 0</pose><geometry><cylinder><radius>0.035</radius><length>0.4</length></cylinder></geometry>
+          <material><ambient>0.32 0.22 0.14 1</ambient><diffuse>0.32 0.22 0.14 1</diffuse></material></visual>
+        <collision name="collision_foliage"><pose>0 0 0.92 0 0 0</pose><geometry><sphere><radius>0.30</radius></sphere></geometry></collision>
+        <visual name="visual_foliage"><pose>0 0 0.92 0 0 0</pose><geometry><sphere><radius>0.30</radius></sphere></geometry>
+          <material><ambient>0.18 0.46 0.24 1</ambient><diffuse>0.18 0.46 0.24 1</diffuse></material></visual>
       </link>
     </model>
-
     <model name="plant_obstacle_3">
       <static>true</static>
-      <pose>4.000 0.000 0.450 0 0 0</pose>
+      <pose>4.000 0.000 0 0 0 0</pose>
       <link name="link">
-        <collision name="collision">
-          <geometry><box><size>0.450 0.450 0.900</size></box></geometry>
-        </collision>
-        <visual name="visual">
-          <geometry><box><size>0.450 0.450 0.900</size></box></geometry>
-          <material><ambient>0.20 0.48 0.28 1</ambient><diffuse>0.20 0.48 0.28 1</diffuse></material>
-        </visual>
+        <collision name="collision_pot"><pose>0 0 0.175 0 0 0</pose><geometry><cylinder><radius>0.20</radius><length>0.35</length></cylinder></geometry></collision>
+        <visual name="visual_pot"><pose>0 0 0.175 0 0 0</pose><geometry><cylinder><radius>0.20</radius><length>0.35</length></cylinder></geometry>
+          <material><ambient>0.55 0.33 0.22 1</ambient><diffuse>0.55 0.33 0.22 1</diffuse></material></visual>
+        <collision name="collision_trunk"><pose>0 0 0.55 0 0 0</pose><geometry><cylinder><radius>0.035</radius><length>0.4</length></cylinder></geometry></collision>
+        <visual name="visual_trunk"><pose>0 0 0.55 0 0 0</pose><geometry><cylinder><radius>0.035</radius><length>0.4</length></cylinder></geometry>
+          <material><ambient>0.32 0.22 0.14 1</ambient><diffuse>0.32 0.22 0.14 1</diffuse></material></visual>
+        <collision name="collision_foliage"><pose>0 0 0.92 0 0 0</pose><geometry><sphere><radius>0.30</radius></sphere></geometry></collision>
+        <visual name="visual_foliage"><pose>0 0 0.92 0 0 0</pose><geometry><sphere><radius>0.30</radius></sphere></geometry>
+          <material><ambient>0.18 0.46 0.24 1</ambient><diffuse>0.18 0.46 0.24 1</diffuse></material></visual>
       </link>
     </model>
-
     <model name="plant_obstacle_4">
       <static>true</static>
-      <pose>8.500 3.000 0.450 0 0 0</pose>
+      <pose>8.500 3.000 0 0 0 0</pose>
       <link name="link">
-        <collision name="collision">
-          <geometry><box><size>0.450 0.450 0.900</size></box></geometry>
-        </collision>
-        <visual name="visual">
-          <geometry><box><size>0.450 0.450 0.900</size></box></geometry>
-          <material><ambient>0.20 0.48 0.28 1</ambient><diffuse>0.20 0.48 0.28 1</diffuse></material>
-        </visual>
+        <collision name="collision_pot"><pose>0 0 0.175 0 0 0</pose><geometry><cylinder><radius>0.20</radius><length>0.35</length></cylinder></geometry></collision>
+        <visual name="visual_pot"><pose>0 0 0.175 0 0 0</pose><geometry><cylinder><radius>0.20</radius><length>0.35</length></cylinder></geometry>
+          <material><ambient>0.55 0.33 0.22 1</ambient><diffuse>0.55 0.33 0.22 1</diffuse></material></visual>
+        <collision name="collision_trunk"><pose>0 0 0.55 0 0 0</pose><geometry><cylinder><radius>0.035</radius><length>0.4</length></cylinder></geometry></collision>
+        <visual name="visual_trunk"><pose>0 0 0.55 0 0 0</pose><geometry><cylinder><radius>0.035</radius><length>0.4</length></cylinder></geometry>
+          <material><ambient>0.32 0.22 0.14 1</ambient><diffuse>0.32 0.22 0.14 1</diffuse></material></visual>
+        <collision name="collision_foliage"><pose>0 0 0.92 0 0 0</pose><geometry><sphere><radius>0.30</radius></sphere></geometry></collision>
+        <visual name="visual_foliage"><pose>0 0 0.92 0 0 0</pose><geometry><sphere><radius>0.30</radius></sphere></geometry>
+          <material><ambient>0.18 0.46 0.24 1</ambient><diffuse>0.18 0.46 0.24 1</diffuse></material></visual>
       </link>
     </model>
   </world>
