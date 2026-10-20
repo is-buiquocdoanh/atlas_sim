@@ -30,5 +30,6 @@
       <meta> <layer> 1 </layer></meta>
 </visual>
     </link>
+  <static>1</static>
   </model>
 </sdf>

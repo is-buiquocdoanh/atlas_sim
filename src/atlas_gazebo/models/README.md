@@ -27,12 +27,27 @@ thước mà không đúng hình dáng.
 | `aws_robomaker_residential_CookingBench_01` | Bàn bếp nhỏ phòng nghỉ -- `office.sdf`, gốc Z lệch tâm, pose.z=+0.5 |
 | `aws_robomaker_residential_TVCabinet_01` | Tủ pantry -- `office.sdf` |
 | `aws_robomaker_residential_Trash_01` | Thùng rác -- `office.sdf` |
+| `aws_robomaker_residential_SofaB_01` | Sofa sảnh lễ tân -- `office.sdf` |
+| `aws_robomaker_residential_CoffeeTable_01` | Bàn cà phê sảnh lễ tân -- `office.sdf` |
+| `aws_robomaker_residential_Vase_01` | Chậu cây -- `office.sdf`, gốc Z lệch tâm, pose.z=+0.647 |
+| `aws_robomaker_residential_Wardrobe_01` | Tủ nhỏ phòng quản lý -- `office.sdf`, gốc Z lệch tâm, pose.z=+0.127, gốc Y lệch (không đối xứng, xem comment trong office.sdf) |
+| `aws_robomaker_residential_ShoeRack_01` | Kệ lưu trữ khu làm việc -- `office.sdf`, **đã vá lỗi** (xem dưới) |
 | Còn lại (`ShelfD/E_01`, `ClutteringA/C/D_01`, `Lamp_01`, `RoofB_01`, `Bucket_01`) | Chưa dùng tới -- để sẵn nếu sau này mở rộng world |
 
 **Lưu ý thật gặp khi dùng gói `residential`**: vài model (`ChairA_01`, `KitchenTable_01`,
-`KitchenCabinet_01`, `Sofa_01`) có bounding box đo ra PHI THỰC TẾ (cao hàng chục mét) -- lỗi xuất
-file gốc, không phải lỗi quy đổi đơn vị của mình -- đã KHÔNG dùng các model này, chỉ dùng model đã
-tự đo và xác nhận kích thước hợp lý (xem bảng trên).
+`KitchenCabinet_01`, `Sofa_01`, `SofaC_01`) có bounding box đo ra PHI THỰC TẾ (cao/rộng hàng chục
+mét) -- lỗi xuất file gốc, không phải lỗi quy đổi đơn vị của mình -- đã KHÔNG dùng các model này,
+chỉ dùng model đã tự đo và xác nhận kích thước hợp lý (xem bảng trên).
+
+**2 lỗi file gốc khác đã vá trực tiếp trong bản copy ở đây** (không phải lỗi do mình gây ra, nhưng
+phải tự sửa để world load được):
+- `ShoeRack_01/model.sdf`: khối `<inertia>` gốc có 2 thẻ `<ixx>` trùng nhau và THIẾU hẳn `<izz>`
+  -- khiến Gazebo từ chối load cả world với lỗi `Error Code 18: A link named link has invalid
+  inertia`, không chỉ riêng model này. Đã thêm `<izz>0.04</izz>` đúng chỗ.
+- Nhiều model (`SofaB_01`, `Vase_01`, `ReadingDesk_01`, `CookingBench_01`, `ChairD_01`,
+  `Trash_01`) thiếu hẳn thẻ `<static>1</static>` -- nghĩa là vật lý coi chúng là vật thể ĐỘNG, có
+  thể bị trôi/đổ theo thời gian dù chỉ là đồ trang trí. Đã thêm `<static>1</static>` cho đồng bộ
+  với các model khác.
 
 ## Toạ độ/kích thước thật đã đo, không đoán
 

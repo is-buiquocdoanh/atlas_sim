@@ -15,7 +15,7 @@
         <scene>scene</scene>
         <ambient_light>0.5 0.5 0.5</ambient_light>
         <background_color>0.75 0.78 0.82</background_color>
-        <camera_pose>-14 -16 10 0 0.5 0.85</camera_pose>
+        <camera_pose>-14 -16 9 0 0.5 0.85</camera_pose>
       </plugin>
       <plugin filename="EntityContextMenuPlugin" name="Entity context menu">
         <gz-gui>
@@ -130,23 +130,23 @@
       <direction>-0.5 0.1 -0.9</direction>
     </light>
 
-    <!-- Văn phòng -- dùng chung sàn/tường thật của warehouse.sdf (GroundB_01 + WallB_01, asset
-         AWS RoboMaker, nguồn+giấy phép ghi trong models/README.md). 2 gotcha thật gặp khi dựng,
-         fix ở đây, ghi lại để không lặp lại:
-           1) Mặt sàn THẬT của GroundB_01 nằm ở z=0.12432m (mesh có đế dày ~12.4cm), không phải
-              z=0 như đặt pose ban đầu -- robot spawn mặc định z=0.05 (đúng bán kính bánh xe) bị
-              lún nửa bánh xuống dưới sàn. Sửa bằng cách đặt pose.z = -0.12432 cho GroundB_01 (đẩy
-              xuống đúng 1 chiều dày của nó) để mặt TRÊN khớp đúng world z=0 -- lúc đó gốc của
-              WallB_01 (z=0 cục bộ, không cần đổi) cũng tự động khớp luôn, vì 2 model này vốn
-              thiết kế chung 1 mặt đất chuẩn.
-           2) Theo phản hồi thực tế (tường 2.7m vẫn còn hơi kín, muốn thấp thêm) -- hạ tiếp xuống
-              scale Z 0.24 (còn ~2.17m), đồng thời để KHỚP tường ngăn phòng mới (xem dưới) cũng
-              dựng cao ngang 2.2m.
-         Bố cục mới: chia 3 khu bằng 2 bức tường ngăn (hộp đơn giản, không phải mesh, để chủ động
-         kích thước + chừa đúng cửa đi) -- văn phòng mở (y: -10.5..2, bàn làm việc) → phòng họp
-         (y: 2..7, bàn họp + bảng) → phòng nghỉ/pantry (y: 7..10.5, tủ lạnh, tủ, bàn trà). Cửa đi
-         rộng 1.2m tại x: -0.6..0.6 ở CẢ 2 tường ngăn, thẳng hàng nhau -- tạo 1 hành lang giữa
-         thẳng từ nam lên bắc, robot spawn mặc định (0,0) nằm đúng đầu hành lang này. -->
+    <!-- Văn phòng v2 -- theo phản hồi thực tế: tường hạ tiếp xuống còn ~1m (gần như "mô hình thu
+         nhỏ", thấy toàn cảnh từ trên dễ dàng, vẫn đủ cao hơn hẳn mặt phẳng quét LIDAR ~0.14m nên
+         không ảnh hưởng SLAM/Nav2), chia 5 PHÒNG ĐÚNG CHỨC NĂNG thay vì 3, thêm nhiều nội thất
+         (sofa, bàn cà phê, tủ, kệ, chậu cây) cho giống văn phòng thật hơn.
+         Vẫn dùng sàn/tường ngoài thật của warehouse.sdf (GroundB_01 + WallB_01, asset AWS
+         RoboMaker, xem models/README.md) -- đã sửa gotcha sàn lún (pose.z=-0.12432, xem chú
+         thích chi tiết trong warehouse.sdf). Tường ngăn phòng vẫn là hộp đơn giản tự dựng (không
+         phải mesh) để chủ động đúng kích thước + vị trí cửa, nay cũng hạ xuống 1m cho đồng bộ.
+         5 phòng theo trục Y (nam → bắc), mỗi phòng 1 chức năng riêng:
+           1. Sảnh lễ tân   y: -10.5..-8    (2.5m) -- sofa, bàn cà phê, chậu cây
+           2. Khu làm việc  y: -8..1        (9m)   -- 4 bàn + ghế + 1 kệ lưu trữ (có spawn (0,0))
+           3. Phòng họp     y: 1..5         (4m)   -- bàn họp + 4 ghế + bảng
+           4. Phòng quản lý y: 5..7.5       (2.5m) -- 1 bàn riêng + ghế + tủ
+           5. Phòng nghỉ    y: 7.5..10.5    (3m)   -- tủ lạnh, bàn bếp, tủ pantry, bàn trà + ghế
+         4 tường ngăn (y=-8/1/5/7.5), MỖI tường chừa đúng 1 cửa rộng 1.2m tại x: -0.6..0.6, CẢ 4
+         cửa thẳng hàng nhau -- tạo đúng 1 hành lang thẳng xuyên suốt 5 phòng, robot spawn mặc
+         định (0,0) nằm ngay đầu hành lang trong khu làm việc. -->
     <include>
       <uri>model://aws_robomaker_warehouse_GroundB_01</uri>
       <pose>0 0 -0.12432 0 0 0</pose>
@@ -154,70 +154,85 @@
     <include>
       <uri>model://aws_robomaker_warehouse_WallB_01</uri>
       <pose>0 0 0 0 0 0</pose>
-      <scale>1 1 0.24</scale>
+      <scale>1 1 0.111</scale>
     </include>
 
-    <!-- 2 tường ngăn, mỗi tường 2 đoạn trái/phải chừa cửa 1.2m ở giữa (x: -0.6..0.6) -->
-    <model name="partition_wall_1_west"><static>true</static><pose>-3.8 2 1.1 0 0 0</pose>
-      <link name="link">
-        <collision name="collision"><geometry><box><size>6.4 0.1 2.2</size></box></geometry></collision>
-        <visual name="visual"><geometry><box><size>6.4 0.1 2.2</size></box></geometry>
-          <material><ambient>0.85 0.85 0.82 1</ambient><diffuse>0.85 0.85 0.82 1</diffuse></material></visual>
-      </link>
+    <!-- 4 tường ngăn x 2 đoạn (trái/phải), cao 1m, chừa cửa 1.2m ở x: -0.6..0.6 -->
+    <model name="partition_wall_1_west"><static>true</static><pose>-3.8 -8 0.5 0 0 0</pose>
+      <link name="link"><collision name="collision"><geometry><box><size>6.4 0.1 1.0</size></box></geometry></collision>
+        <visual name="visual"><geometry><box><size>6.4 0.1 1.0</size></box></geometry><material><ambient>0.85 0.85 0.82 1</ambient><diffuse>0.85 0.85 0.82 1</diffuse></material></visual></link>
     </model>
-    <model name="partition_wall_1_east"><static>true</static><pose>3.8 2 1.1 0 0 0</pose>
-      <link name="link">
-        <collision name="collision"><geometry><box><size>6.4 0.1 2.2</size></box></geometry></collision>
-        <visual name="visual"><geometry><box><size>6.4 0.1 2.2</size></box></geometry>
-          <material><ambient>0.85 0.85 0.82 1</ambient><diffuse>0.85 0.85 0.82 1</diffuse></material></visual>
-      </link>
+    <model name="partition_wall_1_east"><static>true</static><pose>3.8 -8 0.5 0 0 0</pose>
+      <link name="link"><collision name="collision"><geometry><box><size>6.4 0.1 1.0</size></box></geometry></collision>
+        <visual name="visual"><geometry><box><size>6.4 0.1 1.0</size></box></geometry><material><ambient>0.85 0.85 0.82 1</ambient><diffuse>0.85 0.85 0.82 1</diffuse></material></visual></link>
     </model>
-    <model name="partition_wall_2_west"><static>true</static><pose>-3.8 7 1.1 0 0 0</pose>
-      <link name="link">
-        <collision name="collision"><geometry><box><size>6.4 0.1 2.2</size></box></geometry></collision>
-        <visual name="visual"><geometry><box><size>6.4 0.1 2.2</size></box></geometry>
-          <material><ambient>0.85 0.85 0.82 1</ambient><diffuse>0.85 0.85 0.82 1</diffuse></material></visual>
-      </link>
+    <model name="partition_wall_2_west"><static>true</static><pose>-3.8 1 0.5 0 0 0</pose>
+      <link name="link"><collision name="collision"><geometry><box><size>6.4 0.1 1.0</size></box></geometry></collision>
+        <visual name="visual"><geometry><box><size>6.4 0.1 1.0</size></box></geometry><material><ambient>0.85 0.85 0.82 1</ambient><diffuse>0.85 0.85 0.82 1</diffuse></material></visual></link>
     </model>
-    <model name="partition_wall_2_east"><static>true</static><pose>3.8 7 1.1 0 0 0</pose>
-      <link name="link">
-        <collision name="collision"><geometry><box><size>6.4 0.1 2.2</size></box></geometry></collision>
-        <visual name="visual"><geometry><box><size>6.4 0.1 2.2</size></box></geometry>
-          <material><ambient>0.85 0.85 0.82 1</ambient><diffuse>0.85 0.85 0.82 1</diffuse></material></visual>
-      </link>
+    <model name="partition_wall_2_east"><static>true</static><pose>3.8 1 0.5 0 0 0</pose>
+      <link name="link"><collision name="collision"><geometry><box><size>6.4 0.1 1.0</size></box></geometry></collision>
+        <visual name="visual"><geometry><box><size>6.4 0.1 1.0</size></box></geometry><material><ambient>0.85 0.85 0.82 1</ambient><diffuse>0.85 0.85 0.82 1</diffuse></material></visual></link>
+    </model>
+    <model name="partition_wall_3_west"><static>true</static><pose>-3.8 5 0.5 0 0 0</pose>
+      <link name="link"><collision name="collision"><geometry><box><size>6.4 0.1 1.0</size></box></geometry></collision>
+        <visual name="visual"><geometry><box><size>6.4 0.1 1.0</size></box></geometry><material><ambient>0.85 0.85 0.82 1</ambient><diffuse>0.85 0.85 0.82 1</diffuse></material></visual></link>
+    </model>
+    <model name="partition_wall_3_east"><static>true</static><pose>3.8 5 0.5 0 0 0</pose>
+      <link name="link"><collision name="collision"><geometry><box><size>6.4 0.1 1.0</size></box></geometry></collision>
+        <visual name="visual"><geometry><box><size>6.4 0.1 1.0</size></box></geometry><material><ambient>0.85 0.85 0.82 1</ambient><diffuse>0.85 0.85 0.82 1</diffuse></material></visual></link>
+    </model>
+    <model name="partition_wall_4_west"><static>true</static><pose>-3.8 7.5 0.5 0 0 0</pose>
+      <link name="link"><collision name="collision"><geometry><box><size>6.4 0.1 1.0</size></box></geometry></collision>
+        <visual name="visual"><geometry><box><size>6.4 0.1 1.0</size></box></geometry><material><ambient>0.85 0.85 0.82 1</ambient><diffuse>0.85 0.85 0.82 1</diffuse></material></visual></link>
+    </model>
+    <model name="partition_wall_4_east"><static>true</static><pose>3.8 7.5 0.5 0 0 0</pose>
+      <link name="link"><collision name="collision"><geometry><box><size>6.4 0.1 1.0</size></box></geometry></collision>
+        <visual name="visual"><geometry><box><size>6.4 0.1 1.0</size></box></geometry><material><ambient>0.85 0.85 0.82 1</ambient><diffuse>0.85 0.85 0.82 1</diffuse></material></visual></link>
     </model>
 
-    <!-- Khu 1 -- văn phòng mở (y: -10.5..2): 4 bàn làm việc + ghế, 2 cột x=-4/+4, tránh hẳn
-         x=0 (hành lang giữa) và không đụng tường ngăn y=2. -->
-    <include><name>desk_1</name><uri>model://aws_robomaker_warehouse_DeskC_01</uri><pose>-4 -7 0 0 0 0</pose></include>
-    <include><name>desk_2</name><uri>model://aws_robomaker_warehouse_DeskC_01</uri><pose>4 -7 0 0 0 0</pose></include>
-    <include><name>desk_3</name><uri>model://aws_robomaker_warehouse_DeskC_01</uri><pose>-4 -3 0 0 0 3.14159</pose></include>
-    <include><name>desk_4</name><uri>model://aws_robomaker_warehouse_DeskC_01</uri><pose>4 -3 0 0 0 3.14159</pose></include>
-    <include><name>chair_1</name><uri>model://aws_robomaker_residential_ChairD_01</uri><pose>-4 -8.4 0 0 0 3.14159</pose></include>
-    <include><name>chair_2</name><uri>model://aws_robomaker_residential_ChairD_01</uri><pose>4 -8.4 0 0 0 3.14159</pose></include>
-    <include><name>chair_3</name><uri>model://aws_robomaker_residential_ChairD_01</uri><pose>-4 -1.6 0 0 0 0</pose></include>
-    <include><name>chair_4</name><uri>model://aws_robomaker_residential_ChairD_01</uri><pose>4 -1.6 0 0 0 0</pose></include>
+    <!-- Phòng 1 -- sảnh lễ tân (y: -10.5..-8). Sofa/bàn cà phê/chậu cây đặt dọc theo trục X
+         (phòng chỉ sâu 2.5m theo Y, không đủ chỗ xếp sofa+bàn nối tiếp theo Y). -->
+    <include><name>lobby_sofa</name><uri>model://aws_robomaker_residential_SofaB_01</uri><pose>-5.5 -9.2 0 0 0 1.5708</pose></include>
+    <include><name>lobby_coffee_table</name><uri>model://aws_robomaker_residential_CoffeeTable_01</uri><pose>-4 -9.2 0 0 0 0</pose></include>
+    <include><name>lobby_plant</name><uri>model://aws_robomaker_residential_Vase_01</uri><pose>6.3 -10.1 0.647 0 0 0</pose></include>
 
-    <!-- Khu 2 -- phòng họp (y: 2..7): 1 bàn (DeskC_01 xoay ngang làm bàn họp) + 4 ghế quanh
-         + 1 bảng treo tường bắc của phòng. -->
-    <include><name>meeting_table</name><uri>model://aws_robomaker_warehouse_DeskC_01</uri><pose>0 4.5 0 0 0 1.5708</pose></include>
-    <include><name>meeting_chair_1</name><uri>model://aws_robomaker_residential_ChairD_01</uri><pose>-1.4 4.5 0 0 0 1.5708</pose></include>
-    <include><name>meeting_chair_2</name><uri>model://aws_robomaker_residential_ChairD_01</uri><pose>1.4 4.5 0 0 0 -1.5708</pose></include>
-    <include><name>meeting_chair_3</name><uri>model://aws_robomaker_residential_ChairD_01</uri><pose>0 3.3 0 0 0 0</pose></include>
-    <include><name>meeting_chair_4</name><uri>model://aws_robomaker_residential_ChairD_01</uri><pose>0 5.7 0 0 0 3.14159</pose></include>
-    <include><name>meeting_board</name><uri>model://aws_robomaker_residential_Board_01</uri><pose>-2.5 6.85 1.5 0 0 0</pose></include>
+    <!-- Phòng 2 -- khu làm việc (y: -8..1, chứa spawn (0,0)): 4 bàn + ghế, 2 cột x=-4/+4, tránh
+         x=0 (hành lang) + 1 kệ lưu trữ dọc tường đông. -->
+    <include><name>desk_1</name><uri>model://aws_robomaker_warehouse_DeskC_01</uri><pose>-4 -6 0 0 0 0</pose></include>
+    <include><name>desk_2</name><uri>model://aws_robomaker_warehouse_DeskC_01</uri><pose>4 -6 0 0 0 0</pose></include>
+    <include><name>desk_3</name><uri>model://aws_robomaker_warehouse_DeskC_01</uri><pose>-4 -2 0 0 0 3.14159</pose></include>
+    <include><name>desk_4</name><uri>model://aws_robomaker_warehouse_DeskC_01</uri><pose>4 -2 0 0 0 3.14159</pose></include>
+    <include><name>chair_1</name><uri>model://aws_robomaker_residential_ChairD_01</uri><pose>-4 -7.4 0 0 0 3.14159</pose></include>
+    <include><name>chair_2</name><uri>model://aws_robomaker_residential_ChairD_01</uri><pose>4 -7.4 0 0 0 3.14159</pose></include>
+    <include><name>chair_3</name><uri>model://aws_robomaker_residential_ChairD_01</uri><pose>-4 -0.6 0 0 0 0</pose></include>
+    <include><name>chair_4</name><uri>model://aws_robomaker_residential_ChairD_01</uri><pose>4 -0.6 0 0 0 0</pose></include>
+    <include><name>storage_shelf</name><uri>model://aws_robomaker_residential_ShoeRack_01</uri><pose>6.1 -4 0.154 0 0 1.5708</pose></include>
 
-    <!-- Khu 3 -- phòng nghỉ/pantry (y: 7..10.5): tủ lạnh, bàn bếp nhỏ, tủ, bàn trà + ghế, thùng
-         rác -- 3 model có gốc Z lệch tâm (đo bằng dae_bbox.py trước khi đặt, không đoán) được
-         bù z thủ công để không lún/lơ lửng: Refrigerator_01 +0.42, CookingBench_01 +0.5,
-         ReadingDesk_01 +0.266. -->
-    <include><name>fridge</name><uri>model://aws_robomaker_residential_Refrigerator_01</uri><pose>-6 9.3 0.42 0 0 0</pose></include>
-    <include><name>cooking_bench</name><uri>model://aws_robomaker_residential_CookingBench_01</uri><pose>6 9.3 0.5 0 0 1.5708</pose></include>
-    <include><name>pantry_cabinet</name><uri>model://aws_robomaker_residential_TVCabinet_01</uri><pose>0 10.2 0 0 0 1.5708</pose></include>
-    <include><name>break_table</name><uri>model://aws_robomaker_residential_ReadingDesk_01</uri><pose>-3.5 7.8 0.266 0 0 0</pose></include>
-    <include><name>break_chair_1</name><uri>model://aws_robomaker_residential_ChairD_01</uri><pose>-3.5 8.6 0 0 0 3.14159</pose></include>
-    <include><name>break_chair_2</name><uri>model://aws_robomaker_residential_ChairD_01</uri><pose>-2.3 7.8 0 0 0 1.5708</pose></include>
-    <include><name>trash_bin</name><uri>model://aws_robomaker_residential_Trash_01</uri><pose>3.8 7.5 0 0 0 0</pose></include>
+    <!-- Phòng 3 -- phòng họp (y: 1..5): bàn họp (DeskC_01 xoay ngang) + 4 ghế + bảng treo tường
+         bắc. -->
+    <include><name>meeting_table</name><uri>model://aws_robomaker_warehouse_DeskC_01</uri><pose>0 3 0 0 0 1.5708</pose></include>
+    <include><name>meeting_chair_1</name><uri>model://aws_robomaker_residential_ChairD_01</uri><pose>-1.4 3 0 0 0 1.5708</pose></include>
+    <include><name>meeting_chair_2</name><uri>model://aws_robomaker_residential_ChairD_01</uri><pose>1.4 3 0 0 0 -1.5708</pose></include>
+    <include><name>meeting_chair_3</name><uri>model://aws_robomaker_residential_ChairD_01</uri><pose>0 1.8 0 0 0 0</pose></include>
+    <include><name>meeting_chair_4</name><uri>model://aws_robomaker_residential_ChairD_01</uri><pose>0 4.2 0 0 0 3.14159</pose></include>
+    <include><name>meeting_board</name><uri>model://aws_robomaker_residential_Board_01</uri><pose>-2.5 4.85 1.3 0 0 0</pose></include>
+
+    <!-- Phòng 4 -- phòng quản lý riêng (y: 5..7.5, phòng nhỏ, 1 người): 1 bàn + 1 ghế + 1 tủ. -->
+    <include><name>manager_desk</name><uri>model://aws_robomaker_warehouse_DeskC_01</uri><pose>0 6.6 0 0 0 0</pose></include>
+    <include><name>manager_chair</name><uri>model://aws_robomaker_residential_ChairD_01</uri><pose>0 5.7 0 0 0 3.14159</pose></include>
+    <include><name>manager_cabinet</name><uri>model://aws_robomaker_residential_Wardrobe_01</uri><pose>-3 6.5 0.127 0 0 0</pose></include>
+
+    <!-- Phòng 5 -- phòng nghỉ/pantry (y: 7.5..10.5): tủ lạnh, bàn bếp nhỏ, tủ pantry, bàn trà +
+         ghế, thùng rác -- 3 model gốc Z lệch tâm (đo bằng dae_bbox.py, không đoán) đã bù z:
+         Refrigerator_01 +0.42, CookingBench_01 +0.5, ReadingDesk_01 +0.266. -->
+    <include><name>fridge</name><uri>model://aws_robomaker_residential_Refrigerator_01</uri><pose>-6 10.0 0.42 0 0 0</pose></include>
+    <include><name>cooking_bench</name><uri>model://aws_robomaker_residential_CookingBench_01</uri><pose>6 10.0 0.5 0 0 1.5708</pose></include>
+    <include><name>pantry_cabinet</name><uri>model://aws_robomaker_residential_TVCabinet_01</uri><pose>0 10.3 0 0 0 1.5708</pose></include>
+    <include><name>break_table</name><uri>model://aws_robomaker_residential_ReadingDesk_01</uri><pose>-3.5 8.3 0.266 0 0 0</pose></include>
+    <include><name>break_chair_1</name><uri>model://aws_robomaker_residential_ChairD_01</uri><pose>-3.5 9.3 0 0 0 3.14159</pose></include>
+    <include><name>break_chair_2</name><uri>model://aws_robomaker_residential_ChairD_01</uri><pose>-2.4 8.3 0 0 0 1.5708</pose></include>
+    <include><name>trash_bin</name><uri>model://aws_robomaker_residential_Trash_01</uri><pose>3.8 8.1 0 0 0 0</pose></include>
 
   </world>
 </sdf>
