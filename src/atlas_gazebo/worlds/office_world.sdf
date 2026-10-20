@@ -17,7 +17,7 @@
         <engine>ogre2</engine>
         <scene>scene</scene>
         <ambient_light>0.5 0.5 0.5</ambient_light>
-        <background_color>0.75 0.78 0.82</background_color>
+        <background_color>0.5 0.5 0.5</background_color>
         <camera_pose>-14 -16 10 0 0.5 0.85</camera_pose>
       </plugin>
       <plugin filename="EntityContextMenuPlugin" name="Entity context menu">
@@ -120,9 +120,11 @@
       </dart>
     </physics>
     <gravity>0 0 -9.81</gravity>
+    <!-- Nền trắng (0.88 0.91 0.95) gần như trùng màu robot (atlas_white, rgba 0.95 0.95 0.95)
+         nên khó thấy robot -- đổi sang xám trung tính để tương phản rõ. -->
     <scene>
       <ambient>0.65 0.65 0.65 1</ambient>
-      <background>0.88 0.91 0.95 1</background>
+      <background>0.5 0.5 0.5 1</background>
       <shadows>true</shadows>
     </scene>
     <light name="sun" type="directional">
@@ -138,7 +140,24 @@
       <pose>0.000 0.000 -0.050 0 0 0</pose>
       <link name="link">
         <collision name="collision">
-          <geometry><box><size>20.000 14.000 0.100</size></box></geometry>
+          <!-- Đã thử nâng mu/mu2 lên 100/50 trên collision box nhưng robot vẫn trượt
+               bánh gần như hoàn toàn (đo thực tế: đi lệnh 0.3 m/s x 3s chỉ dịch 0.003m,
+               trong khi bánh xe vẫn quay đủ ~0.78m theo odom). Test chéo với maze.sdf
+               (sàn <plane>, mu=1.0) cho thấy robot di chuyển đúng 0.78m không trượt --
+               tức gốc vấn đề là HÌNH DẠNG collision (<box> tiếp xúc bánh xe trụ tròn bị
+               dart+bullet collision_detector xử lý tiếp xúc kém), không phải hệ số ma
+               sát. Đổi collision sàn sang <plane> giống maze.sdf, giữ nguyên visual dạng
+               khối cho đẹp. -->
+          <pose>0 0 0.05 0 0 0</pose>
+          <geometry><plane><normal>0 0 1</normal><size>24 18</size></plane></geometry>
+          <surface>
+            <friction>
+              <ode>
+                <mu>1.0</mu>
+                <mu2>1.0</mu2>
+              </ode>
+            </friction>
+          </surface>
         </collision>
         <visual name="visual">
           <geometry><box><size>20.000 14.000 0.100</size></box></geometry>
