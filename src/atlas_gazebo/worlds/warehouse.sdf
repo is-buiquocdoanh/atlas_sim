@@ -13,9 +13,9 @@
         </gz-gui>
         <engine>ogre2</engine>
         <scene>scene</scene>
-        <ambient_light>0.4 0.4 0.4</ambient_light>
-        <background_color>0.8 0.8 0.8</background_color>
-        <camera_pose>-10 -8 10 0 0.6 0.7</camera_pose>
+        <ambient_light>0.5 0.5 0.5</ambient_light>
+        <background_color>0.75 0.78 0.82</background_color>
+        <camera_pose>-14 -16 11 0 0.5 0.85</camera_pose>
       </plugin>
       <plugin filename="EntityContextMenuPlugin" name="Entity context menu">
         <gz-gui>
@@ -130,228 +130,67 @@
       <direction>-0.5 0.1 -0.9</direction>
     </light>
 
-    <model name="ground_plane">
-      <static>true</static>
-      <link name="link">
-        <collision name="collision">
-          <geometry>
-            <plane>
-              <normal>0 0 1</normal>
-              <size>100 100</size>
-            </plane>
-          </geometry>
-          <surface>
-            <friction>
-              <ode>
-                <mu>1.0</mu>
-                <mu2>1.0</mu2>
-              </ode>
-            </friction>
-          </surface>
-        </collision>
-        <visual name="visual">
-          <geometry>
-            <plane>
-              <normal>0 0 1</normal>
-              <size>100 100</size>
-            </plane>
-          </geometry>
-          <material>
-            <ambient>0.6 0.6 0.6 1</ambient>
-            <diffuse>0.6 0.6 0.6 1</diffuse>
-            <specular>0.2 0.2 0.2 1</specular>
-          </material>
-        </visual>
-      </link>
-    </model>
+    <!-- Nhà kho dùng asset thật "AWS RoboMaker Small Warehouse World" (aws_robomaker_warehouse_*,
+         models/ -- nguồn + giấy phép ghi trong models/README.md), thay cho các khối màu phẳng cũ
+         (nhìn xấu, không giống kho thật). Kích thước gốc đo trực tiếp bằng cách parse float_array
+         toạ độ đỉnh trong file .DAE (đơn vị gốc cm, quy đổi mét), không đoán -- xem lại lịch sử
+         git để biết số đo gốc chưa scale nếu cần:
+           - GroundB_01 + WallB_01 là 1 cặp model THIẾT KẾ KHỚP NHAU: cùng chân đế ~14m (X) x
+             21m (Y) -- toà nhà 1 phòng lớn, không mái.
+           - ShelfF_01 dài ~18m dọc trục Y của chính nó -- đặt 2 dãy dọc theo chiều dài 21m của
+             nhà kho, KHÔNG xoay (yaw=0 khớp hướng trục dài với trục Y nhà kho).
+         Sau phản hồi thực tế (tường bản gốc 9m cao hết tầm nhìn orbit camera, kệ bản gốc 6.5m
+         cao + đặt sát giữa khiến lối đi chật, robot nhỏ bị "chìm" dưới chân kệ không thấy khác
+         biệt giữa các world) -- đã SCALE Z riêng (không méo mặt sàn/chiều dài, chỉ thấp bớt):
+           - Tường: scale 1 1 0.3 -> còn ~2.7m, orbit camera nhìn được vào trong không cần bay cao.
+           - Kệ: scale 1 1 0.5 -> còn ~3.3m, đẩy ra sát 2 bên tường x=±5 (thay vì ±3.5 bản đầu)
+             để lối đi giữa thoáng hẳn ra ~7.9m (x: -3.95..3.95, gấp đôi bản đầu 4.9m), robot
+             spawn mặc định (0,0) nằm giữa, không bị kẹp 2 bên kệ cao. -->
+    <!-- Lỗi thật gặp khi test: mặt sàn THẬT của GroundB_01 nằm ở z=0.12432m (mesh có đế dày
+         ~12.4cm), không phải z=0 -- robot spawn mặc định z=0.05 (đúng bán kính bánh xe) bị lún
+         nửa bánh xuống dưới sàn nếu đặt pose.z=0. Đẩy xuống đúng 1 chiều dày (-0.12432) để mặt
+         TRÊN khớp world z=0 -- gốc WallB_01 (z=0 cục bộ) tự động khớp theo, không cần đổi. -->
+    <include>
+      <uri>model://aws_robomaker_warehouse_GroundB_01</uri>
+      <pose>0 0 -0.12432 0 0 0</pose>
+    </include>
+    <!-- Tường hạ thấp còn ~2.7m (scale Z 0.3x bản gốc 9.02m thật) -- bản gốc cao hết tầm nhìn,
+         orbit camera không nhìn được vào trong. Scale Z riêng không méo mặt sàn/kệ vì WallB_01
+         là model độc lập, chỉ ảnh hưởng đúng khối tường. -->
+    <include>
+      <uri>model://aws_robomaker_warehouse_WallB_01</uri>
+      <pose>0 0 0 0 0 0</pose>
+      <scale>1 1 0.3</scale>
+    </include>
+    <!-- Kệ hạ còn ~3.3m (scale Z 0.5x bản gốc 6.53m) + đẩy sát 2 bên tường (x=±5, thay vì ±3.5)
+         để lối đi giữa thoáng hẳn ra (~7.9m, gấp đôi bản cũ) -- theo đúng yêu cầu "kệ thoáng ra,
+         robot đi giữa không bị kẹp 2 bên kệ cao". -->
+    <include>
+      <name>shelf_row_west</name>
+      <uri>model://aws_robomaker_warehouse_ShelfF_01</uri>
+      <pose>-5 0 0 0 0 0</pose>
+      <scale>1 1 0.5</scale>
+    </include>
+    <include>
+      <name>shelf_row_east</name>
+      <uri>model://aws_robomaker_warehouse_ShelfF_01</uri>
+      <pose>5 0 0 0 0 0</pose>
+      <scale>1 1 0.5</scale>
+    </include>
 
-    <!-- Nhà kho 12x8m: khung ngoài + 3 dãy kệ, mỗi dãy tách 2 đoạn chừa 1 lối đi dọc
-         (cross-aisle) rộng 2m ở giữa (x: -1..1), và các lối đi ngang giữa các dãy kệ rộng
-         ~1.5-1.7m -- đủ cho vài robot né nhau, dư chỗ để sau này tăng số robot.
-         Robot spawn ở dải trống phía nam (y=-3.5), cách kệ gần nhất một khoảng an toàn. -->
-
-    <model name="warehouse_wall_north">
-      <static>true</static>
-      <pose>0 4.0 0.25 0 0 0</pose>
-      <link name="link">
-        <collision name="collision">
-          <geometry><box><size>12.1 0.1 0.5</size></box></geometry>
-          <surface>
-            <friction><ode><mu>1.0</mu><mu2>1.0</mu2></ode></friction>
-            <contact><ode><min_depth>0.001</min_depth><max_vel>2.0</max_vel></ode></contact>
-          </surface>
-        </collision>
-        <visual name="visual">
-          <geometry><box><size>12.1 0.1 0.5</size></box></geometry>
-          <material><ambient>0.6 0.6 0.6 1</ambient><diffuse>0.6 0.6 0.6 1</diffuse></material>
-        </visual>
-      </link>
-    </model>
-
-    <model name="warehouse_wall_south">
-      <static>true</static>
-      <pose>0 -4.0 0.25 0 0 0</pose>
-      <link name="link">
-        <collision name="collision">
-          <geometry><box><size>12.1 0.1 0.5</size></box></geometry>
-          <surface>
-            <friction><ode><mu>1.0</mu><mu2>1.0</mu2></ode></friction>
-            <contact><ode><min_depth>0.001</min_depth><max_vel>2.0</max_vel></ode></contact>
-          </surface>
-        </collision>
-        <visual name="visual">
-          <geometry><box><size>12.1 0.1 0.5</size></box></geometry>
-          <material><ambient>0.6 0.6 0.6 1</ambient><diffuse>0.6 0.6 0.6 1</diffuse></material>
-        </visual>
-      </link>
-    </model>
-
-    <model name="warehouse_wall_east">
-      <static>true</static>
-      <pose>6.0 0 0.25 0 0 0</pose>
-      <link name="link">
-        <collision name="collision">
-          <geometry><box><size>0.1 8.1 0.5</size></box></geometry>
-          <surface>
-            <friction><ode><mu>1.0</mu><mu2>1.0</mu2></ode></friction>
-            <contact><ode><min_depth>0.001</min_depth><max_vel>2.0</max_vel></ode></contact>
-          </surface>
-        </collision>
-        <visual name="visual">
-          <geometry><box><size>0.1 8.1 0.5</size></box></geometry>
-          <material><ambient>0.6 0.6 0.6 1</ambient><diffuse>0.6 0.6 0.6 1</diffuse></material>
-        </visual>
-      </link>
-    </model>
-
-    <model name="warehouse_wall_west">
-      <static>true</static>
-      <pose>-6.0 0 0.25 0 0 0</pose>
-      <link name="link">
-        <collision name="collision">
-          <geometry><box><size>0.1 8.1 0.5</size></box></geometry>
-          <surface>
-            <friction><ode><mu>1.0</mu><mu2>1.0</mu2></ode></friction>
-            <contact><ode><min_depth>0.001</min_depth><max_vel>2.0</max_vel></ode></contact>
-          </surface>
-        </collision>
-        <visual name="visual">
-          <geometry><box><size>0.1 8.1 0.5</size></box></geometry>
-          <material><ambient>0.6 0.6 0.6 1</ambient><diffuse>0.6 0.6 0.6 1</diffuse></material>
-        </visual>
-      </link>
-    </model>
-
-    <!-- Dãy kệ 1 (y=2.2), 2 đoạn trái/phải, chừa lối dọc giữa x: -1..1 -->
-    <model name="shelf_row1_left">
-      <static>true</static>
-      <pose>-3.25 2.2 0.5 0 0 0</pose>
-      <link name="link">
-        <collision name="collision">
-          <geometry><box><size>4.5 0.5 1.0</size></box></geometry>
-          <surface>
-            <friction><ode><mu>1.0</mu><mu2>1.0</mu2></ode></friction>
-            <contact><ode><min_depth>0.001</min_depth><max_vel>2.0</max_vel></ode></contact>
-          </surface>
-        </collision>
-        <visual name="visual">
-          <geometry><box><size>4.5 0.5 1.0</size></box></geometry>
-          <material><ambient>0.7 0.5 0.2 1</ambient><diffuse>0.7 0.5 0.2 1</diffuse></material>
-        </visual>
-      </link>
-    </model>
-
-    <model name="shelf_row1_right">
-      <static>true</static>
-      <pose>3.25 2.2 0.5 0 0 0</pose>
-      <link name="link">
-        <collision name="collision">
-          <geometry><box><size>4.5 0.5 1.0</size></box></geometry>
-          <surface>
-            <friction><ode><mu>1.0</mu><mu2>1.0</mu2></ode></friction>
-            <contact><ode><min_depth>0.001</min_depth><max_vel>2.0</max_vel></ode></contact>
-          </surface>
-        </collision>
-        <visual name="visual">
-          <geometry><box><size>4.5 0.5 1.0</size></box></geometry>
-          <material><ambient>0.7 0.5 0.2 1</ambient><diffuse>0.7 0.5 0.2 1</diffuse></material>
-        </visual>
-      </link>
-    </model>
-
-    <!-- Dãy kệ 2 (y=0), 2 đoạn trái/phải -->
-    <model name="shelf_row2_left">
-      <static>true</static>
-      <pose>-3.25 0 0.5 0 0 0</pose>
-      <link name="link">
-        <collision name="collision">
-          <geometry><box><size>4.5 0.5 1.0</size></box></geometry>
-          <surface>
-            <friction><ode><mu>1.0</mu><mu2>1.0</mu2></ode></friction>
-            <contact><ode><min_depth>0.001</min_depth><max_vel>2.0</max_vel></ode></contact>
-          </surface>
-        </collision>
-        <visual name="visual">
-          <geometry><box><size>4.5 0.5 1.0</size></box></geometry>
-          <material><ambient>0.7 0.5 0.2 1</ambient><diffuse>0.7 0.5 0.2 1</diffuse></material>
-        </visual>
-      </link>
-    </model>
-
-    <model name="shelf_row2_right">
-      <static>true</static>
-      <pose>3.25 0 0.5 0 0 0</pose>
-      <link name="link">
-        <collision name="collision">
-          <geometry><box><size>4.5 0.5 1.0</size></box></geometry>
-          <surface>
-            <friction><ode><mu>1.0</mu><mu2>1.0</mu2></ode></friction>
-            <contact><ode><min_depth>0.001</min_depth><max_vel>2.0</max_vel></ode></contact>
-          </surface>
-        </collision>
-        <visual name="visual">
-          <geometry><box><size>4.5 0.5 1.0</size></box></geometry>
-          <material><ambient>0.7 0.5 0.2 1</ambient><diffuse>0.7 0.5 0.2 1</diffuse></material>
-        </visual>
-      </link>
-    </model>
-
-    <!-- Dãy kệ 3 (y=-2.2), 2 đoạn trái/phải -->
-    <model name="shelf_row3_left">
-      <static>true</static>
-      <pose>-3.25 -2.2 0.5 0 0 0</pose>
-      <link name="link">
-        <collision name="collision">
-          <geometry><box><size>4.5 0.5 1.0</size></box></geometry>
-          <surface>
-            <friction><ode><mu>1.0</mu><mu2>1.0</mu2></ode></friction>
-            <contact><ode><min_depth>0.001</min_depth><max_vel>2.0</max_vel></ode></contact>
-          </surface>
-        </collision>
-        <visual name="visual">
-          <geometry><box><size>4.5 0.5 1.0</size></box></geometry>
-          <material><ambient>0.7 0.5 0.2 1</ambient><diffuse>0.7 0.5 0.2 1</diffuse></material>
-        </visual>
-      </link>
-    </model>
-
-    <model name="shelf_row3_right">
-      <static>true</static>
-      <pose>3.25 -2.2 0.5 0 0 0</pose>
-      <link name="link">
-        <collision name="collision">
-          <geometry><box><size>4.5 0.5 1.0</size></box></geometry>
-          <surface>
-            <friction><ode><mu>1.0</mu><mu2>1.0</mu2></ode></friction>
-            <contact><ode><min_depth>0.001</min_depth><max_vel>2.0</max_vel></ode></contact>
-          </surface>
-        </collision>
-        <visual name="visual">
-          <geometry><box><size>4.5 0.5 1.0</size></box></geometry>
-          <material><ambient>0.7 0.5 0.2 1</ambient><diffuse>0.7 0.5 0.2 1</diffuse></material>
-        </visual>
-      </link>
-    </model>
+    <!-- Set dressing nhỏ cho giống kho thật đang hoạt động -- đặt trong lối đi giữa (đã thoáng
+         ra nhiều), cách spawn (0,0) và mép kệ còn dư biên. Thuần trang trí, không phải vật cản
+         bài tập Module 13 (vật cản đó bạn tự thêm sau khi đã lưu map, xem Module 13). -->
+    <include>
+      <name>pallet_jack</name>
+      <uri>model://aws_robomaker_warehouse_PalletJackB_01</uri>
+      <pose>-3 8 0 0 0 1.5708</pose>
+    </include>
+    <include>
+      <name>trash_can</name>
+      <uri>model://aws_robomaker_warehouse_TrashCanC_01</uri>
+      <pose>3 -8 0 0 0 0</pose>
+    </include>
 
   </world>
 </sdf>

@@ -1,0 +1,223 @@
+<?xml version="1.0" ?>
+<sdf version="1.9">
+  <world name="atlas_office">
+
+    <!-- Xem giải thích panel GUI này (Visualize Lidar, v.v.) trong maze.sdf -- copy nguyên
+         khối GUI/plugin từ đó để world nào cũng có trải nghiệm giống nhau. -->
+    <gui fullscreen="0">
+      <plugin filename="MinimalScene" name="3D View">
+        <gz-gui>
+          <title>3D View</title>
+          <property type="bool" key="showTitleBar">false</property>
+          <property type="string" key="state">docked</property>
+        </gz-gui>
+        <engine>ogre2</engine>
+        <scene>scene</scene>
+        <ambient_light>0.5 0.5 0.5</ambient_light>
+        <background_color>0.75 0.78 0.82</background_color>
+        <camera_pose>-14 -16 10 0 0.5 0.85</camera_pose>
+      </plugin>
+      <plugin filename="EntityContextMenuPlugin" name="Entity context menu">
+        <gz-gui>
+          <property key="state" type="string">floating</property>
+          <property key="width" type="double">5</property>
+          <property key="height" type="double">5</property>
+          <property key="showTitleBar" type="bool">false</property>
+        </gz-gui>
+      </plugin>
+      <plugin filename="GzSceneManager" name="Scene Manager">
+        <gz-gui>
+          <property key="resizable" type="bool">false</property>
+          <property key="width" type="double">5</property>
+          <property key="height" type="double">5</property>
+          <property key="state" type="string">floating</property>
+          <property key="showTitleBar" type="bool">false</property>
+        </gz-gui>
+      </plugin>
+      <plugin filename="InteractiveViewControl" name="Interactive view control">
+        <gz-gui>
+          <property key="resizable" type="bool">false</property>
+          <property key="width" type="double">5</property>
+          <property key="height" type="double">5</property>
+          <property key="state" type="string">floating</property>
+          <property key="showTitleBar" type="bool">false</property>
+        </gz-gui>
+      </plugin>
+      <plugin filename="CameraTracking" name="Camera Tracking">
+        <gz-gui>
+          <property key="resizable" type="bool">false</property>
+          <property key="width" type="double">5</property>
+          <property key="height" type="double">5</property>
+          <property key="state" type="string">floating</property>
+          <property key="showTitleBar" type="bool">false</property>
+        </gz-gui>
+      </plugin>
+      <plugin filename="WorldControl" name="World control">
+        <gz-gui>
+          <title>World control</title>
+          <property type="bool" key="showTitleBar">false</property>
+          <property type="bool" key="resizable">false</property>
+          <property type="double" key="height">72</property>
+          <property type="double" key="width">121</property>
+          <property type="double" key="z">1</property>
+          <property type="string" key="state">floating</property>
+          <anchors target="3D View">
+            <line own="left" target="left"/>
+            <line own="bottom" target="bottom"/>
+          </anchors>
+        </gz-gui>
+        <play_pause>true</play_pause>
+        <step>true</step>
+        <use_event>true</use_event>
+      </plugin>
+      <plugin filename="WorldStats" name="World stats">
+        <gz-gui>
+          <title>World stats</title>
+          <property type="bool" key="showTitleBar">false</property>
+          <property type="bool" key="resizable">false</property>
+          <property type="double" key="height">110</property>
+          <property type="double" key="width">290</property>
+          <property type="double" key="z">1</property>
+          <property type="string" key="state">floating</property>
+          <anchors target="3D View">
+            <line own="right" target="right"/>
+            <line own="bottom" target="bottom"/>
+          </anchors>
+        </gz-gui>
+        <sim_time>true</sim_time>
+        <real_time>true</real_time>
+        <real_time_factor>true</real_time_factor>
+        <iterations>true</iterations>
+      </plugin>
+      <plugin filename="EntityTree" name="Entity tree">
+        <gz-gui>
+          <property type="string" key="state">docked</property>
+        </gz-gui>
+      </plugin>
+      <plugin filename="VisualizeLidar" name="Visualize Lidar"/>
+    </gui>
+
+    <plugin filename="gz-sim-physics-system" name="gz::sim::systems::Physics"/>
+    <plugin filename="gz-sim-user-commands-system" name="gz::sim::systems::UserCommands"/>
+    <plugin filename="gz-sim-scene-broadcaster-system" name="gz::sim::systems::SceneBroadcaster"/>
+    <plugin filename="gz-sim-contact-system" name="gz::sim::systems::Contact"/>
+    <plugin filename="gz-sim-imu-system" name="gz::sim::systems::Imu"/>
+    <plugin filename="gz-sim-sensors-system" name="gz::sim::systems::Sensors">
+      <render_engine>ogre2</render_engine>
+    </plugin>
+
+    <!-- Giữ nguyên physics đã xác nhận fix bug "xuyên tường" ở maze.sdf: dartsim +
+         collision_detector bullet (ODE không có plugin cài sẵn trên máy này). -->
+    <physics name="1ms" type="dartsim">
+      <max_step_size>0.001</max_step_size>
+      <real_time_factor>1.0</real_time_factor>
+      <dart>
+        <collision_detector>bullet</collision_detector>
+      </dart>
+    </physics>
+
+    <light type="directional" name="sun">
+      <cast_shadows>true</cast_shadows>
+      <pose>0 0 10 0 0 0</pose>
+      <diffuse>0.8 0.8 0.8 1</diffuse>
+      <specular>0.2 0.2 0.2 1</specular>
+      <attenuation>
+        <range>1000</range>
+        <constant>0.9</constant>
+        <linear>0.01</linear>
+        <quadratic>0.001</quadratic>
+      </attenuation>
+      <direction>-0.5 0.1 -0.9</direction>
+    </light>
+
+    <!-- Văn phòng -- dùng chung sàn/tường thật của warehouse.sdf (GroundB_01 + WallB_01, asset
+         AWS RoboMaker, nguồn+giấy phép ghi trong models/README.md). 2 gotcha thật gặp khi dựng,
+         fix ở đây, ghi lại để không lặp lại:
+           1) Mặt sàn THẬT của GroundB_01 nằm ở z=0.12432m (mesh có đế dày ~12.4cm), không phải
+              z=0 như đặt pose ban đầu -- robot spawn mặc định z=0.05 (đúng bán kính bánh xe) bị
+              lún nửa bánh xuống dưới sàn. Sửa bằng cách đặt pose.z = -0.12432 cho GroundB_01 (đẩy
+              xuống đúng 1 chiều dày của nó) để mặt TRÊN khớp đúng world z=0 -- lúc đó gốc của
+              WallB_01 (z=0 cục bộ, không cần đổi) cũng tự động khớp luôn, vì 2 model này vốn
+              thiết kế chung 1 mặt đất chuẩn.
+           2) Theo phản hồi thực tế (tường 2.7m vẫn còn hơi kín, muốn thấp thêm) -- hạ tiếp xuống
+              scale Z 0.24 (còn ~2.17m), đồng thời để KHỚP tường ngăn phòng mới (xem dưới) cũng
+              dựng cao ngang 2.2m.
+         Bố cục mới: chia 3 khu bằng 2 bức tường ngăn (hộp đơn giản, không phải mesh, để chủ động
+         kích thước + chừa đúng cửa đi) -- văn phòng mở (y: -10.5..2, bàn làm việc) → phòng họp
+         (y: 2..7, bàn họp + bảng) → phòng nghỉ/pantry (y: 7..10.5, tủ lạnh, tủ, bàn trà). Cửa đi
+         rộng 1.2m tại x: -0.6..0.6 ở CẢ 2 tường ngăn, thẳng hàng nhau -- tạo 1 hành lang giữa
+         thẳng từ nam lên bắc, robot spawn mặc định (0,0) nằm đúng đầu hành lang này. -->
+    <include>
+      <uri>model://aws_robomaker_warehouse_GroundB_01</uri>
+      <pose>0 0 -0.12432 0 0 0</pose>
+    </include>
+    <include>
+      <uri>model://aws_robomaker_warehouse_WallB_01</uri>
+      <pose>0 0 0 0 0 0</pose>
+      <scale>1 1 0.24</scale>
+    </include>
+
+    <!-- 2 tường ngăn, mỗi tường 2 đoạn trái/phải chừa cửa 1.2m ở giữa (x: -0.6..0.6) -->
+    <model name="partition_wall_1_west"><static>true</static><pose>-3.8 2 1.1 0 0 0</pose>
+      <link name="link">
+        <collision name="collision"><geometry><box><size>6.4 0.1 2.2</size></box></geometry></collision>
+        <visual name="visual"><geometry><box><size>6.4 0.1 2.2</size></box></geometry>
+          <material><ambient>0.85 0.85 0.82 1</ambient><diffuse>0.85 0.85 0.82 1</diffuse></material></visual>
+      </link>
+    </model>
+    <model name="partition_wall_1_east"><static>true</static><pose>3.8 2 1.1 0 0 0</pose>
+      <link name="link">
+        <collision name="collision"><geometry><box><size>6.4 0.1 2.2</size></box></geometry></collision>
+        <visual name="visual"><geometry><box><size>6.4 0.1 2.2</size></box></geometry>
+          <material><ambient>0.85 0.85 0.82 1</ambient><diffuse>0.85 0.85 0.82 1</diffuse></material></visual>
+      </link>
+    </model>
+    <model name="partition_wall_2_west"><static>true</static><pose>-3.8 7 1.1 0 0 0</pose>
+      <link name="link">
+        <collision name="collision"><geometry><box><size>6.4 0.1 2.2</size></box></geometry></collision>
+        <visual name="visual"><geometry><box><size>6.4 0.1 2.2</size></box></geometry>
+          <material><ambient>0.85 0.85 0.82 1</ambient><diffuse>0.85 0.85 0.82 1</diffuse></material></visual>
+      </link>
+    </model>
+    <model name="partition_wall_2_east"><static>true</static><pose>3.8 7 1.1 0 0 0</pose>
+      <link name="link">
+        <collision name="collision"><geometry><box><size>6.4 0.1 2.2</size></box></geometry></collision>
+        <visual name="visual"><geometry><box><size>6.4 0.1 2.2</size></box></geometry>
+          <material><ambient>0.85 0.85 0.82 1</ambient><diffuse>0.85 0.85 0.82 1</diffuse></material></visual>
+      </link>
+    </model>
+
+    <!-- Khu 1 -- văn phòng mở (y: -10.5..2): 4 bàn làm việc + ghế, 2 cột x=-4/+4, tránh hẳn
+         x=0 (hành lang giữa) và không đụng tường ngăn y=2. -->
+    <include><name>desk_1</name><uri>model://aws_robomaker_warehouse_DeskC_01</uri><pose>-4 -7 0 0 0 0</pose></include>
+    <include><name>desk_2</name><uri>model://aws_robomaker_warehouse_DeskC_01</uri><pose>4 -7 0 0 0 0</pose></include>
+    <include><name>desk_3</name><uri>model://aws_robomaker_warehouse_DeskC_01</uri><pose>-4 -3 0 0 0 3.14159</pose></include>
+    <include><name>desk_4</name><uri>model://aws_robomaker_warehouse_DeskC_01</uri><pose>4 -3 0 0 0 3.14159</pose></include>
+    <include><name>chair_1</name><uri>model://aws_robomaker_residential_ChairD_01</uri><pose>-4 -8.4 0 0 0 3.14159</pose></include>
+    <include><name>chair_2</name><uri>model://aws_robomaker_residential_ChairD_01</uri><pose>4 -8.4 0 0 0 3.14159</pose></include>
+    <include><name>chair_3</name><uri>model://aws_robomaker_residential_ChairD_01</uri><pose>-4 -1.6 0 0 0 0</pose></include>
+    <include><name>chair_4</name><uri>model://aws_robomaker_residential_ChairD_01</uri><pose>4 -1.6 0 0 0 0</pose></include>
+
+    <!-- Khu 2 -- phòng họp (y: 2..7): 1 bàn (DeskC_01 xoay ngang làm bàn họp) + 4 ghế quanh
+         + 1 bảng treo tường bắc của phòng. -->
+    <include><name>meeting_table</name><uri>model://aws_robomaker_warehouse_DeskC_01</uri><pose>0 4.5 0 0 0 1.5708</pose></include>
+    <include><name>meeting_chair_1</name><uri>model://aws_robomaker_residential_ChairD_01</uri><pose>-1.4 4.5 0 0 0 1.5708</pose></include>
+    <include><name>meeting_chair_2</name><uri>model://aws_robomaker_residential_ChairD_01</uri><pose>1.4 4.5 0 0 0 -1.5708</pose></include>
+    <include><name>meeting_chair_3</name><uri>model://aws_robomaker_residential_ChairD_01</uri><pose>0 3.3 0 0 0 0</pose></include>
+    <include><name>meeting_chair_4</name><uri>model://aws_robomaker_residential_ChairD_01</uri><pose>0 5.7 0 0 0 3.14159</pose></include>
+    <include><name>meeting_board</name><uri>model://aws_robomaker_residential_Board_01</uri><pose>-2.5 6.85 1.5 0 0 0</pose></include>
+
+    <!-- Khu 3 -- phòng nghỉ/pantry (y: 7..10.5): tủ lạnh, bàn bếp nhỏ, tủ, bàn trà + ghế, thùng
+         rác -- 3 model có gốc Z lệch tâm (đo bằng dae_bbox.py trước khi đặt, không đoán) được
+         bù z thủ công để không lún/lơ lửng: Refrigerator_01 +0.42, CookingBench_01 +0.5,
+         ReadingDesk_01 +0.266. -->
+    <include><name>fridge</name><uri>model://aws_robomaker_residential_Refrigerator_01</uri><pose>-6 9.3 0.42 0 0 0</pose></include>
+    <include><name>cooking_bench</name><uri>model://aws_robomaker_residential_CookingBench_01</uri><pose>6 9.3 0.5 0 0 1.5708</pose></include>
+    <include><name>pantry_cabinet</name><uri>model://aws_robomaker_residential_TVCabinet_01</uri><pose>0 10.2 0 0 0 1.5708</pose></include>
+    <include><name>break_table</name><uri>model://aws_robomaker_residential_ReadingDesk_01</uri><pose>-3.5 7.8 0.266 0 0 0</pose></include>
+    <include><name>break_chair_1</name><uri>model://aws_robomaker_residential_ChairD_01</uri><pose>-3.5 8.6 0 0 0 3.14159</pose></include>
+    <include><name>break_chair_2</name><uri>model://aws_robomaker_residential_ChairD_01</uri><pose>-2.3 7.8 0 0 0 1.5708</pose></include>
+    <include><name>trash_bin</name><uri>model://aws_robomaker_residential_Trash_01</uri><pose>3.8 7.5 0 0 0 0</pose></include>
+
+  </world>
+</sdf>
