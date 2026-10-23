@@ -26,8 +26,8 @@ def generate_launch_description():
 
     world_arg = DeclareLaunchArgument(
         "world",
-        default_value="empty.sdf",
-        description="Tên file world trong atlas_gazebo/worlds (vd: empty.sdf, maze.sdf)",
+        default_value="office_world.sdf",
+        description="Tên file world trong atlas_gazebo/worlds (vd: office_world.sdf, maze.sdf)",
     )
 
     simulation_bringup = IncludeLaunchDescription(
